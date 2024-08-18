@@ -1,0 +1,1 @@
+pub(crate) const MAX: usize = 65_535;
