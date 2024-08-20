@@ -13,10 +13,10 @@
 // }
 
 
-// #[derive(Debug, Clone, Copy)]
-// pub struct ReasonCode(pub u8);
+#[derive(Debug, Clone, Copy)]
+pub struct ReasonCode;
 
-// impl ReasonCode {
-//     pub const SUCCESS: ReasonCode = ReasonCode(0);
-//     pub const NORAMAL_DISCONNECTION: ReasonCode = ReasonCode(0);
-// }
+impl ReasonCode {
+    pub const SUCCESS: u64 = 0x00;
+    pub const NORAMAL_DISCONNECTION: u64 = 0x00;
+}
