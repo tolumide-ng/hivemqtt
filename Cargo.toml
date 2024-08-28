@@ -1,10 +1,19 @@
+[workspace]
+resolver = "2"
+members = [
+    "hivemqtt-core",
+    "hivemqtt-macros"
+]
+
+
+[workspace.package]
+edition = "2024"
+keywords = ["mqtt", "network", "hivemq"]
+categories = ["mqtt", "network"]
+authors = [
+    "Tolumide Shopein <tolumideshopein@gmail.com>"
+]
+
 [package]
 name = "hivemqtt"
-version = "0.1.0"
-edition = "2021"
-authors = ["Tolumide Shopein <tolumideshopein@gmail.com>"]
-
-[dependencies]
-bytes = "1.7.1"
-derive_more = { version = "1.0.0", features = ["display"]}
-thiserror = "=1.0.24"
+readmme = "README.md"
