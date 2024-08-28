@@ -7,13 +7,14 @@ members = [
 
 
 [workspace.package]
-edition = "2024"
+edition = "2021"
 keywords = ["mqtt", "network", "hivemq"]
 categories = ["mqtt", "network"]
+version = "0.1.0"
 authors = [
     "Tolumide Shopein <tolumideshopein@gmail.com>"
 ]
 
-[package]
-name = "hivemqtt"
-readmme = "README.md"
+# [package]
+# name = "hivemqtt"
+# readmme = "README.md"

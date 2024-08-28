@@ -1,8 +1,11 @@
 [package]
-name = "hivemqtt"
+name = "hivemqtt-core"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+
+[lib]
+path = "src/lib.rs"
 
 [dependencies]
 bytes = "1.7.1"
