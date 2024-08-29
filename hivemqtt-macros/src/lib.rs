@@ -15,26 +15,44 @@ pub fn length_derive(input: TokenStream) -> TokenStream {
         // if let syn::Fields::Named(fields) = data,fields {}
 
         if let syn::Fields::Named(names) = data.fields {
-            // let field_names = names.named.iter().map(|f| &f.ident).collect::<Vec<_>>();
-            // // let field_name_strings: Vec<String> = field_names.iter().map(|ident| ident.to_string()).collect();
+            let field_names = names.named.iter().map(|f| f).collect::<Vec<_>>();
 
-            // // let expanded = quote! { }
 
-            // println!("{:#?}", field_names);
+            for field in field_names {
+                // println!("yessir");
+                let is_field_optional = field_type("Option", &field.ty);
+                // if let Type::Path(f_type_path) = &field.ty {
+                //     let f_path = &f_type_path.path.segments[0];
+                //     let f_type = &f_path.ident;
+                //     let is_optional = f_type == "Option";
+                //     println!("THE TYPE HERE IS {:#?} ------>>> {:#?}", f_type, is_optional);
 
-            // dbg!(&field_names);
+                //     println!("{:#?}", f_path);
+                // }
 
-            // for x in field_names {
-            //     if let Some(idd) = x {
-            //         // let xxx = stringify!(#idd);
-            //         // println!("the iudd {:#?}", xxx);
-            //         // // if let Ident {name, span} = idd {}
+                let ident = &field.ident;
 
-            //         // let q = quote! { #idd };
-            //         let x = &idd;
-            //         println!("the qqqqq {:#?}", idd);
-            //     }
-            // }
+                
+                let var = quote! { println!("{:#?}", #ident) };
+                // println!("the identity HERE IS {:#?}", var);
+
+                // println!("{:#?}", is_field_optional);
+
+                let field_name = &field.ident;
+
+                let vv = quote! {
+                    if self.#field_name.is_some() {
+                        println!("((((((((((((((((((((((((welcome)))))))))))))))))))))))) to some");
+                        return 1;
+                    } else {
+                        println!("************************OHHHHH************************ it was a NONEYU");
+                        return 2;
+                    }
+                };
+
+                println!("THE [[[[[[[[VVVVVVVVV]]]]]]]] {:#?}", vv);
+
+            }
 
 
 
@@ -45,7 +63,8 @@ pub fn length_derive(input: TokenStream) -> TokenStream {
                     let xident = x.segments.first().clone().unwrap();
                     let is_optional_field = xident.clone().ident;
                     println!("the path is :::: {:#?}", is_optional_field);
-                    is_optional_field == "Option"
+                    // is_optional_field == "Option";
+                    // println!("======================================== {:#?}", is_optional_field);
                     // if is_optional_field && #ident.
                 } else {unimplemented!()};
                 
@@ -78,35 +97,17 @@ pub fn length_derive(input: TokenStream) -> TokenStream {
         //     // println!("fields and value {:#?}", xx);
         // });
     };
-
-
-
-    // if let syn::Data(data) = input.
-
-    
-    // }
-    // if let Item::Struct(s) = item {
-    //     println!("ident :::::::::::: {:#?}", s.ident);
-    //     for field in s.fields.iter() {
-    //         // let span = field.span();
-
-    //         // let fname = match &field.ident {
-    //         //     Some(ident) => ident.to_string(),
-    //         //     None => "unnamed".to_string(),
-    //         // };
-    //         // let ftype = &field.ty;
-    //         // let xx = quote! {ftype};
-    //         // println!("the item here >>>>>> {:#?} --->> {:#?}", fname, xx);
-
-    //         println!("the field visibility:::::::::::::::::: {:#?}", &field.ident);
-    //         for att in &field.attrs {
-    //             println!("the attributes aare::::::||||| {:#?}", att);
-    //         }
-    //     }
-    //     // let qitem = quote! { fields };
-    // };
-    // let xxt = item.fields;
-
     TokenStream::new()
     // xx
+}
+
+
+fn field_type(expected: &str, ty: &syn::Type) -> bool {
+    if let Type::Path(ref f_type_path) = ty {
+        let f_path = &f_type_path.path.segments[0];
+        let f_type = &f_path.ident;
+        let matches_expected = f_type == expected;
+        return matches_expected;
+    }
+    return false;
 }
