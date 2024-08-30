@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
-use quote::{quote, ToTokens};
-use syn::{parse_macro_input, DeriveInput, Type, TypePath};
+use quote::{format_ident, quote, quote_spanned, ToTokens};
+use syn::{parse_macro_input, spanned::Spanned, DeriveInput, Type, TypePath};
 
 
 #[proc_macro_derive(Length, attributes(byte))]
@@ -10,93 +10,53 @@ pub fn length_derive(input: TokenStream) -> TokenStream {
     // let call_ident = Ident::new("calligraphy", Span::call_site());
     // println!("{}", call_ident);
     let _input = parse_macro_input!(input as DeriveInput);
-    let name = _input.ident;
-    if let syn::Data::Struct(data) = _input.data {
-        // if let syn::Fields::Named(fields) = data,fields {}
-
-        if let syn::Fields::Named(names) = data.fields {
-            let field_names = names.named.iter().map(|f| f).collect::<Vec<_>>();
-
-
-            for field in field_names {
-                // println!("yessir");
-                let is_field_optional = field_type("Option", &field.ty);
-                // if let Type::Path(f_type_path) = &field.ty {
-                //     let f_path = &f_type_path.path.segments[0];
-                //     let f_type = &f_path.ident;
-                //     let is_optional = f_type == "Option";
-                //     println!("THE TYPE HERE IS {:#?} ------>>> {:#?}", f_type, is_optional);
-
-                //     println!("{:#?}", f_path);
-                // }
-
-                let ident = &field.ident;
-
-                
-                let var = quote! { println!("{:#?}", #ident) };
-                // println!("the identity HERE IS {:#?}", var);
-
-                // println!("{:#?}", is_field_optional);
-
-                let field_name = &field.ident;
-
-                let vv = quote! {
-                    if self.#field_name.is_some() {
-                        println!("((((((((((((((((((((((((welcome)))))))))))))))))))))))) to some");
-                        return 1;
-                    } else {
-                        println!("************************OHHHHH************************ it was a NONEYU");
-                        return 2;
+    let struct_name = _input.ident;
+    let field_lens = match _input.data {
+        syn::Data::Struct(data_struct) => {
+            if let syn::Fields::Named(data) = data_struct.fields {
+                let op = data.named.iter().filter_map(|f| {
+                    let field_name = &f.ident;
+                    let field_type = &f.ty;
+    
+                    if let Some(f_name) = field_name {
+                        if let syn::Type::Path(type_path) = field_type {
+                            if type_path.path.is_ident("Option") {
+                                return Some(quote! {
+                                    if let Some(ref value) = self.#f_name {
+                                        size += 1                               }
+                                })
+                            } else {
+                                return Some(quote!{size += 1;});
+                            }
+                        }
                     }
-                };
-
-                println!("THE [[[[[[[[VVVVVVVVV]]]]]]]] {:#?}", vv);
-
+                    None
+                }).collect::<Vec<_>>();
+                op
+            } else {
+                let xx: Vec<proc_macro2::TokenStream> = Vec::with_capacity(0);
+                xx
             }
-
-
-
-            names.named.iter().for_each(|f| {
-                let typei = &f.ty;
-                let xx = if let Type::Path(p) = typei {
-                    let x = p.clone().path;
-                    let xident = x.segments.first().clone().unwrap();
-                    let is_optional_field = xident.clone().ident;
-                    println!("the path is :::: {:#?}", is_optional_field);
-                    // is_optional_field == "Option";
-                    // println!("======================================== {:#?}", is_optional_field);
-                    // if is_optional_field && #ident.
-                } else {unimplemented!()};
-                
-
-                let ident = &f.ident.clone().unwrap();
-                let ident_str = &ident.to_string();
-                let result = quote! {
-                    if xx && self.#ident.is_some() {
-                        println!("yaaaahhhh");
-                    }
-                };
-                // result
-                // let id = &f.ident.clone().unwrap();
-                // println!("the ty is {:?}", id.into_token_stream());
-                // println!("the ident {:#?}", id);
-                // quote!{#id};
-            });
-        
         }
-        // if let Fields::Named(fields) = x {0};
-        // data.fields.iter().for_each(|f| {
-        //     let name = &f.ident;
-        //     let ty = &f.ty;
-
-        //     // let sp = f.span();
-        //     // ty.span()
-        //     // let xx = quote! {
-        //     //     #name: Option<#ty>
-        //     // };
-        //     // println!("fields and value {:#?}", xx);
-        // });
+        _ => {
+            let xx: Vec<proc_macro2::TokenStream> = Vec::with_capacity(0);
+            xx
+        }
     };
+
+
+
+    let expanded = quote! {
+        impl #struct_name {
+            pub fn len(&self) -> usize {
+                let mut size = 0;
+                #( #field_lens )*
+                size
+            }
+        }
+    };
+
+
     TokenStream::new()
     // xx
 }
