@@ -1,4 +1,5 @@
 use bytes::Bytes;
+use hivemqtt_macros::DataSize;
 
 /// The CONNECT payload contains 1 or more length-prefixed fields
 /// whose presence is determined by the flags in the Variable Header.
@@ -29,6 +30,7 @@ pub(crate) struct Payload {
 }
 
 
+#[derive(DataSize)]
 struct WillProperties {
     // /// The length of the Will Properties (this struct) encoded as Variable Byte Integer
     // property_length: usize,
@@ -48,5 +50,6 @@ struct WillProperties {
     /// This property is intended to provide a means of transferring application layer name-value
     /// tags whose meaning and interpretation are known only by the application prgrams responsible
     /// for sending and receiving them.
+    #[byte(2)]
     user_property: Vec<(String, String)>,
 }

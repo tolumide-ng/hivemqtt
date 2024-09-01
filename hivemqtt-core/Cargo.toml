@@ -11,3 +11,4 @@ path = "src/lib.rs"
 bytes = "1.7.1"
 derive_more = { version = "1.0.0", features = ["display"]}
 thiserror = "=1.0.24"
+hivemqtt-macros = { path = "../hivemqtt-macros" }

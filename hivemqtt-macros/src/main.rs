@@ -1,6 +1,6 @@
-pub(crate) mod ty_attr;
+pub(crate) mod data_size;
 
-use hivemqtt_macros::Eleniyan;
+use hivemqtt_macros::DataSize;
 
 fn main() {
     
@@ -9,13 +9,14 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[derive(Debug, Eleniyan)]
+    #[derive(Debug, DataSize)]
     struct MQTTProp {
         #[byte(6)]
         name: String,
         #[byte(3)]
         age: Option<u8>,
-        #[byte(4)]
+        // #[byte(4)]
+        // #[byte(max(4))]
         friends: Vec<String>,
         #[byte(1)]
         origin: Option<u32>,
