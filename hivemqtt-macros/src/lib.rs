@@ -4,14 +4,14 @@ pub(crate) mod data_size;
 use data_size::{field_lens, get_size};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Type};
+use syn::{parse_macro_input, DeriveInput};
 
 // Todo! Handle more varied input like --> #[byte(max(4))]
 //    - this means that that expected max bytes is 4 bytes, and we should deduct the length from the input 
 //          we can do something like value <= u8::MAX, value <= u16::MAX e.t.c to determine, the proper size of the input
 // Error handling
 // Provide support for fields inside a struct that may not use the #[byte(x)] attribute
-#[proc_macro_derive(DataSize, attributes(byte))]
+#[proc_macro_derive(DataSize, attributes(bytes))]
 pub fn length_derive(input: TokenStream) -> TokenStream {
     let vv = input.clone();
     let _input = parse_macro_input!(input as DeriveInput);

@@ -11,14 +11,14 @@ mod tests {
     use super::*;
     #[derive(Debug, DataSize)]
     struct MQTTProp {
-        #[byte(6)]
+        #[bytes(6)]
         name: String,
-        #[byte(3)]
+        #[bytes(3)]
         age: Option<u8>,
-        // #[byte(4)]
-        // #[byte(max(4))]
+        // #[bytes(4)]
+        #[bytes(max_4)]
         friends: Vec<String>,
-        #[byte(1)]
+        #[bytes(wl_1)]
         origin: Option<u32>,
     }
 
