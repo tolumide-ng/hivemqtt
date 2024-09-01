@@ -53,6 +53,6 @@ struct WillProperties {
     /// This property is intended to provide a means of transferring application layer name-value
     /// tags whose meaning and interpretation are known only by the application prgrams responsible
     /// for sending and receiving them.
-    #[bytes(wl(2))]
+    #[bytes(wl_2)]
     user_property: Vec<(String, String)>,
 }

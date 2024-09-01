@@ -16,9 +16,9 @@ mod tests {
         #[bytes(3)]
         age: Option<u8>,
         // #[bytes(4)]
-        #[bytes(max_4)]
+        #[bytes(wl_4)]
         friends: Vec<String>,
-        #[bytes(wl_1)]
+        // #[bytes(wl_1)]
         origin: Option<u32>,
     }
 
