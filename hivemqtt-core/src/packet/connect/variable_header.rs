@@ -1,4 +1,43 @@
-use super::connect_flags::ConnectFlags;
+use bytes::Bytes;
+
+use crate::commons::version::Version;
+
+use super::{payload::WillProperties, properties::ConnectProperties};
+
+use crate::commons::qos::QoS;
+
+/// The Connect Flags bytes provides information on the MQTT connection, 
+/// and indicates the presence or absence of fields in the payload 
+pub struct ConnectFlags {
+    /// 3.1.2.4
+    clean_start: bool,
+    /// 3.1.2.5
+    will_flag: bool,
+    /// 3.1.2.6
+    will_qos: QoS,
+    /// 3.1.2.7
+    will_retain: bool,
+    /// 3.1.2.8
+    username: bool,
+    /// 3.1.2.9
+    password: bool,
+}
+
+// impl ConnectFlags {
+//     pub fn new(username: bool, password: bool, will_retain: bool, will_flag: bool, clean_start: bool) {}
+// }
+
+impl From<ConnectFlags> for u8 {
+    fn from(value: ConnectFlags) -> Self {
+        let flags = (value.clean_start as u8) << 1 |
+        (value.will_flag as u8) << 2 |
+        ((value.will_flag as u8) << 3 & (value.will_qos as u8) << 3) |
+        ((value.will_flag as u8) << 5 & (value.will_retain as u8) << 5) |
+        (value.password as u8) << 6 | (value.username as u8) << 7;
+
+        flags
+    }
+}
 
 /// ```text
 /// +--------+--------------------------+---+---+---+---+---+---+---+---+
@@ -56,47 +95,28 @@ use super::connect_flags::ConnectFlags;
 /// **SEII = Session Expiry Interval Identifier
 /// **SEI  = Session Expiry Interval
 /// ```
-pub struct VariableHeader {
+pub struct Connect {
+    // ACTUAL VARIABLE HEADERS
+    /// 3.1.2.2
+    version: Version,
+    /// 3.1.2.3
     connect_flags: ConnectFlags,
-    // protocol_version: ProtocolVersion,
-    /// The maximum value is 65_535(u16::MAX) = 18hours and 15seconds
+    /// 3.1.2.10 (2 bytes) - byte 9 & byte 10
     keep_alive: u16,
-    /// The length of the Properties in the CONNECT packet Variable Header encoded as a Variable Byte Integer
-    property_length: u16,
-    /// 4 byte integer representing the Session Expiry inteval in seconds
-    /// If this value is setabsent or set to 0, the Session ends when the Network is closed.
-    /// If the value is set to 0xFFFFFFFF (u32::MAX), the Session does not expire
-    session_expiry_interval: u32,
-    /// This value must be greater than zero(0), else there would be a protocol error.
-    /// The Client uses this value to limit the number of QoS1, and QoS2 publications that it is willing to concurrently process.
-    /// If this value is absent, then its value defaults to u16::MAX
-    receive_maximum: u16,
-    /// This value indicates the maximum packet size the Client is willing to accept
-    /// If this value is not present, there is no limit on the packet size.
-    /// ! This value must be greater than zero(0) if/when set, else there would be a Protoxol error
-    /// If the server sends a packet whose size exceeds the limit, It is a protocol error, and the client must disconnect
-    /// with ReasonCode 0x95 (Packet too Large)
-    maximum_packet_size: Option<u16>,
-    /// Default is 0 if the value is absent (two bytes)
-    /// The Client uses this value to limit the number of Topic Aliases that it is willing to hold on this Connection.
-    topic_alias_maximum: u16,
-    /// The only valid values here are 0 or 1, anything else would result in a protocl error
-    /// The Client uses this value to request the Server to return Response information in the CONNACK.
-    request_response_information: bool,
-    /// Default value here is 1
-    /// The only valid values here are 0 or 1, anything else would result in a Protocol Error
-    /// The Client uses this to indicate whether the Reason String or User properties are snet in the case of failures
-    request_response_problem: bool,
-    /// UTF-8 String Pair
-    user_property: String,
-    // authentication: Option<ConnectAuthentication>,
-    /// Name of the Authentication method used for extended authentication. 
-    /// If the Client sets this value, the Client MUST NOT send any packets other than AUTH or 
-    /// DISCONNECT packets until it has received a CONNACK packet
-    authentication_method: String,
-    /// Binary Data containing the authentication data.
-    /// It is ProtocolError to include Authentication Data if there is no Authentication Method.
-    authentication_data: String,
+    /// 3.1.2.11.2 - 3.1.2.11.10
+    properties: ConnectProperties,
+    // CONNECT PAYLOAD
+    /// 3.1.3.1
+    client_identifier: Option<String>,
+    /// 3.1.3.2
+    last_will: WillProperties,
+    /// 3.1.3.3 (if the will flag is 1, then this must be the next field in the payload)
+    will_topic: Option<String>,
+    /// 3.1.3.4
+    will_payload: Option<Bytes>,
+    username: Option<String>,
+    password: Option<String>
+
 }
 
 // struct ConnectAuthentication {
@@ -108,3 +128,4 @@ pub struct VariableHeader {
 //     /// It is ProtocolError to include Authentication Data if there is no Authentication Method.
 //     authentication_data: String,
 // }
+
