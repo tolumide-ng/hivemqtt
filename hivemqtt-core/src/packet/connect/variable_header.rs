@@ -1,6 +1,6 @@
-use bytes::Bytes;
+use bytes::{BufMut, Bytes, BytesMut};
 
-use crate::commons::version::Version;
+use crate::{commons::version::Version, constants::PROTOCOL_NAME};
 
 use super::{payload::WillProperties, properties::ConnectProperties};
 
@@ -8,7 +8,7 @@ use crate::commons::qos::QoS;
 
 /// The Connect Flags bytes provides information on the MQTT connection, 
 /// and indicates the presence or absence of fields in the payload 
-pub struct ConnectFlags {
+struct ConnectFlags { // internal deduct from provided value
     /// 3.1.2.4
     clean_start: bool,
     /// 3.1.2.5
@@ -23,11 +23,14 @@ pub struct ConnectFlags {
     password: bool,
 }
 
-// impl ConnectFlags {
-//     pub fn new(username: bool, password: bool, will_retain: bool, will_flag: bool, clean_start: bool) {}
-// }
+impl ConnectFlags {
+    pub(crate) fn new(username: bool, password: bool, will_retain: bool, will_flag: bool, clean_start: bool, will_qos: QoS) -> Self {
+        Self { clean_start, will_flag, will_qos, will_retain, username, password }
+    }
+}
 
 impl From<ConnectFlags> for u8 {
+    
     fn from(value: ConnectFlags) -> Self {
         let flags = (value.clean_start as u8) << 1 |
         (value.will_flag as u8) << 2 |
@@ -95,6 +98,7 @@ impl From<ConnectFlags> for u8 {
 /// **SEII = Session Expiry Interval Identifier
 /// **SEI  = Session Expiry Interval
 /// ```
+/// 
 pub struct Connect {
     // ACTUAL VARIABLE HEADERS
     /// 3.1.2.2
@@ -107,7 +111,7 @@ pub struct Connect {
     properties: ConnectProperties,
     // CONNECT PAYLOAD
     /// 3.1.3.1
-    client_identifier: Option<String>,
+    client_id: Option<String>,
     /// 3.1.3.2
     last_will: WillProperties,
     /// 3.1.3.3 (if the will flag is 1, then this must be the next field in the payload)
@@ -115,8 +119,27 @@ pub struct Connect {
     /// 3.1.3.4
     will_payload: Option<Bytes>,
     username: Option<String>,
-    password: Option<String>
+    password: Option<String>,
+    
+    
+    clean_start: bool,
+    will: bool,
 
+}
+
+struct WillConfig {
+    topic: String, properties: Option<String>,
+    qos: QoS, retain: bool,
+}
+
+
+pub struct ConnectPack {
+    clean_start: bool,
+    keep_alive: u16,
+    will: Option<WillConfig>,
+    connect_properties: Option<ConnectProperties>,
+    username: Option<String>,
+    password: Option<String>,
 }
 
 // struct ConnectAuthentication {
@@ -128,4 +151,32 @@ pub struct Connect {
 //     /// It is ProtocolError to include Authentication Data if there is no Authentication Method.
 //     authentication_data: String,
 // }
+
+
+impl ConnectPack {
+    // pub fn new() {}
+
+    /// 3.1.2: The Variable Header for the CONNECT Packet contains the following fields in this order: Protocol Name, Protocol Level, Connect Flags, Keep Alive, and Properties
+    fn write(&self) {
+        let mut buff = BytesMut::new();
+        
+        buff.put_u8(0b0001_0000); // length of protocol name in u16
+        buff.extend_from_slice(PROTOCOL_NAME.as_bytes()); // protocol name
+        buff.put_u8(Version::V5 as u8); // protocol level
+
+        let with_username = self.username.is_some();
+        let with_password = self.password.is_some();
+
+        let connect_flags = u8::from(match &self.will {
+            Some(will) => ConnectFlags::new(with_username, with_password, will.retain, true, self.clean_start, will.qos),
+            None => ConnectFlags::new(with_username, with_password,false, false, self.clean_start, QoS::Zero),
+        });   // retest this
+        
+        buff.put_u8(connect_flags); // connect flags
+        buff.put_u16(self.keep_alive);
+
+
+
+    }
+}
 

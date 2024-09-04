@@ -35,3 +35,24 @@ pub enum PacketType {
     /// Client -> Sever | Server -> Client (Authentication Exchange)
     Auth,
 }
+
+impl PacketType {
+    fn to_4bits(&self) -> u8 {
+        (*self as u8) << 4
+    }
+
+    /// Fixed Header
+    /// ```text
+    /// +--------+------+-------+-------+-------+-------+-------+-------+-------+
+    /// | Bit    |  7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
+    /// +--------+------+-------+-------+-------+-------+-------+-------+-------+
+    /// | byte 1 |  MQTT Control Packet type    | Respective flag               |
+    /// +--------+------+-------+-------+-------+-------+-------+-------+-------+
+    /// | byte 2 |                  Remaining Length                    |       |
+    /// +--------+------+-------+-------+-------+-------+-------+-------+-------+
+    /// ```
+    /// Each MQTT Control Packet contains a Fixed Header
+    pub(crate) fn fixed_header(&self, flag: Option<u8>) -> u8 {
+        self.to_4bits() | flag.unwrap_or(0u8)
+    }
+}

@@ -34,3 +34,8 @@ pub(crate) struct ConnectProperties {
     #[bytes(wl_2)] 
     authentication_data: Option<Bytes>,
 }
+
+
+impl ConnectProperties {
+    pub(crate) fn write() {}
+}
