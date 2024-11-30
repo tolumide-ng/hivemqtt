@@ -63,35 +63,35 @@ impl From<PacketType> for u8 {
 type Properties = u64;
 
 impl PacketType {
-    #[allow(unused_variables)]
-    const PACKET_TYPE_OFFSET: u8 = 4;
+    // #[allow(unused_variables)]
+    // const PACKET_TYPE_OFFSET: u8 = 4;
     const TOTAL_PACKETS: usize = 15;
 
-    /// Fixed Header (Present in all MQTT Control Packets)
-    /// ```text
-    /// +--------+------+-------+-------+-------+-------+-------+-------+-------+
-    /// | Bit    |  7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
-    /// +--------+------+-------+-------+-------+-------+-------+-------+-------+
-    /// | byte 1 |  MQTT Control Packet type    | Respective flag               |
-    /// +--------+------+-------+-------+-------+-------+-------+-------+-------+
-    /// | byte 2 |                  Remaining Length                    |       |
-    /// +--------+------+-------+-------+-------+-------+-------+-------+-------+
-    /// ```
-    /// Each MQTT Control Packet contains a Fixed Header
-    /// `flag` parameter only needs to be provided when the packet type is `Publish`
-    ///     - (bool, bool) -> (duplicate delivery, publish retained message flag)
-    pub(crate) fn fixed_header(&self) -> u8 {
-        u8::from(*self) << Self::PACKET_TYPE_OFFSET | self.flag()
-    }
+    // /// Fixed Header (Present in all MQTT Control Packets)
+    // /// ```text
+    // /// +--------+------+-------+-------+-------+-------+-------+-------+-------+
+    // /// | Bit    |  7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
+    // /// +--------+------+-------+-------+-------+-------+-------+-------+-------+
+    // /// | byte 1 |  MQTT Control Packet type    | Respective flag               |
+    // /// +--------+------+-------+-------+-------+-------+-------+-------+-------+
+    // /// | byte 2 |                  Remaining Length                    |       |
+    // /// +--------+------+-------+-------+-------+-------+-------+-------+-------+
+    // /// ```
+    // /// Each MQTT Control Packet contains a Fixed Header
+    // /// `flag` parameter only needs to be provided when the packet type is `Publish`
+    // ///     - (bool, bool) -> (duplicate delivery, publish retained message flag)
+    // pub(crate) fn fixed_header(&self) -> u8 {
+    //     u8::from(*self) << Self::PACKET_TYPE_OFFSET | self.flag()
+    // }
 
-    /// The remaining bits [3-0] of byte 1 in the fixed header (Respective flag)
-    fn flag(&self) -> u8 {
-        match &self {
-            Self::Publish(p_flag) => *p_flag,
-            Self::PubRel | Self::Subscribe | Self::UnSubscribe => 0b0000_0010,
-            _ => 0
-        }
-    }
+    // /// The remaining bits [3-0] of byte 1 in the fixed header (Respective flag)
+    // fn flag(&self) -> u8 {
+    //     match &self {
+    //         Self::Publish(p_flag) => *p_flag,
+    //         Self::PubRel | Self::Subscribe | Self::UnSubscribe => 0b0000_0010,
+    //         _ => 0
+    //     }
+    // }
 
     /// Integer representing the number of bytes in the Variable Header and the Payload.
     /// This is encoded is VBI(Variable Byte Integer)

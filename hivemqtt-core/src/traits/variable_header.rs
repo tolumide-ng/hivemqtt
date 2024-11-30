@@ -13,4 +13,6 @@ pub(crate) trait VariableHeader {
             _ => false
         }
     }
+
+    fn get(&self) -> String;
 }
