@@ -1,4 +1,4 @@
-use crate::commons::{fixed_header::FixedHeaderFlag, packet_type::PacketType, qos::QoS};
+use crate::commons::{fixed_header_flag::FixedHeaderFlag, packet_type::PacketType, qos::QoS};
 
 /// Variable Header (Present in some MQTT Control Packets)
 /// Last update: Chapter 2.1

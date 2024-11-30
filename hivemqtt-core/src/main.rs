@@ -1,5 +1,5 @@
 pub mod constants;
-pub mod packet;
+pub mod packets;
 pub mod commons;
 pub(crate) mod traits;
 

@@ -1,4 +1,4 @@
-use super::{fixed_header::FixedHeaderFlag, property::Property::{self, *}};
+use super::{fixed_header_flag::FixedHeaderFlag, property::Property::{self, *}};
 
 
 
@@ -87,15 +87,15 @@ impl PacketType {
     /// The remaining bits [3-0] of byte 1 in the fixed header (Respective flag)
     fn flag(&self) -> u8 {
         match &self {
-            // find a better way to check if it supports dup, QoS type, and retain. We already know it's MQTT5
             Self::Publish(p_flag) => *p_flag,
             Self::PubRel | Self::Subscribe | Self::UnSubscribe => 0b0000_0010,
             _ => 0
         }
     }
 
-    /// Variable Byte Integer representing the number of bytes remaining within the current Control Packet
-    /// (Size of Data in the Vairable Header + Size of Data in the Payload) in bytes
+    /// Integer representing the number of bytes in the Variable Header and the Payload.
+    /// This is encoded is VBI(Variable Byte Integer)
+    /// (Size of Data in the Variable Header + Size of Data in the Payload) in bytes
     /// 2.1.4
     pub(crate) fn remaining_length(&mut self, length: usize) {}
 
