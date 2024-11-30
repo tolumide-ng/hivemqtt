@@ -1,6 +1,6 @@
+/// Must be encoded using the VBI
 #[derive(Debug, Clone, Copy)]
-#[repr(u8)]
-pub enum Property {
+pub(crate) enum Property {
     PayloadFormatIndicator = 1,
     MessageExpiryInterval = 2,
     ContentType = 3,
@@ -14,7 +14,7 @@ pub enum Property {
     AuthenticationData = 22,
     RequestProblemInformation = 23,
     WillDelayInterval = 24,
-    ReuestResponseInformation = 25,
+    RequestResponseInformation = 25,
     ResponseInformation = 26,
     ServerReference = 28,
     ReasonString = 31,

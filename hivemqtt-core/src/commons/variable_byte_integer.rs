@@ -3,7 +3,7 @@ use bytes::{BufMut, Bytes, BytesMut};
 use crate::commons::error::MQTTError;
 
 
-/// The Variable Byte Integer is encoded using an encoding scheme which uses a single byte for values up to 127
+/// The Variable Byte Integer(VBI) is encoded using an encoding scheme which uses a single byte for values up to 127
 pub(crate) trait VariableByteInteger {
     fn encode(buff: &mut BytesMut, len: usize) -> Result<(), MQTTError> {
         // 268_435_455
