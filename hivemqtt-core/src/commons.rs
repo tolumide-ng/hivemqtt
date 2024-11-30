@@ -6,3 +6,4 @@ pub mod qos;
 pub(crate) mod variable_byte_integer;
 pub(crate) mod error;
 pub(crate) mod version;
+pub(crate) mod fixed_header;

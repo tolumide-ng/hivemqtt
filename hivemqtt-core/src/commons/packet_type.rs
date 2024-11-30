@@ -1,3 +1,5 @@
+use super::fixed_header::FixedHeaderFlag;
+
 
 
 // Position: byte 1, bits 7 - 4 (4 bits unsigned value)
@@ -7,9 +9,13 @@ pub enum PacketType {
     /// Client -> Server (Connection Request)
     Connect = 1,
     /// Server -> Client (Connection Acknowledgement)
-    ConnAck,
+    ConnAck = 2,
     /// Client -> Sever | Server -> Client (Publish Message)
-    Publish,
+    /// The u8 here signifies:
+    ///     -> 0b0000_000x - Duplicate delivery of a PUBLISH packet
+    ///     -> 0b0000_0xx0 - Quality of Service (QoS)
+    ///     -> 0b0000_x000 - Retained message flag
+    Publish(u8) = 3, 
     /// Client -> Sever | Server -> Client (Publish acknowledgement (QoS 1))
     PubAck,
     /// Client -> Sever | Server -> Client (Publish received (QoS 2 delivery part 1))
@@ -36,9 +42,18 @@ pub enum PacketType {
     Auth,
 }
 
+impl From<PacketType> for u8 {
+    fn from(value: PacketType) -> Self {
+        match value {
+            PacketType::Publish(_) => 3,
+            _ => unsafe { *(<*const _>::from(&value)).cast::<u8>() }
+        }
+    }
+}
+
 impl PacketType {
     #[allow(unused_variables)]
-    const CONTROL_TYPE_MASK: u8 = 4;
+    const PACKET_TYPE_OFFSET: u8 = 4;
 
     /// Fixed Header (Present in all MQTT Control Packets)
     /// ```text
@@ -52,19 +67,16 @@ impl PacketType {
     /// ```
     /// Each MQTT Control Packet contains a Fixed Header
     /// `flag` parameter only needs to be provided when the packet type is `Publish`
-    pub(crate) fn fixed_header(&self, flag: Option<u8>) -> u8 {
-        (*self as u8) << Self::CONTROL_TYPE_MASK | self.flag(flag)
+    ///     - (bool, bool) -> (duplicate delivery, publish retained message flag)
+    pub(crate) fn fixed_header(&self) -> u8 {
+        u8::from(*self) << Self::PACKET_TYPE_OFFSET | self.flag()
     }
 
     /// The remaining bits [3-0] of byte 1 in the fixed header (Respective flag)
-    /// for Publish flag:
-    ///     - bit 3 -> Duplicate delivery of PUBLISH packet
-    ///     - bit 2 & bit 1 -> Publish Quality of Service(QoS)
-    ///     - bit 0 -> Public retained message flag
-    fn flag(&self, bits: Option<u8>) -> u8 {
+    fn flag(&self) -> u8 {
         match &self {
             // find a better way to check if it supports dup, QoS type, and retain. We already know it's MQTT5
-            Self::Publish => bits.unwrap(),
+            Self::Publish(p_flag) => *p_flag,
             Self::PubRel | Self::Subscribe | Self::UnSubscribe => 0b0000_0010,
             _ => 0
         }
@@ -74,4 +86,24 @@ impl PacketType {
     /// (Size of Data in the Vairable Header + Size of Data in the Payload) in bytes
     /// 2.1.4
     pub(crate) fn remaining_length(&mut self, length: usize) {}
+
+
+    pub(crate) fn make_publish(flag: FixedHeaderFlag) -> PacketType {
+        Self::Publish(u8::from(flag))
+    }
+}
+
+
+
+#[cfg(test)]
+mod packet_type {
+    use super::PacketType;
+
+    #[test]
+    fn should_return_the_right_enum_discriminant() {
+        assert_eq!(u8::from(PacketType::PubAck), 4);
+        assert_eq!(u8::from(PacketType::Connect), 1);
+        assert_eq!(u8::from(PacketType::Publish(4)), 3);
+        assert_eq!(u8::from(PacketType::Auth), 15);
+    }
 }

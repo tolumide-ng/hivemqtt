@@ -14,3 +14,14 @@ impl From<QoS> for u8 {
         }
     }
 }
+
+impl From<u8> for QoS {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => QoS::Zero,
+            1 => QoS::One,
+            2 => QoS::Two,
+            _ => unimplemented!("Unrecognized QoS {}", value)
+        }
+    }
+}
