@@ -14,6 +14,6 @@ pub mod reason_code;
 pub mod qos;
 pub(crate) mod variable_byte_integer;
 pub(crate) mod error;
-pub(crate) mod version;
-pub(crate) mod fixed_header;
-pub(crate) mod will_properties;
+pub(crate) mod version; // good
+pub(crate) mod fixed_header; // good
+pub(crate) mod will_properties; // good

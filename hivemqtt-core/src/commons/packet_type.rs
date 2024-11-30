@@ -3,6 +3,14 @@ use super::{fixed_header::FixedHeaderFlag, property::Property::{self, *}};
 
 
 
+// For an MQTT control packet, we expect
+// 0. Fixed Header (Compulsory)
+// 1. Variable Header (Compulsory with some parts of it optional)
+// 2. Payload (Optional for some MQTT packets)
+
+
+
+
 // Position: byte 1, bits 7 - 4 (4 bits unsigned value)
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
