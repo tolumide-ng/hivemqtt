@@ -104,51 +104,51 @@ impl PacketType {
         Self::Publish(u8::from(flag))
     }
 
-    /// Just like chess bitboards
-    const PACKET_PROPERTY: [Properties; Self::TOTAL_PACKETS] = [
-        packet_props!(SessionExpiryInterval, AuthenticationMethod, AuthenticationData, RequestProblemInformation, 
-            RequestResponseInformation, ReceiveMaximum, TopicAliasMaximum, UserProperty, MaximumPacketSize), // CONNECT
-        packet_props!(SessionExpiryInterval, AssignedClientIdentifier, ServerKeepAlive, AuthenticationMethod, AuthenticationData, 
-            ResponseInformation, ServerReference, ReasonString, ReceiveMaximum, TopicAliasMaximum, MaximumQoS, RetainAvailable, UserProperty, 
-            MaximumPacketSize, WildCardSubscription, SubscriptionIdentifierAvailable, SharedSubscriptionAvailable), // CONNACK
-        packet_props!(PayloadFormatIndicator, MessageExpiryInterval, ContentType, ResponseTopic, CorrelationData, SubscriptionIdentifier, 
-            TopicAliasMaximum, UserProperty), // Publish
-        packet_props!(ReasonString, UserProperty), // PubAck
-        packet_props!(ReasonString, UserProperty), // PubRecv
-        packet_props!(ReasonString, UserProperty), // PubRel
-        packet_props!(ReasonString, UserProperty), // PubComp
-        packet_props!(SubscriptionIdentifier, UserProperty), // Subscribe
-        packet_props!(ReasonString, UserProperty), // Suback
-        packet_props!(UserProperty), // Unsubscribe 
-        packet_props!(ReasonString, UserProperty), // Unsuback
-        0u64, // Pingreq
-        0u64, // Pingresp
-        packet_props!(SessionExpiryInterval, ServerReference, ReasonString, UserProperty), // Disconnect
-        packet_props!(AuthenticationMethod, AuthenticationData, ReasonString, UserProperty), // Auth
-    ];
+    // /// Just like chess bitboards
+    // const PACKET_PROPERTY: [Properties; Self::TOTAL_PACKETS] = [
+    //     packet_props!(SessionExpiryInterval, AuthenticationMethod, AuthenticationData, RequestProblemInformation, 
+    //         RequestResponseInformation, ReceiveMaximum, TopicAliasMaximum, UserProperty, MaximumPacketSize), // CONNECT
+    //     packet_props!(SessionExpiryInterval, AssignedClientIdentifier, ServerKeepAlive, AuthenticationMethod, AuthenticationData, 
+    //         ResponseInformation, ServerReference, ReasonString, ReceiveMaximum, TopicAliasMaximum, MaximumQoS, RetainAvailable, UserProperty, 
+    //         MaximumPacketSize, WildCardSubscription, SubscriptionIdentifierAvailable, SharedSubscriptionAvailable), // CONNACK
+    //     packet_props!(PayloadFormatIndicator, MessageExpiryInterval, ContentType, ResponseTopic, CorrelationData, SubscriptionIdentifier, 
+    //         TopicAliasMaximum, UserProperty), // Publish
+    //     packet_props!(ReasonString, UserProperty), // PubAck
+    //     packet_props!(ReasonString, UserProperty), // PubRecv
+    //     packet_props!(ReasonString, UserProperty), // PubRel
+    //     packet_props!(ReasonString, UserProperty), // PubComp
+    //     packet_props!(SubscriptionIdentifier, UserProperty), // Subscribe
+    //     packet_props!(ReasonString, UserProperty), // Suback
+    //     packet_props!(UserProperty), // Unsubscribe 
+    //     packet_props!(ReasonString, UserProperty), // Unsuback
+    //     0u64, // Pingreq
+    //     0u64, // Pingresp
+    //     packet_props!(SessionExpiryInterval, ServerReference, ReasonString, UserProperty), // Disconnect
+    //     packet_props!(AuthenticationMethod, AuthenticationData, ReasonString, UserProperty), // Auth
+    // ];
 
-    pub(crate) fn get_properties(&self) -> Vec<Property> {
-        let index = (u8::from(*self)-1) as usize;
-        let mut properties = Self::PACKET_PROPERTY[index];
+    // pub(crate) fn get_properties(&self) -> Vec<Property> {
+    //     let index = (u8::from(*self)-1) as usize;
+    //     let mut properties = Self::PACKET_PROPERTY[index];
 
-        let mut found = Vec::new();
+    //     let mut found = Vec::new();
 
-        while properties != 0 {
-            // equivalent to the enum's discriminant
-            let index = properties.trailing_zeros() as u8;
-            // We can do this because we know that the internal PACKET_PROPERTY above would always be valid since we generated it ourself
-            let property: Property = unsafe {std::mem::transmute(index)};
-            found.push(property);
-            properties &= properties-1;
-        }
-        found
-    }
+    //     while properties != 0 {
+    //         // equivalent to the enum's discriminant
+    //         let index = properties.trailing_zeros() as u8;
+    //         // We can do this because we know that the internal PACKET_PROPERTY above would always be valid since we generated it ourself
+    //         let property: Property = unsafe {std::mem::transmute(index)};
+    //         found.push(property);
+    //         properties &= properties-1;
+    //     }
+    //     found
+    // }
 
-    pub(crate) fn has_property(&self, property: Property) -> bool {
-        let index = (u8::from(*self)-1) as usize;
-        let properties = Self::PACKET_PROPERTY[index];
-        ((1u64 << property as u64) & properties) != 0
-    }
+    // pub(crate) fn has_property(&self, property: Property) -> bool {
+    //     let index = (u8::from(*self)-1) as usize;
+    //     let properties = Self::PACKET_PROPERTY[index];
+    //     ((1u64 << property as u64) & properties) != 0
+    // }
 }
 
 

@@ -9,6 +9,7 @@ use syn::{Attribute, FieldsNamed, Meta};
 #[derive(Debug, PartialEq, Eq)]
 #[repr(u8)]
 pub(crate) enum Prefix {
+    /// With length
     Wl = 0,
     Max,
     /// KeyVal (like Vec<(k, v)>)

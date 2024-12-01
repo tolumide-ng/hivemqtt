@@ -1,5 +1,6 @@
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd)]
 pub enum QoS {
+    #[default]
     Zero = 0,
     One,
     Two,

@@ -4,8 +4,8 @@ use hivemqtt_macros::DataSize;
 /// The CONNECT payload contains 1 or more length-prefixed fields
 /// whose presence is determined by the flags in the Variable Header.
 pub(crate) struct Payload {
-    // todo: Add utility method to enable generation of random id's when [rnadom] feature flag is enabled
-    client_identifider: String,
+    // todo: Add utility method to enable generation of random id's when [random] feature flag is enabled
+    client_id: String,
     will_properties: WillProperties,
     /// If the will_flag is set to 1 (connect flags of the CONNECT variable header),
     /// then this property must be provided
@@ -20,18 +20,23 @@ pub(crate) struct Payload {
     /// If the password flag is set to 1 (connect flags of the CONNECT variable header),
     /// then this property must be provided
     /// MUST BE BINARY DATA
-    password: Option<String>,
+    password: Option<Bytes>,
 }
+
+
+// if the flag topic is set to 1, the will topic is the next field in the Payload.
+// The will topic MUST be a UTF-8 encoded string
+
 
 
 #[derive(DataSize, Debug, Clone)]
 pub(crate) struct WillProperties {
-    /// 3.1.3.2.2
+    /// 3.1.3.2.2: Default value is 0
     #[bytes(4)]
-    delay_interval: Option<u32>,
+    delay_interval: u32,
     /// 3.1.3.2.3
     #[bytes(1)]
-    payload_format_indicator: Option<bool>,
+    payload_format_indicator: bool,
     /// 3.1.3.2.4
     #[bytes(4)]
     message_expiry_interval: Option<u32>,
