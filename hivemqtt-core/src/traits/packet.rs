@@ -1,13 +1,15 @@
 use crate::commons::packet_type::PacketType;
 use crate::commons::property::Property::{self, *};
 
+use super::variable_header::VariableHeader;
+
 #[allow(unused_variables)]
 type Properties = u64;
 #[allow(unused_variables)]
 const TOTAL_PACKETS: usize = 15;
 
 // Open to further changes
-trait Packet {
+trait Packet: VariableHeader {
     fn packet_type(&self) -> PacketType;
     fn encode(&self) -> [u8];
     fn decode(&self) -> Self

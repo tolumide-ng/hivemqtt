@@ -1,5 +1,6 @@
 /// This is the actual Connect Packet
 pub(crate) struct Connect {
+    
 }
 
 
