@@ -8,4 +8,8 @@ pub(crate) trait Write {
         buff.put_u16(value.len() as u16);
         buff.extend_from_slice(value);
     }
+
+
+    /// Writes the vairable header into the buffer (write_variable_header)
+    fn w_vh(&self, buff: &mut BytesMut) {}
 }

@@ -1,4 +1,4 @@
-pub(crate) mod payload;
+pub(crate) mod will;
 pub(crate) mod properties;
 pub(crate) mod variable_header;
 pub(crate) mod packet;

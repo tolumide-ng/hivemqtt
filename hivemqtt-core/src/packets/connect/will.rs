@@ -54,9 +54,9 @@ pub(crate) struct Will {
     /// 3.1.3.4
     payload: Bytes,
     /// 3.1.2.6 (flag)
-    qos: QoS,
+    pub(super) qos: QoS,
     /// 3.1.2.7 (flag)
-    retain: bool,
+    pub(super) retain: bool,
 }
 
 

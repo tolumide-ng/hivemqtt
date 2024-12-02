@@ -1,3 +1,5 @@
+use bytes::BytesMut;
+
 use crate::commons::{fixed_header_flag::FixedHeaderFlag, packet_type::PacketType, qos::QoS};
 
 /// Variable Header (Present in some MQTT Control Packets)
@@ -14,5 +16,6 @@ pub(crate) trait VariableHeader {
         }
     }
 
-    fn get(&self) -> String;
+    /// Write
+    fn w(&self, buff: &mut BytesMut) -> String;
 }

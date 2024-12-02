@@ -3,12 +3,12 @@ use crate::commons::qos::QoS;
 
 #[derive(Debug, Default)]
 pub(crate) struct ConnectFlags {
-    username: bool,
-    password: bool,
-    will_retain: bool,
-    will_qos: QoS,
-    will_flag: bool,
-    clean_start: bool,
+    pub(super) username: bool,
+    pub(super) password: bool,
+    pub(super) will_retain: bool,
+    pub(super) will_qos: QoS,
+    pub(super) will_flag: bool,
+    pub(super) clean_start: bool,
 }
 
 impl ConnectFlags {
@@ -18,6 +18,25 @@ impl ConnectFlags {
     const QOS_MASK: u8 = 1 << 4 | 1 << 3;
     const WILL_FLAG_MASK: u8 = 1 << 2;
     const CLEAN_START_MASK: u8 = 1 << 1;
+
+
+    pub(super) fn new(
+        username: bool,
+        password: bool,
+        will_retain: bool,
+        will_qos: QoS,
+        will_flag: bool,
+        clean_start: bool
+    ) -> Self {
+        Self {
+            username,
+            password,
+            will_retain,
+            will_qos,
+            will_flag,
+            clean_start,
+        }
+    }
 }
 
 impl From<ConnectFlags> for u8 {
