@@ -5,22 +5,6 @@ use hivemqtt_macros::DataSize;
 
 use crate::{commons::{property::Property, qos::QoS, variable_byte_integer::encode_varint}, traits::write::Write};
 
-// if the flag topic is set to 1, the will topic is the next field in the Payload.
-// The will topic MUST be a UTF-8 encoded string
-
-
-pub(crate) struct Will {
-    properties: WillProperties,
-    /// 3.1.3.3
-    topic: String,
-    /// 3.1.3.4
-    payload: Bytes,
-    /// 3.1.2.6
-    qos: QoS,
-    /// 3.1.2.7
-    retain: bool,
-}
-
 
 #[derive(DataSize, Debug, Clone)]
 pub(crate) struct WillProperties {
@@ -58,5 +42,28 @@ impl Write for WillProperties {
         Property::ResponseTopic(self.response_topic.as_deref().map(Cow::Borrowed)).w(buff);
         Property::CorrelationData(self.correlation_data.as_deref().map(Cow::Borrowed)).w(buff);
         Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buff);
+    }
+}
+
+
+
+pub(crate) struct Will {
+    properties: WillProperties,
+    /// 3.1.3.3
+    topic: String,
+    /// 3.1.3.4
+    payload: Bytes,
+    /// 3.1.2.6 (flag)
+    qos: QoS,
+    /// 3.1.2.7 (flag)
+    retain: bool,
+}
+
+
+impl Write for Will {
+    fn w(&self, buff: &mut bytes::BytesMut) {
+        self.properties.w(buff);
+        self.ws(buff, self.topic.as_bytes());
+        self.ws(buff, &self.payload);
     }
 }
