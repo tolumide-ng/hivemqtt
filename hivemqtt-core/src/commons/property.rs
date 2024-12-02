@@ -4,28 +4,30 @@ use bytes::{BufMut, Bytes, BytesMut};
 
 use crate::traits::write::Write;
 
+use super::variable_byte_integer::encode_varint;
+
 /// Must be encoded using the VBI
 #[derive(Debug, Clone)]
 #[repr(u8)]
 pub(crate) enum Property<'a> {
     PayloadFormatIndicator(Option<u8>) = 1,
     MessageExpiryInterval(Option<u32>) = 2,
-    ContentType(Option<String>) = 3,
-    ResponseTopic(Option<String>) = 8,
-    CorrelationData(Option<Bytes>) = 9,
+    ContentType(Option<Cow<'a, str>>) = 3,
+    ResponseTopic(Option<Cow<'a, str>>) = 8,
+    CorrelationData(Option<Cow<'a, [u8]>>) = 9,
     // this can be a Option<usize> or Vec<usize>, we can create an extra enum for this if there is a need for it.
     SubscriptionIdentifier(Option<usize>) = 11, 
     SessionExpiryInterval(Option<u32>) = 17,
-    AssignedClientIdentifier(Option<String>) = 18,
+    AssignedClientIdentifier(Option<Cow<'a, str>>) = 18,
     ServerKeepAlive(Option<u16>) = 19,
     AuthenticationMethod(Option<Cow<'a, str>>) = 21,
     AuthenticationData(Option<Cow<'a, [u8]>>) = 22,
     RequestProblemInformation(Option<u8>) = 23,
     WillDelayInterval(Option<u32>) = 24,
     RequestResponseInformation(Option<u8>) = 25,
-    ResponseInformation(Option<String>) = 26,
-    ServerReference(Option<String>) = 28,
-    ReasonString(Option<String>) = 31,
+    ResponseInformation(Option<Cow<'a, str>>) = 26,
+    ServerReference(Option<Cow<'a, str>>) = 28,
+    ReasonString(Option<Cow<'a, str>>) = 31,
     ReceiveMaximum(Option<u16>) = 33,
     TopicAliasMaximum(Option<u16>) = 34,
     MaximumQoS(Option<u8>) = 36,
@@ -98,12 +100,18 @@ impl<'a> Write for Property<'a> {
             Self::ContentType(Some(p)) => self.ws(buf, p.as_bytes()),
             Self::ResponseTopic(Some(p)) => self.ws(buf, p.as_bytes()),
             Self::CorrelationData(Some(p)) => self.ws(buf, p),
-            // Self::CorrelationData(Some(p)) => self.ws(buf, p),
-            // Self::CorrelationData(Some(p)) => self.ws(buf, p),
-
-            // Self::RequestProblemInformation(Some(_p)) => 
-            // }
-            _ => {}
+            Self::SubscriptionIdentifier(Some(p)) => _ = encode_varint(buf, *p).unwrap(),
+            Self::AssignedClientIdentifier(Some(data)) => self.ws(buf, data.as_bytes()),
+            Self::ServerKeepAlive(Some(i)) => buf.put_u16(*i),
+            Self::ResponseInformation(Some(i)) => self.ws(buf, i.as_bytes()),
+            Self::ServerReference(Some(i)) => self.ws(buf, i.as_bytes()),
+            Self::ReasonString(Some(i)) => self.ws(buf, i.as_bytes()),
+            Self::MaximumQoS(Some(i)) => buf.put_u8(*i),
+            Self::RetainAvailable(Some(i)) => buf.put_u8(*i),
+            Self::WildCardSubscription(Some(i)) => buf.put_u8(*i),
+            Self::SubscriptionIdentifierAvailable(Some(i)) => buf.put_u8(*i),
+            Self::SharedSubscriptionAvailable(Some(i)) => buf.put_u8(*i),
+            _ => {unreachable!("Unrecognized enum variant or argument!")}
         }
     }
 }

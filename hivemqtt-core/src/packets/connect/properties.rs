@@ -6,6 +6,8 @@ use hivemqtt_macros::DataSize;
 use crate::{commons::{property::Property, variable_byte_integer::encode_varint}, traits::write::Write};
 
 
+
+/// CONNECT Properties (3.1.2.11)
 #[derive(Debug, Clone, DataSize)]
 pub(crate) struct ConnectProperties {
     /// 3.1.2.11.2
@@ -40,7 +42,7 @@ pub(crate) struct ConnectProperties {
 
 impl Write for ConnectProperties {
     fn w(&self, buf: &mut bytes::BytesMut) {
-        let _ = encode_varint(buf, self.len()).unwrap(); // from the DataSize macro
+        let _ = encode_varint(buf, self.len()).unwrap(); // from the DataSize macro (3.1.2.11.1)
         Property::SessionExpiryInterval(self.session_expiry_interval).w(buf);
         Property::ReceiveMaximum(self.receive_maximum).w(buf);
         Property::MaximumPacketSize(self.maximum_packet_size).w(buf);

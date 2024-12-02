@@ -2,7 +2,7 @@ use bytes::{BufMut, Bytes, BytesMut};
 
 use crate::{commons::version::Version, constants::PROTOCOL_NAME};
 
-use super::{payload::WillProperties, properties::ConnectProperties};
+use super::{payload::{Will, WillProperties}, properties::ConnectProperties};
 
 use crate::commons::qos::QoS;
 
@@ -100,30 +100,23 @@ impl From<ConnectFlags> for u8 {
 /// ```
 /// 
 pub struct Connect {
-    // ACTUAL VARIABLE HEADERS
     /// 3.1.2.2
     version: Version,
-    /// 3.1.2.3
-    connect_flags: ConnectFlags,
-    /// 3.1.2.10 (2 bytes) - byte 9 & byte 10
-    keep_alive: u16,
-    /// 3.1.2.11.2 - 3.1.2.11.10
-    properties: ConnectProperties,
-    // CONNECT PAYLOAD
     /// 3.1.3.1
     client_id: Option<String>,
     /// 3.1.3.2
-    last_will: WillProperties,
-    /// 3.1.3.3 (if the will flag is 1, then this must be the next field in the payload)
-    will_topic: Option<String>,
-    /// 3.1.3.4
-    will_payload: Option<Bytes>,
+    will_properties: Option<Will>,
     username: Option<String>,
     password: Option<String>,
-    
-    
+
+    /// 3.1.2.3
+    connect_flags: ConnectFlags,
+    /// 3.1.2.4
     clean_start: bool,
-    will: bool,
+    /// 3.1.2.10
+    keep_alive: u16,
+    /// 3.1.2.11
+    properties: Option<ConnectProperties>,
 
 }
 
