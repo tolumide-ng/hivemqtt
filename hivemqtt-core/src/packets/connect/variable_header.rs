@@ -142,17 +142,6 @@ pub struct ConnectPack {
     password: Option<String>,
 }
 
-// struct ConnectAuthentication {
-//     /// Name of the Authentication method used for extended authentication. 
-//     /// If the Client sets this value, the Client MUST NOT send any packets other than AUTH or 
-//     /// DISCONNECT packets until it has received a CONNACK packet
-//     authentication_method: String,
-//     /// Binary Data containing the authentication data.
-//     /// It is ProtocolError to include Authentication Data if there is no Authentication Method.
-//     authentication_data: String,
-// }
-
-
 impl ConnectPack {
     // pub fn new() {}
 

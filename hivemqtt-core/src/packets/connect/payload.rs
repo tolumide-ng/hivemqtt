@@ -1,26 +1,22 @@
 use bytes::Bytes;
 use hivemqtt_macros::DataSize;
+use secrecy::SecretString;
 
 /// The CONNECT payload contains 1 or more length-prefixed fields
 /// whose presence is determined by the flags in the Variable Header.
 pub(crate) struct Payload {
-    // todo: Add utility method to enable generation of random id's when [random] feature flag is enabled
+    /// 3.1.3.1
     client_id: String,
+    /// 3.1.3.2
     will_properties: WillProperties,
-    /// If the will_flag is set to 1 (connect flags of the CONNECT variable header),
-    /// then this property must be provided
+    /// 3.1.3.3
     will_topic: Option<String>,
-    /// If the will_flag is set to 1 (connect flags of the CONNECT variable header),
-    /// then this property must be provided
+    /// 3.1.3.4
     will_payload: Option<String>,
-    /// If the username flag is set to 1 (connect flags of the CONNECT variable header),
-    /// then this property must be provided
-    /// Can be used by the Server for authentication and authorization
+    /// 3.1.3.5
     username: Option<String>,
-    /// If the password flag is set to 1 (connect flags of the CONNECT variable header),
-    /// then this property must be provided
-    /// MUST BE BINARY DATA
-    password: Option<Bytes>,
+    /// 3.1.3.6
+    password: Option<SecretString>,
 }
 
 

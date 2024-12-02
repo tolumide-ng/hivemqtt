@@ -2,15 +2,16 @@ use bytes::{BufMut, Bytes, BytesMut};
 
 use crate::commons::error::MQTTError;
 
+pub(crate) struct VariableByteInteger;
 
 /// The Variable Byte Integer(VBI) is encoded using an encoding scheme which uses a single byte for values up to 127
-pub(crate) trait VariableByteInteger {
-    fn encode(buff: &mut BytesMut, len: usize) -> Result<(), MQTTError> {
+impl VariableByteInteger {
+    pub(crate) fn encode(buff: &mut BytesMut, len: usize) -> Result<(), MQTTError> {
         // 268_435_455
         if len > 0xFFFFFFF {
             return Err(MQTTError::PayloadTooLong)
         }
-        let mut x = len;
+        let mut x: usize = len;
 
         while x > 0 {
             // Get the last 7bits of x;
@@ -26,7 +27,7 @@ pub(crate) trait VariableByteInteger {
         Ok(())
     }
 
-    fn decode(buff: &Bytes) -> Result<u32, MQTTError> {
+    pub(crate) fn decode(buff: &Bytes) -> Result<u32, MQTTError> {
         let mut result = 0;
         let mut shift = 0;
 
@@ -50,3 +51,49 @@ pub(crate) trait VariableByteInteger {
         Err(MQTTError::IncompletePacket)
     }
 }
+
+
+
+
+/// Encode Variable Byte Integer(var_int)
+pub(crate) fn encode_varint(buff: &mut BytesMut, len: usize) -> Result<usize, MQTTError> {
+    // 268_435_455
+    if len > 0xFFFFFFF {
+        return Err(MQTTError::PayloadTooLong)
+    }
+    let mut x: usize = len;
+    let mut count = 0;
+
+    while x != 0 {
+        // Get the last 7bits of x;
+        let mut bytes = (x & 0x7F) as u8; // (x%128)
+        x >>= 7; // shift to right by 7bits(i.e. 2^7 = 128) (i.e x = x/128)
+
+        if x > 0 {
+            bytes |= 0x80
+        }
+        buff.put_u8(bytes);
+        count += 1;
+    }
+
+    Ok(count)
+}
+// pub(crate) fn encode_varint(buff: &mut BytesMut, len: usize) -> Result<usize, MQTTError> {
+//     // 268_435_455
+//         if len > 0xFFFFFFF {
+//             return Err(MQTTError::PayloadTooLong)
+//         }
+
+
+//     let mut count = 0;
+//     let mut x = len;
+    
+//     while x != 0 {
+//         let mut byte = x % 128;
+//         x /= 128;
+//         if x > 0 { byte |= 128; }
+//         buff.put_u8(byte);
+//         count += 1;
+//     }
+//     Ok(count)
+// }
