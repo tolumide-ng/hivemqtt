@@ -1,6 +1,7 @@
 use bytes::BufMut;
+use hivemqtt_macros::DataSize;
 
-use crate::{commons::version::Version, constants::PROTOCOL_NAME, traits::{variable_header::VariableHeader, write::Write}};
+use crate::{commons::{variable_byte_integer::variable_length, version::Version}, constants::PROTOCOL_NAME, traits::write::Write};
 
 use super::{connect_flags::ConnectFlags, properties::ConnectProperties, will::Will};
 
@@ -61,14 +62,19 @@ use super::{connect_flags::ConnectFlags, properties::ConnectProperties, will::Wi
 /// **SEII = Session Expiry Interval Identifier
 /// **SEI  = Session Expiry Interval
 /// ```
+#[derive(Debug, DataSize)]
 pub struct Connect {
     /// 3.1.2.2
+    #[bytes(0)]
     version: Version,
     /// 3.1.3.1
+    #[bytes(wl_2)]
     client_id: String,
     /// 3.1.3.2
     will: Option<Will>,
+    #[bytes(wl_2)]
     username: Option<String>,
+    #[bytes(wl_2)]
     password: Option<String>,
 
     /// 3.1.2.4
@@ -81,13 +87,22 @@ pub struct Connect {
 
 
 impl Write for Connect {
-    fn w(&self, buff: &mut bytes::BytesMut) {
-        
+    fn length(&self) -> usize {
+        let mut len = (2 + PROTOCOL_NAME.len()) + 1 + 1 + 2; // version + connect flags + keep alive
+        len += self.conn_ppts.length();
+        len += variable_length(self.conn_ppts.length());
+        if let Some(will) = &self.will { len += will.length() }
+        len += self.len(); // client id + username + password
+
+        len
     }
 
-    fn w_vh(&self, buff: &mut bytes::BytesMut) {
-        self.ws(buff, PROTOCOL_NAME.as_bytes());
-        buff.put_u8(self.version as u8);
+
+    fn w(&self, buf: &mut bytes::BytesMut) {
+        buf.put_u8(0b0001_0000);
+        // buf.
+        self.ws(buf, PROTOCOL_NAME.as_bytes());
+        buf.put_u8(self.version as u8);
         
         let mut flags = ConnectFlags {
             clean_start: self.clean_start,
@@ -102,12 +117,12 @@ impl Write for Connect {
             flags.will_qos = will.qos;
         }
         
-        buff.put_u8(u8::from(flags));
-        buff.put_u16(self.keep_alive);
-        self.conn_ppts.w(buff);
-        self.ws(buff, self.client_id.as_bytes());
-        if let Some(will) = &self.will { will.w(buff) }
-        if let Some(username) = &self.username { self.ws(buff, username.as_bytes()) }
-        if let Some(password) = &self.password { self.ws(buff, password.as_bytes()) }
+        buf.put_u8(u8::from(flags));
+        buf.put_u16(self.keep_alive);
+        self.conn_ppts.w(buf);
+        self.ws(buf, self.client_id.as_bytes());
+        if let Some(will) = &self.will { will.w(buf) }
+        if let Some(username) = &self.username { self.ws(buf, username.as_bytes()) }
+        if let Some(password) = &self.password { self.ws(buf, password.as_bytes()) }   
     }
 }

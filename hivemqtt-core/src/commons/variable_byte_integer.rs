@@ -56,7 +56,7 @@ impl VariableByteInteger {
 
 
 /// Encode Variable Byte Integer(var_int)
-pub(crate) fn encode_varint(buff: &mut BytesMut, len: usize) -> Result<usize, MQTTError> {
+pub(crate) fn variable_integer(buff: &mut BytesMut, len: usize) -> Result<usize, MQTTError> {
     // 268_435_455
     if len > 0xFFFFFFF {
         return Err(MQTTError::PayloadTooLong)
@@ -78,22 +78,11 @@ pub(crate) fn encode_varint(buff: &mut BytesMut, len: usize) -> Result<usize, MQ
 
     Ok(count)
 }
-// pub(crate) fn encode_varint(buff: &mut BytesMut, len: usize) -> Result<usize, MQTTError> {
-//     // 268_435_455
-//         if len > 0xFFFFFFF {
-//             return Err(MQTTError::PayloadTooLong)
-//         }
 
 
-//     let mut count = 0;
-//     let mut x = len;
-    
-//     while x != 0 {
-//         let mut byte = x % 128;
-//         x /= 128;
-//         if x > 0 { byte |= 128; }
-//         buff.put_u8(byte);
-//         count += 1;
-//     }
-//     Ok(count)
-// }
+pub(crate) fn variable_length(len: usize) -> usize {
+    if len >= 2_097_152 { 4 }
+    else if len >= 16_384 { 3 }
+    else if len >= 128 { 2 }
+    else { 1 }
+}

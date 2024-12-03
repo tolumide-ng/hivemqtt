@@ -6,10 +6,11 @@ use syn::{Attribute, FieldsNamed, Meta};
 /// max: means the size of the item in this field is dynamic but it is a max of `y` bytes (i.e. `max_y`)
 /// wl: means(with length) that after the provided/suggested bytes is used, add the length of the content in this field
 ///     .e.g if field `content_type` has this: `#[bytes(wl_4)]` means that the size of this field is: `4 + content_type.len()`` 
+/// If the property has no prefix, then only the provided number + 1 is returned as the value in that case, e.g. #[bytes(3)] returns 3 + 1 => 4
 #[derive(Debug, PartialEq, Eq)]
 #[repr(u8)]
 pub(crate) enum Prefix {
-    /// With length
+    /// With length (use this only for properties who's length should also be calculated)
     Wl = 0,
     Max,
     /// KeyVal (like Vec<(k, v)>)

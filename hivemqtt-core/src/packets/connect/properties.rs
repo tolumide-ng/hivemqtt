@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::Bytes;
 use hivemqtt_macros::DataSize;
 
-use crate::{commons::{property::Property, variable_byte_integer::encode_varint}, traits::write::Write};
+use crate::{commons::{property::Property, variable_byte_integer::variable_integer}, traits::write::Write};
 
 
 
@@ -42,7 +42,7 @@ pub(crate) struct ConnectProperties {
 
 impl Write for ConnectProperties {
     fn w(&self, buf: &mut bytes::BytesMut) {
-        let _ = encode_varint(buf, self.len()).unwrap(); // from the DataSize macro (3.1.2.11.1)
+        let _ = variable_integer(buf, self.len()).unwrap(); // from the DataSize macro (3.1.2.11.1)
         Property::SessionExpiryInterval(self.session_expiry_interval).w(buf);
         Property::ReceiveMaximum(self.receive_maximum).w(buf);
         Property::MaximumPacketSize(self.maximum_packet_size).w(buf);
@@ -52,5 +52,9 @@ impl Write for ConnectProperties {
         Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buf);
         Property::AuthenticationMethod(self.authentication_method.as_deref().map(Cow::Borrowed)).w(buf);
         Property::AuthenticationData(self.authentication_data.as_deref().map(Cow::Borrowed)).w(buf);
+    }
+
+    fn length(&self) -> usize {
+        self.len()
     }
 }

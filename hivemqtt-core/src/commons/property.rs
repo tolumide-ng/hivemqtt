@@ -4,7 +4,7 @@ use bytes::{BufMut, Bytes, BytesMut};
 
 use crate::traits::write::Write;
 
-use super::variable_byte_integer::encode_varint;
+use super::variable_byte_integer::variable_integer;
 
 /// Must be encoded using the VBI
 #[derive(Debug, Clone)]
@@ -100,7 +100,7 @@ impl<'a> Write for Property<'a> {
             Self::ContentType(Some(p)) => self.ws(buf, p.as_bytes()),
             Self::ResponseTopic(Some(p)) => self.ws(buf, p.as_bytes()),
             Self::CorrelationData(Some(p)) => self.ws(buf, p),
-            Self::SubscriptionIdentifier(Some(p)) => _ = encode_varint(buf, *p).unwrap(),
+            Self::SubscriptionIdentifier(Some(p)) => _ = variable_integer(buf, *p).unwrap(),
             Self::AssignedClientIdentifier(Some(data)) => self.ws(buf, data.as_bytes()),
             Self::ServerKeepAlive(Some(i)) => buf.put_u16(*i),
             Self::ResponseInformation(Some(i)) => self.ws(buf, i.as_bytes()),

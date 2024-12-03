@@ -23,7 +23,8 @@ pub fn length_derive(input: TokenStream) -> TokenStream {
         Ok(field_lens) => {
             quote! {
                 impl #struct_name {
-                    pub fn len(&self) -> usize {
+                    // pub(crate) fn len(&self) -> usize {
+                    fn len(&self) -> usize {
                         let mut size = 0;
                         #( #field_lens )*
                         size

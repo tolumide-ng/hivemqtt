@@ -1,4 +1,5 @@
 use bytes::{BufMut, BytesMut};
+use hivemqtt_macros::DataSize;
 
 pub(crate) trait Write {
     fn w(&self, buff: &mut BytesMut);
@@ -12,4 +13,12 @@ pub(crate) trait Write {
 
     /// Writes the vairable header into the buffer (write_variable_header)
     fn w_vh(&self, buff: &mut BytesMut) {}
+
+    /// Allows a struct specify what it's length is to it's external users
+    /// Normally this is obtainable using the .len() method (internally on structs implementing DataSize),
+    /// However, this method allows the struct customize what its actual length is.
+    /// NOTE: The eventual plan is to make this the only property accessible externally and 
+    ///     make `.len()` internal while probably enforcing that all struct's implementing this method/trait
+    ///     must also implement `DataSize` proc. So that there is a default accurate length property
+    fn length(&self) -> usize { 0 }
 }

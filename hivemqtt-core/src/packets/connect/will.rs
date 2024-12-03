@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::Bytes;
 use hivemqtt_macros::DataSize;
 
-use crate::{commons::{property::Property, qos::QoS, variable_byte_integer::encode_varint}, traits::write::Write};
+use crate::{commons::{property::Property, qos::QoS, variable_byte_integer::{variable_integer, variable_length}}, traits::write::Write};
 
 
 #[derive(DataSize, Debug, Clone)]
@@ -27,14 +27,14 @@ pub(crate) struct WillProperties {
     #[bytes(wl_2)]
     correlation_data: Option<Bytes>,
     /// 3.1.3.2.8
-    #[bytes(wl_2)]
+    #[bytes(kv_2)]
     user_property: Vec<(String, String)>,
 }
 
 
 impl Write for WillProperties {
     fn w(&self, buff: &mut bytes::BytesMut) {
-        let _ = encode_varint(buff, self.len()).unwrap();
+        let _ = variable_integer(buff, self.len()).unwrap();
         Property::WillDelayInterval(self.delay_interval).w(buff);
         Property::PayloadFormatIndicator(self.payload_format_indicator).w(buff);
         Property::MessageExpiryInterval(self.message_expiry_interval).w(buff);
@@ -43,15 +43,21 @@ impl Write for WillProperties {
         Property::CorrelationData(self.correlation_data.as_deref().map(Cow::Borrowed)).w(buff);
         Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buff);
     }
+
+    fn length(&self) -> usize {
+        self.len()
+    }
 }
 
 
-
+#[derive(Debug, DataSize)]
 pub(crate) struct Will {
     properties: WillProperties,
     /// 3.1.3.3
+    #[bytes(wl_2)]
     topic: String,
     /// 3.1.3.4
+    #[bytes(wl_2)]
     payload: Bytes,
     /// 3.1.2.6 (flag)
     pub(super) qos: QoS,
@@ -65,5 +71,10 @@ impl Write for Will {
         self.properties.w(buff);
         self.ws(buff, self.topic.as_bytes());
         self.ws(buff, &self.payload);
+    }
+
+    fn length(&self) -> usize {
+        let ppts = self.properties.length();
+        self.len() + variable_length(ppts) + ppts
     }
 }
