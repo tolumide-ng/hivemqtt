@@ -1,8 +1,13 @@
+pub(crate) mod properties;
+
 use bytes::BufMut;
 
 use crate::{commons::{packets::Packet, variable_byte_integer::variable_integer}, traits::write::ControlPacket};
 
-pub(crate) struct Connack {}
+pub(crate) struct Connack {
+    /// 3.2.2.1.1 Connect Acknowledge flag
+    session_present: bool, // bit 0 of the COnnect Acknowledge flag
+}
 
 
 impl ControlPacket for Connack {
