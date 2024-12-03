@@ -8,7 +8,7 @@ macro_rules! packet_props {
 
 
 pub mod constants;
-pub mod packets;
+pub mod packet;
 pub mod commons;
 pub(crate) mod traits;
 

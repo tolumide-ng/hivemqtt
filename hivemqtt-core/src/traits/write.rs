@@ -1,7 +1,6 @@
 use bytes::{BufMut, BytesMut};
-use hivemqtt_macros::DataSize;
 
-pub(crate) trait Write {
+pub(crate) trait ControlPacket {
     fn w(&self, buff: &mut BytesMut);
 
     /// Writes the length of the bytes and itself into the buffer

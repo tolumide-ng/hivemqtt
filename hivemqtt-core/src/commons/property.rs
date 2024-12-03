@@ -1,10 +1,10 @@
 use std::borrow::Cow;
 
-use bytes::{BufMut, Bytes, BytesMut};
+use bytes::{BufMut, BytesMut};
 
-use crate::traits::write::Write;
+use crate::traits::write::ControlPacket;
 
-use super::variable_byte_integer::variable_integer;
+use super::{packets::Packet, variable_byte_integer::variable_integer};
 
 /// Must be encoded using the VBI
 #[derive(Debug, Clone)]
@@ -74,7 +74,7 @@ impl<'a> From<&Property<'a>> for u8 {
 
 
 
-impl<'a> Write for Property<'a> {
+impl<'a> ControlPacket for Property<'a> {
     fn w(&self, buf: &mut BytesMut) {
         buf.put_u8(u8::from(self));
         match self {

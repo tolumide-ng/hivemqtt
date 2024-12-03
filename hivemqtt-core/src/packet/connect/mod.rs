@@ -1,9 +1,12 @@
+pub(crate) mod will;
+pub(crate) mod properties;
+
+
 use bytes::BufMut;
 use hivemqtt_macros::DataSize;
 
-use crate::{commons::{qos::QoS, variable_byte_integer::variable_length, version::Version}, constants::PROTOCOL_NAME, traits::write::Write};
-
-use super::{properties::ConnectProperties, will::Will};
+use crate::{commons::{packets::Packet, qos::QoS, variable_byte_integer::{variable_integer, variable_length}, version::Version}, constants::PROTOCOL_NAME, traits::write::ControlPacket};
+use crate::packet::connect::{properties::ConnectProperties, will::Will};
 
 
 #[derive(Debug, Default)]
@@ -126,8 +129,7 @@ pub struct Connect {
     conn_ppts: ConnectProperties,
 }
 
-
-impl Write for Connect {
+impl ControlPacket for Connect {
     fn length(&self) -> usize {
         let mut len = (2 + PROTOCOL_NAME.len()) + 1 + 1 + 2; // version + connect flags + keep alive
         len += self.conn_ppts.length();
@@ -138,10 +140,9 @@ impl Write for Connect {
         len
     }
 
-
     fn w(&self, buf: &mut bytes::BytesMut) {
-        buf.put_u8(0b0001_0000);
-        // buf.
+        buf.put_u8(Packet::Connect.into());
+        let _ = variable_integer(buf, self.length());
         self.ws(buf, PROTOCOL_NAME.as_bytes());
         buf.put_u8(self.version as u8);
         
