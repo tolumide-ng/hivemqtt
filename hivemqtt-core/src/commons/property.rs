@@ -74,97 +74,51 @@ impl<'a> From<&Property<'a>> for u8 {
 
 
 
+impl<'a> Property<'a> {
+    fn with_id<F>(&self, buf: &mut BytesMut, func: F)
+        where F: Fn(&mut BytesMut) {
+            buf.put_u8(u8::from(self));
+            func(buf);
+        }
+}
+
 impl<'a> ControlPacket for Property<'a> {
     fn w(&self, buf: &mut BytesMut) {
         match self {
-            Self::SessionExpiryInterval(Some(p)) => {
-                buf.put_u8(u8::from(self)); buf.put_u32(*p)
-            },
-            Self::ReceiveMaximum(Some(p)) => {
-                buf.put_u8(u8::from(self));
-                buf.put_u16(*p)
-            },
-            Self::MaximumPacketSize(Some(p)) => {
-                buf.put_u8(u8::from(self));
-                buf.put_u32(*p)
-            },
-            Self::TopicAliasMaximum(Some(p)) => {
-                buf.put_u8(u8::from(self));
-                buf.put_u16(*p);
-            },
-            Self::RequestResponseInformation(Some(p)) => {
-                buf.put_u8(u8::from(self));
-                buf.put_u8(*p);
-            },
-            Self::RequestProblemInformation(Some(p)) => {
-                buf.put_u8(u8::from(self));
-                buf.put_u8(*p);
-            },
+            Self::SessionExpiryInterval(Some(p)) => self.with_id(buf, |b| b.put_u32(*p)),
+            Self::ReceiveMaximum(Some(p)) => self.with_id(buf, |b| b.put_u16(*p)),
+            Self::MaximumPacketSize(Some(p)) => self.with_id(buf, |b| b.put_u32(*p)),
+            Self::TopicAliasMaximum(Some(p)) => self.with_id(buf, |b| b.put_u16(*p)),
+            Self::RequestResponseInformation(Some(p)) => self.with_id(buf, |b| b.put_u8(*p)),
+            Self::RequestProblemInformation(Some(p)) => self.with_id(buf, |b| b.put_u8(*p)),
             Self::UserProperty(p) => {
                 p.iter().for_each(|(k, v)| {
-                    buf.put_u8(u8::from(self));
-                    self.ws(buf, k.as_bytes());
-                    self.ws(buf, v.as_bytes());
-
+                    self.with_id(buf, |b| {
+                        self.ws(b, k.as_bytes());
+                        self.ws(b, v.as_bytes());
+                    });
                 });
             }
-            Self::AuthenticationMethod(Some(data)) => {
-                buf.put_u8(u8::from(self));
-                self.ws(buf, data.as_bytes())
-            },
-            Self::AuthenticationData(Some(data)) => {
-                buf.put_u8(u8::from(self));
-                self.ws(buf, &data)
-            },
-            Self::WillDelayInterval(Some(p)) => {buf.put_u8(u8::from(self));
-                buf.put_u32(*p)},
-            Self::PayloadFormatIndicator(Some(p)) => {buf.put_u8(u8::from(self));
-                buf.put_u8(*p)},
-            Self::MessageExpiryInterval(Some(p)) => {buf.put_u8(u8::from(self));
-                buf.put_u32(*p)},
-            Self::ContentType(Some(p)) => {buf.put_u8(u8::from(self));
-                self.ws(buf, p.as_bytes())},
-            Self::ResponseTopic(Some(p)) => {buf.put_u8(u8::from(self));
-                self.ws(buf, p.as_bytes())},
-            Self::CorrelationData(Some(p)) => {buf.put_u8(u8::from(self));
-                self.ws(buf, p)},
-            Self::SubscriptionIdentifier(Some(p)) => _ = {buf.put_u8(u8::from(self));
-                variable_integer(buf, *p).unwrap()},
-            Self::AssignedClientIdentifier(Some(data)) => {buf.put_u8(u8::from(self));
-                self.ws(buf, data.as_bytes())},
-            Self::ServerKeepAlive(Some(i)) => { buf.put_u8(u8::from(self));buf.put_u16(*i) },
-            Self::ResponseInformation(Some(i)) => {
-                buf.put_u8(u8::from(self));
-                self.ws(buf, i.as_bytes())
-            },
-            Self::ServerReference(Some(i)) => {
-                buf.put_u8(u8::from(self));
-                self.ws(buf, i.as_bytes())
-            }
-            Self::ReasonString(Some(i)) => {
-                buf.put_u8(u8::from(self));
-                self.ws(buf, i.as_bytes())
-            }
-            Self::MaximumQoS(Some(i)) => {
-                buf.put_u8(u8::from(self));
-                buf.put_u8(*i)
-            }
-            Self::RetainAvailable(Some(i)) => {
-                buf.put_u8(u8::from(self));
-                buf.put_u8(*i)
-            }
-            Self::WildCardSubscription(Some(i)) => {
-                buf.put_u8(u8::from(self));
-                buf.put_u8(*i)
-            }
-            Self::SubscriptionIdentifierAvailable(Some(i)) => {
-                buf.put_u8(u8::from(self));
-                buf.put_u8(*i)
-            }
-            Self::SharedSubscriptionAvailable(Some(i)) => {
-                buf.put_u8(u8::from(self));
-                buf.put_u8(*i)
-            }
+            Self::AuthenticationMethod(Some(data)) => self.with_id(buf, |b| self.ws(b, data.as_bytes())),
+            Self::AuthenticationData(Some(data)) => self.with_id(buf, |b| self.ws(b, &data)),
+            Self::WillDelayInterval(Some(p)) => self.with_id(buf, |b| b.put_u32(*p)),
+            Self::PayloadFormatIndicator(Some(p)) => self.with_id(buf, |b| b.put_u8(*p)),
+            Self::MessageExpiryInterval(Some(p)) => self.with_id(buf, |b| b.put_u32(*p)),
+            Self::ContentType(Some(p)) => self.with_id(buf, |b| self.ws(b, p.as_bytes())),
+            Self::ResponseTopic(Some(p)) => self.with_id(buf, |b| self.ws(b, p.as_bytes())),
+            Self::CorrelationData(Some(p)) => self.with_id(buf, |b| self.ws(b, p)),
+            // NOTE: this needs to be tested for if this method of writing is correct or not!
+            Self::SubscriptionIdentifier(Some(p)) => _ = self.with_id(buf, |b| {let _ = variable_integer(b, *p).unwrap(); }),
+            Self::AssignedClientIdentifier(Some(data)) => self.with_id(buf, |b| self.ws(b, data.as_bytes())),
+            Self::ServerKeepAlive(Some(i)) => self.with_id(buf, |b| b.put_u16(*i)),
+            Self::ResponseInformation(Some(i)) => self.with_id(buf, |b| self.ws(b, i.as_bytes())),
+            Self::ServerReference(Some(i)) => self.with_id(buf, |b| self.ws(b, i.as_bytes())),
+            Self::ReasonString(Some(i)) => self.with_id(buf, |b| self.ws(b, i.as_bytes())),
+            Self::MaximumQoS(Some(i)) => self.with_id(buf, |b| b.put_u8(*i)),
+            Self::RetainAvailable(Some(i)) => self.with_id(buf, |b| b.put_u8(*i)),
+            Self::WildCardSubscription(Some(i)) => self.with_id(buf, |b| b.put_u8(*i)),
+            Self::SubscriptionIdentifierAvailable(Some(i)) => self.with_id(buf, |b| b.put_u8(*i)),
+            Self::SharedSubscriptionAvailable(Some(i)) => self.with_id(buf, |b| b.put_u8(*i)),
             _ => {unreachable!("Unrecognized enum variant or argument!")}
         }
     }
