@@ -9,7 +9,7 @@ use syn::{Field, PathSegment, Ident, PathArguments, Type, TypePath};
 /// Vec<String|Bytes>, Vec<(String|Bytes, String|Bytes)>
 /// u8|u16|u32|u128|true|String|Bytes
 /// 
-pub(crate) fn detect(field: &Field) -> TokenStream {
+pub(crate) fn calculate(field: &Field) -> TokenStream {
     let result = quote! { size += 0; };
 
     let Type::Path(TypePath{path, ..}) = &field.ty else { return result };

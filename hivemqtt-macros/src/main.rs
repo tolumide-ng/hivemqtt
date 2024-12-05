@@ -1,5 +1,3 @@
-pub(crate) mod data_size;
-
 use hivemqtt_macros::Length;
 
 fn main() {
