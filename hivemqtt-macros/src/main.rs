@@ -25,7 +25,8 @@ mod tests {
         title: String,
         topics: Option<Vec<String>>,
         auth: Option<Vec<(String, String)>>,
-        client_id: Option<String>
+        client_id: Option<String>,
+        abc: Option<bool>,
     }
 
 
@@ -57,11 +58,11 @@ mod tests {
 
     #[test]
     fn should_return_the_accurate_len() {
-        let title_only  = TestOptionalFields{title: "testingHuman".to_string(), topics: None, auth: None, client_id: None, };
+        let title_only  = TestOptionalFields{title: "testingHuman".to_string(), topics: None, auth: None, client_id: None, abc: None, };
         assert_eq!(title_only.len(), 15);
         
-        let with_auth  = TestOptionalFields{title: "testingHuman".to_string(), topics: None, auth: Some(vec![("username".to_string(), "xxxx88yj".to_string())]), client_id: None, };
-        assert_eq!(with_auth.len(), 36)
+        let with_auth  = TestOptionalFields{title: "testingHuman".to_string(), topics: None, auth: Some(vec![("username".to_string(), "xxxx88yj".to_string())]), client_id: None, abc: Some(false), };
+        assert_eq!(with_auth.len(), 38)
     }
 
     #[test]

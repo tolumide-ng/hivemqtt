@@ -5,9 +5,10 @@ use syn::{Field, PathSegment, Ident, PathArguments, Type, TypePath};
 
 
 /// Currently only handles:
-///     1. - Option<any unsigned integer> | Option<String> | Option<Vec<any type supported on 3>>
-///     2. - Vec<String> | Vec<(String, String)>
-///     3. - any unsigned integer (e.g u8, u16)
+/// Option<u8|u16|u32|u128|String|bool|Bytes>,
+/// Vec<String|Bytes>, Vec<(String|Bytes, String|Bytes)>
+/// u8|u16|u32|u128|true|String|Bytes
+/// 
 pub(crate) fn detect(field: &Field) -> TokenStream {
     let result = quote! { size += 0; };
 
@@ -40,7 +41,6 @@ pub(crate) fn detect(field: &Field) -> TokenStream {
 
 fn get_size(f_name: &Ident, type_name: &Ident, segment: &PathSegment, is_optional: bool) -> TokenStream {
     let result = quote! { size +=  0; };
-    
     return match type_name.to_string().as_str() {
         "String" | "Bytes" => {
             if is_optional {
@@ -77,7 +77,11 @@ fn get_size(f_name: &Ident, type_name: &Ident, segment: &PathSegment, is_optiona
         }
         // this should be updated, if there's an unincluded type
         "u8" | "u16" | "u32" | "u64" | "u128" | "bool" => {
-            return quote! { size += std::mem::size_of::<#type_name>() + 1; }
+            if is_optional {
+                return quote! { if self.#f_name.is_some() { size += std::mem::size_of::<#type_name>() + 1 }; }
+            } else {
+                return quote! { size += std::mem::size_of::<#type_name>() + 1; }
+            }
         }
         _ => {result}
     }

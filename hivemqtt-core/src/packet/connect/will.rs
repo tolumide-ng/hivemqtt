@@ -1,33 +1,19 @@
 use std::borrow::Cow;
 
 use bytes::Bytes;
-use hivemqtt_macros::DataSize;
+use hivemqtt_macros::Length;
 
 use crate::{commons::{property::Property, qos::QoS, variable_byte_integer::{variable_integer, variable_length}}, traits::write::ControlPacket};
 
 
-#[derive(DataSize, Debug, Clone)]
+#[derive(Length, Debug, Clone)]
 pub(crate) struct WillProperties {
-    /// 3.1.3.2.2: Default value is 0
-    #[bytes(4)]
     delay_interval: Option<u32>,
-    /// 3.1.3.2.3
-    #[bytes(1)]
     payload_format_indicator: Option<u8>,
-    /// 3.1.3.2.4
-    #[bytes(4)]
     message_expiry_interval: Option<u32>,
-    /// 3.1.3.2.5
-    #[bytes(wl_2)]
     content_type: Option<String>,
-    /// 3.1.3.2.6
-    #[bytes(wl_2)]
     response_topic: Option<String>,
-    /// 3.1.3.2.7
-    #[bytes(wl_2)]
     correlation_data: Option<Bytes>,
-    /// 3.1.3.2.8
-    #[bytes(kv_2)]
     user_property: Vec<(String, String)>,
 }
 
@@ -50,18 +36,14 @@ impl ControlPacket for WillProperties {
 }
 
 
-#[derive(Debug, DataSize)]
+#[derive(Debug, Length)]
 pub(crate) struct Will {
     properties: WillProperties,
-    /// 3.1.3.3
-    #[bytes(wl_2)]
     topic: String,
-    /// 3.1.3.4
-    #[bytes(wl_2)]
     payload: Bytes,
-    /// 3.1.2.6 (flag)
+    #[bytes(ignore)]
     pub(super) qos: QoS,
-    /// 3.1.2.7 (flag)
+    #[bytes(ignore)]
     pub(super) retain: bool,
 }
 

@@ -3,7 +3,7 @@ pub(crate) mod properties;
 
 
 use bytes::BufMut;
-use hivemqtt_macros::DataSize;
+use hivemqtt_macros::Length;
 
 use crate::{commons::{packets::Packet, qos::QoS, variable_byte_integer::{variable_integer, variable_length}, version::Version}, constants::PROTOCOL_NAME, traits::write::ControlPacket};
 use crate::packet::connect::{properties::ConnectProperties, will::Will};
@@ -50,26 +50,20 @@ impl From<u8> for ConnectFlags {
 }
 
 
-#[derive(Debug, DataSize)]
+#[derive(Debug, Length)]
 pub struct Connect {
-    /// 3.1.2.2
-    #[bytes(0)]
     version: Version,
-    /// 3.1.3.1
-    #[bytes(wl_2)]
     client_id: String,
-    /// 3.1.3.2
+    #[bytes(ignore)]
     will: Option<Will>,
-    #[bytes(wl_2)]
     username: Option<String>,
-    #[bytes(wl_2)]
     password: Option<String>,
 
-    /// 3.1.2.4
+    #[bytes(ignore)]
     clean_start: bool,
-    /// 3.1.2.10
+    #[bytes(ignore)]
     keep_alive: u16,
-    /// 3.1.2.11: Connection properties
+    #[bytes(ignore)] // Connection properties
     conn_ppts: ConnectProperties,
 }
 

@@ -13,6 +13,6 @@ pub mod commons;
 pub(crate) mod traits;
 
 
-use hivemqtt_macros::DataSize;
+use hivemqtt_macros::Length;
 
 fn main() {}

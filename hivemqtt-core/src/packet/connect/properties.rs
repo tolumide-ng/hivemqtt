@@ -1,41 +1,23 @@
 use std::borrow::Cow;
 
 use bytes::Bytes;
-use hivemqtt_macros::DataSize;
+use hivemqtt_macros::Length;
 
 use crate::{commons::{property::Property, variable_byte_integer::variable_integer}, traits::write::ControlPacket};
 
 
 
 /// CONNECT Properties (3.1.2.11)
-#[derive(Debug, Clone, DataSize)]
+#[derive(Debug, Clone, Length)]
 pub(crate) struct ConnectProperties {
-    /// 3.1.2.11.2
-    #[bytes(4)]
     session_expiry_interval: Option<u32>,
-    /// 3.1.2.11.3
-    #[bytes(2)]
     receive_maximum: Option<u16>,
-    /// 3.1.2.11.4
-    #[bytes(4)]
     maximum_packet_size: Option<u32>,
-    /// 3.1.2.11.5
-    #[bytes(2)]
     topic_alias_maximum: Option<u16>,
-    /// 3.1.2.11.6
-    #[bytes(1)]
     request_response_information: Option<u8>,
-    /// 3.1.2.11.7
-    #[bytes(1)]
     request_problem_information: Option<u8>,
-    /// 3.1.2.11.8
-    #[bytes(kv_2)]
     user_property: Vec<(String, String)>,
-    /// 3.1.2.11.9
-    #[bytes(wl_2)]
     authentication_method: Option<String>,
-    /// 3.1.2.11.10
-    #[bytes(wl_2)] 
     authentication_data: Option<Bytes>,
 }
 

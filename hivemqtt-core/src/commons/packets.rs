@@ -37,10 +37,10 @@ mod packet_type {
 
     #[test]
     fn should_return_the_right_enum_discriminant() {
-        assert_eq!(u8::from(Packet::PubAck), 4);
-        assert_eq!(u8::from(Packet::Connect), 1);
-        assert_eq!(u8::from(Packet::Publish), 3);
-        assert_eq!(u8::from(Packet::Auth), 15);
+        assert_eq!(u8::from(Packet::PubAck), 64);
+        assert_eq!(u8::from(Packet::Connect), 16);
+        assert_eq!(u8::from(Packet::Publish), 48);
+        assert_eq!(u8::from(Packet::Auth), 240);
     }
 }
 

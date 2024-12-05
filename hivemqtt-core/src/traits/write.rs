@@ -10,7 +10,7 @@ pub(crate) trait ControlPacket {
     }
 
     /// Allows a struct specify what it's length is to it's external users
-    /// Normally this is obtainable using the .len() method (internally on structs implementing DataSize),
+    /// Normally this is obtainable using the .len() method (internally on structs implementing Length(formerly DataSize)),
     /// However, this method allows the struct customize what its actual length is.
     /// NOTE: The eventual plan is to make this the only property accessible externally and 
     ///     make `.len()` internal while probably enforcing that all struct's implementing this method/trait
