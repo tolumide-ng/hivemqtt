@@ -1,7 +1,7 @@
 use bytes::{BufMut, BytesMut};
 
 pub(crate) trait ControlPacket {
-    fn w(&self, buff: &mut BytesMut);
+    fn w(&self, buf: &mut BytesMut);
 
     /// Writes the length of the bytes and itself into the buffer
     fn ws(&self, buf: &mut BytesMut, value: &[u8]) {
