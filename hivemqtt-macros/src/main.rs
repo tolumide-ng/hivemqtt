@@ -1,6 +1,6 @@
 pub(crate) mod data_size;
 
-use hivemqtt_macros::DataSize;
+use hivemqtt_macros::Length;
 
 fn main() {
     
@@ -8,36 +8,65 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    #[derive(Debug, DataSize)]
-    struct MQTTProp {
-        #[bytes(wl_6)]
-        name: String,
-        #[bytes(3)]
-        age: Option<u8>,
-        // // #[bytes(4)]
-        // #[bytes(wl_4)]
-        friends: Vec<String>,
-        // // #[bytes(wl_1)]
-        // origin: Option<u32>,
-        // #[bytes(kv_2)]
-        // relations: Vec<(String, String)>
+    use super::*;        
+        
+    #[derive(Length)]
+    #[allow(dead_code)]
+    struct TestOne {
+        title: String, // length + 2 + 1
+        port: u16, // std::mem::size_of::<u16>() + 1
+        properties: Vec<(String, String)>,// ....iter().map(|(k, v)| k.len() + 2 + v.len() + 2 + 1).sum::<usizee>()
+        topics: Vec<String>, // ...iter().map(|k| k.len() + 2 + 1).sum::<usize>()
+        active: bool, // std::mem::size_of::<bool>() + 1
+    }
+
+    #[derive(Length)]
+    struct TestOptionalFields {
+        title: String,
+        topics: Option<Vec<String>>,
+        auth: Option<Vec<(String, String)>>,
+        client_id: Option<String>
+    }
+
+
+    #[allow(dead_code)]
+    #[derive(Length)]
+    struct IgnoreField {
+        title: String, // length + 2 + 1
+        port: u16, // std::mem::size_of::<u16>() + 1
+        #[bytes(ignore)]
+        properties: Vec<(String, String)>,// ....iter().map(|(k, v)| k.len() + 2 + v.len() + 2 + 1).sum::<usizee>()
+        topics: Vec<String>, // ...iter().map(|k| k.len() + 2 + 1).sum::<usize>()
+        #[bytes(ignore)]
+        active: bool, // std::mem::size_of::<bool>() + 1
+        #[bytes(ignore)]
+        client_id: Option<String>,
     }
 
     #[test]
-    fn testing_bambi() {
-        let xx = MQTTProp {name: String::from("tolumide"),
-         age: Some(19u8), 
-        friends: vec![String::from("Human")], 
-        // origin: None,
-    // relations: vec![(String::from("father"), String::from("Daddy")), (String::from("mother"), String::from("Mummy"))]
-};
-        // println!("the xx {:#?}", xx);
-        println!("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>>>>   {:#?}", xx.len());
-        assert!(false);
-        // assert!(false);
+    fn should_return_the_length_if_all_fields_are_populated() {
+        let subject = TestOne { title: "A".to_string(),  port: 440, properties: vec![(String::from("abc"), String::from("cde"))], topics: vec![String::from("topic_A")], active: true };
+        assert_eq!(subject.len(), 30);
     }
 
+    #[test]
+    fn should_ignore_an_empty_vector() {
+        let subject = TestOne { title: "A".to_string(),  port: 440, properties: vec![], topics: vec![], active: true };
+        assert_eq!(subject.len(), 9);
+    }
 
+    #[test]
+    fn should_return_the_accurate_len() {
+        let title_only  = TestOptionalFields{title: "testingHuman".to_string(), topics: None, auth: None, client_id: None, };
+        assert_eq!(title_only.len(), 15);
+        
+        let with_auth  = TestOptionalFields{title: "testingHuman".to_string(), topics: None, auth: Some(vec![("username".to_string(), "xxxx88yj".to_string())]), client_id: None, };
+        assert_eq!(with_auth.len(), 36)
+    }
 
+    #[test]
+    fn should_ignore_fields_with_the_ignore_attribute() {
+        let subject = IgnoreField { title: "A".to_string(),  port: 440, properties: vec![(String::from("abc"), String::from("cde"))], topics: vec![String::from("topic_A")], active: true, client_id: None };
+        assert_eq!(subject.len(), 17)
+    }
 }

@@ -1,0 +1,84 @@
+use proc_macro2::TokenStream;
+use quote::quote;
+use syn::{Field, PathSegment, Ident, PathArguments, Type, TypePath};
+
+
+
+/// Currently only handles:
+///     1. - Option<any unsigned integer> | Option<String> | Option<Vec<any type supported on 3>>
+///     2. - Vec<String> | Vec<(String, String)>
+///     3. - any unsigned integer (e.g u8, u16)
+pub(crate) fn detect(field: &Field) -> TokenStream {
+    let result = quote! { size += 0; };
+
+    let Type::Path(TypePath{path, ..}) = &field.ty else { return result };
+    let Some(segment) = path.segments.last() else { return result };
+
+    let type_name= &segment.ident;
+    let data_type = (&segment.ident).to_string();
+    let Some(field_name) = &field.ident else { return result };
+
+
+    return match data_type.as_str() {
+        "Option" => { // handles only Option<u8|i16|...>
+            let PathArguments::AngleBracketed(args) = &segment.arguments else { return result };
+            let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first() else { return result };
+            match inner_ty {
+                syn::Type::Path(inner_path) => {
+                    let data_type = inner_path.path.segments.last().unwrap();
+                    let type_name = &data_type.ident;
+                    let call_size = get_size(field_name, type_name, data_type, true);
+                    quote! { #call_size; }
+                }
+                _ => {result}
+            }
+        }
+        _ => get_size(field_name, type_name, segment, false)
+    };
+}
+
+
+fn get_size(f_name: &Ident, type_name: &Ident, segment: &PathSegment, is_optional: bool) -> TokenStream {
+    let result = quote! { size +=  0; };
+    
+    return match type_name.to_string().as_str() {
+        "String" | "Bytes" => {
+            if is_optional {
+                return quote! { if let Some(ref value) = self.#f_name { size += value.len() + 1 + 2; } }
+            } else  {
+                return quote! {size += self.#f_name.len() + 1 + 2;}
+            }
+        }
+        "Vec" => { // we only expect a vector of (String|Bytes, String|Bytes), String, or Bytes
+            let PathArguments::AngleBracketed(args) = &segment.arguments else { return result };
+            let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first() else { return result };
+            match inner_ty {
+                syn::Type::Path(inner_path) => { // Vec<String|Bytes>
+                    if inner_path.path.segments.last().filter(|ps| ps.ident == "String" || ps.ident == "Bytes").is_none() { return result };
+                    return quote! { size += self.#f_name.iter().map(|s| s.len() + 2 + 1).sum::<usize>(); }
+                }
+                syn::Type::Tuple(tuple) => { // Vec<(String|Bytes, String|Bytes)>
+                    if tuple.elems.len() != 2 { return result };
+                    let string_or_bytes = tuple.elems.iter().all(|elem| if let syn::Type::Path(elem) = elem {
+                        if elem.path.segments.last().filter(|ps| ps.ident == "String" || ps.ident == "Bytes").is_none() { return false} else {true}
+                    } else { true} );
+                    
+                    if !string_or_bytes { return result; }
+
+                    if is_optional {
+                        return quote! { if let Some(ref value) = self.#f_name { size += value.iter().map(|(k, v)| k.len() + 2 + v.len() + 2 + 1).sum::<usize>(); } };
+                    } else {
+                        return quote! { size += self.#f_name.iter().map(|(k, v)| k.len() + 2 + v.len() + 2 + 1).sum::<usize>(); };
+                    }
+                }
+                _ => { 
+                    return result }
+            }
+        }
+        // this should be updated, if there's an unincluded type
+        "u8" | "u16" | "u32" | "u64" | "u128" | "bool" => {
+            return quote! { size += std::mem::size_of::<#type_name>() + 1; }
+        }
+        _ => {result}
+    }
+}

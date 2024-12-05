@@ -75,6 +75,7 @@ impl ControlPacket for Properties {
 }
 
 
+#[allow(dead_code)]
 #[derive(Debug, Default, Clone, Copy)]
 pub(crate) enum ConnAckReasonCode {
     #[default]

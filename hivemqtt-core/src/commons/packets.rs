@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum Packet {
     Connect = 0x10, // 0b0001_0000

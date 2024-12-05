@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[derive(derive_more::Display)]
 #[repr(u8)]
 pub(crate) enum ReasonCode {
