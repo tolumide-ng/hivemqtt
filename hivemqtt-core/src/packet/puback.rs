@@ -44,6 +44,8 @@ impl ControlPacket for PubAck {
 
         if let Some(ppts) = &self.properties {
             ppts.w(buf);
+        } else {
+            let _ = Self::encode_variable_length(buf, 0);
         }
     }
 }
