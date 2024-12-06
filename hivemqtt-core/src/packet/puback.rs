@@ -5,33 +5,70 @@ use hivemqtt_macros::Length;
 
 use crate::{commons::{packets::Packet, property::Property}, traits::write::ControlPacket};
 
-#[derive(Debug, Length)]
+#[derive(Debug)]
 pub(crate) struct PubAck {
-    #[bytes(ignore)]
+    packet_identifier: u16,
     reason_code: PubAckReasonCode,
-    reason_string: Option<String>,
+    properties: Option<PubAckProperties>,
 }
 
 
 impl ControlPacket for PubAck {
     /// Length of the Variable Header, encoded as Variable Byte Integer
     fn length(&self) -> usize {
-        0
+        let mut len = 2; // packet identifier
+
+        // only add reason code if there's no properties
+        if self.reason_code == PubAckReasonCode::Success && self.properties.is_none() {
+            return len;
+        }
+        len += 1; // reason code
+
+        if let Some(ppt) = &self.properties {
+            len += ppt.len() + Self::get_variable_length(ppt.len())
+        }
+        len
     }
 
     fn w(&self, buf: &mut bytes::BytesMut) {
         buf.put_u8(u8::from(Packet::PubAck));
         let _ = Self::encode_variable_length(buf, self.length());
+        
+        buf.put_u16(self.packet_identifier);
 
+        if self.reason_code == PubAckReasonCode::Success && self.properties.is_none() {
+            return;
+        }
+
+        buf.put_u8(self.reason_code as u8);
+
+        if let Some(ppts) = &self.properties {
+            ppts.w(buf);
+        }
+    }
+}
+
+
+#[derive(Debug, Length)]
+pub(crate) struct PubAckProperties {
+    reason_string: Option<String>,
+    user_property: Vec<(String, String)>,
+}
+
+impl ControlPacket for PubAckProperties {
+    fn w(&self, buf: &mut bytes::BytesMut) {
+        let _ = Self::encode_variable_length(buf, self.length());
+        
         Property::ReasonString(self.reason_string.as_deref().map(Cow::Borrowed)).w(buf);
-
+        Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buf);
     }
 }
 
 
 
+
 #[repr(u8)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub(crate) enum PubAckReasonCode {
     Success = 0,
     NoMatchingSubscribers = 16,

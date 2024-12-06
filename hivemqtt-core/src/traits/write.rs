@@ -12,6 +12,13 @@ pub(crate) trait ControlPacket {
         else { 1 }
     }
 
+    fn variable_length(&self) -> usize {
+        if self.length() >= 2_097_152 { 4 }
+        else if self.length() >= 16_384 { 3 }
+        else if self.length() >= 128 { 2 }
+        else { 1 }
+    }
+
     fn encode_variable_length(buf: &mut BytesMut, len: usize) -> Result<usize, MQTTError> {
          // 268_435_455
         if len > 0xFFFFFFF {
