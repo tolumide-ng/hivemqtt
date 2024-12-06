@@ -5,7 +5,7 @@ use hivemqtt_macros::Length;
 
 use crate::{commons::{packets::Packet, property::Property}, traits::write::ControlPacket};
 
-pub(crate) struct PubRec {
+pub struct PubRec {
     packet_identifier: u16,
     reason_code: PubRecReasonCode,
     properties: Option<PubRecProperties>,

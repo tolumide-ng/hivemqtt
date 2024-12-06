@@ -59,7 +59,7 @@ pub(crate) struct PubAckProperties {
 
 impl ControlPacket for PubAckProperties {
     fn w(&self, buf: &mut bytes::BytesMut) {
-        let _ = Self::encode_variable_length(buf, self.length());
+        let _ = Self::encode_variable_length(buf, self.len());
         
         Property::ReasonString(self.reason_string.as_deref().map(Cow::Borrowed)).w(buf);
         Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buf);
