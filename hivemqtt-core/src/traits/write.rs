@@ -12,7 +12,7 @@ pub(crate) trait ControlPacket {
         else { 1 }
     }
 
-    fn encode_variable_length(&self, buf: &mut BytesMut, len: usize) -> Result<usize, MQTTError> {
+    fn encode_variable_length(buf: &mut BytesMut, len: usize) -> Result<usize, MQTTError> {
          // 268_435_455
         if len > 0xFFFFFFF {
             return Err(MQTTError::PayloadTooLong)
@@ -35,7 +35,7 @@ pub(crate) trait ControlPacket {
         Ok(count)
     }
 
-    fn decode_variable_length(&self, buf: &mut BytesMut) {}
+    fn decode_variable_length(buf: &mut BytesMut) {}
 
     /// Writes the length of the bytes and itself into the buffer
     fn ws(&self, buf: &mut BytesMut, value: &[u8]) {

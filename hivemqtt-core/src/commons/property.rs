@@ -4,7 +4,7 @@ use bytes::{BufMut, BytesMut};
 
 use crate::traits::write::ControlPacket;
 
-use super::{packets::Packet, variable_byte_integer::variable_integer};
+use super::variable_byte_integer::variable_integer;
 
 /// Must be encoded using the VBI
 #[derive(Debug, Clone)]
@@ -15,8 +15,7 @@ pub(crate) enum Property<'a> {
     ContentType(Option<Cow<'a, str>>) = 3,
     ResponseTopic(Option<Cow<'a, str>>) = 8,
     CorrelationData(Option<Cow<'a, [u8]>>) = 9,
-    // this can be a Option<usize> or Vec<usize>, we can create an extra enum for this if there is a need for it.
-    SubscriptionIdentifier(Option<usize>) = 11, 
+    SubscriptionIdentifier(Cow<'a, Vec<usize>>) = 11, 
     SessionExpiryInterval(Option<u32>) = 17,
     AssignedClientIdentifier(Option<Cow<'a, str>>) = 18,
     ServerKeepAlive(Option<u16>) = 19,
@@ -30,6 +29,7 @@ pub(crate) enum Property<'a> {
     ReasonString(Option<Cow<'a, str>>) = 31,
     ReceiveMaximum(Option<u16>) = 33,
     TopicAliasMaximum(Option<u16>) = 34,
+    TopicAlias(Option<u16>) = 35,
     MaximumQoS(Option<u8>) = 36,
     RetainAvailable(Option<u8>) = 37,
     UserProperty(Cow<'a, Vec<(String, String)>>) = 38,
@@ -61,6 +61,7 @@ impl<'a> From<&Property<'a>> for u8 {
             Property::ReasonString(_) => 31,
             Property::ReceiveMaximum(_) => 33,
             Property::TopicAliasMaximum(_) => 34,
+            Property::TopicAlias(_) => 35,
             Property::MaximumQoS(_) => 36,
             Property::RetainAvailable(_) => 37,
             Property::UserProperty(_) => 38,
@@ -89,6 +90,7 @@ impl<'a> ControlPacket for Property<'a> {
             Self::ReceiveMaximum(Some(p)) => self.with_id(buf, |b| b.put_u16(*p)),
             Self::MaximumPacketSize(Some(p)) => self.with_id(buf, |b| b.put_u32(*p)),
             Self::TopicAliasMaximum(Some(p)) => self.with_id(buf, |b| b.put_u16(*p)),
+            Self::TopicAlias(Some(p)) => self.with_id(buf, |b| b.put_u16(*p)),
             Self::RequestResponseInformation(Some(p)) => self.with_id(buf, |b| b.put_u8(*p)),
             Self::RequestProblemInformation(Some(p)) => self.with_id(buf, |b| b.put_u8(*p)),
             Self::UserProperty(p) => {
@@ -108,7 +110,13 @@ impl<'a> ControlPacket for Property<'a> {
             Self::ResponseTopic(Some(p)) => self.with_id(buf, |b| self.ws(b, p.as_bytes())),
             Self::CorrelationData(Some(p)) => self.with_id(buf, |b| self.ws(b, p)),
             // NOTE: this needs to be tested for if this method of writing is correct or not!
-            Self::SubscriptionIdentifier(Some(p)) => _ = self.with_id(buf, |b| {let _ = variable_integer(b, *p).unwrap(); }),
+            Self::SubscriptionIdentifier(i) => {
+                i.iter().for_each(|id| {
+                    self.with_id(buf, |b| {
+                        let _ = variable_integer(b, *id).unwrap();
+                    });
+                });
+            },
             Self::AssignedClientIdentifier(Some(data)) => self.with_id(buf, |b| self.ws(b, data.as_bytes())),
             Self::ServerKeepAlive(Some(i)) => self.with_id(buf, |b| b.put_u16(*i)),
             Self::ResponseInformation(Some(i)) => self.with_id(buf, |b| self.ws(b, i.as_bytes())),
