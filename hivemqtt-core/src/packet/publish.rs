@@ -5,14 +5,13 @@ use hivemqtt_macros::Length;
 
 use crate::{commons::{packets::Packet, property::Property, qos::QoS}, traits::write::ControlPacket};
 
-#[derive(Debug, Length)]
+#[derive(Debug)]
 pub(crate) struct Publish {
     dup: bool,
     retain: bool,
     qos: QoS,
     topic: String,
     packet_identifier: u16,
-    #[bytes(ignore)]
     properties: PublishProperties,
     payload: Bytes,
 }
@@ -20,7 +19,10 @@ pub(crate) struct Publish {
 impl ControlPacket for Publish {
     fn length(&self) -> usize {
         // (variable header + length of the payload), encoded as Variable Byte Integer
-        0
+        let mut len = self.topic.len() + 2;
+        len += self.properties.len() + Self::get_variable_length(self.properties.len());
+        len += self.payload.len();
+        len
     }
 
     fn w(&self, buf: &mut bytes::BytesMut) {
