@@ -5,6 +5,7 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
 
 
+
 #[proc_macro_derive(Length, attributes(bytes))]
 pub fn derive_length(input: TokenStream) -> TokenStream {
     let data = input.clone();
@@ -37,6 +38,13 @@ pub fn derive_length(input: TokenStream) -> TokenStream {
                 let mut size = 0;
                 #( #field_lens )*
                 return size;
+            }
+
+            fn variable_len(int: usize) -> usize {
+                if int >= 2_097_152 { return 4 }
+                if int >= 16_384 { return 3 }
+                if int >= 128 { return 2 }
+                return 1
             }
         }
     };

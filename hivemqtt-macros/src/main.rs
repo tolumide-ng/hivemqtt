@@ -16,6 +16,9 @@ mod tests {
         properties: Vec<(String, String)>,// ....iter().map(|(k, v)| k.len() + 2 + v.len() + 2 + 1).sum::<usizee>()
         topics: Vec<String>, // ...iter().map(|k| k.len() + 2 + 1).sum::<usize>()
         active: bool, // std::mem::size_of::<bool>() + 1
+        size: Vec<usize>, // variable_len(value) + 1
+        ops: Option<usize>, // variable_len(value) + 1
+        s: usize, // variable_len(value) + 1
     }
 
     #[derive(Length)]
@@ -44,14 +47,17 @@ mod tests {
 
     #[test]
     fn should_return_the_length_if_all_fields_are_populated() {
-        let subject = TestOne { title: "A".to_string(),  port: 440, properties: vec![(String::from("abc"), String::from("cde"))], topics: vec![String::from("topic_A")], active: true };
-        assert_eq!(subject.len(), 30);
+        let subject = TestOne { 
+            title: "A".to_string(),  port: 440, properties: vec![(String::from("abc"), String::from("cde"))], topics: vec![String::from("topic_A")], 
+            active: true, size: vec![10], ops: Some(10), s: 10 };
+        assert_eq!(subject.len(), 36);
     }
 
     #[test]
     fn should_ignore_an_empty_vector() {
-        let subject = TestOne { title: "A".to_string(),  port: 440, properties: vec![], topics: vec![], active: true };
-        assert_eq!(subject.len(), 9);
+        let subject = TestOne { title: "A".to_string(),  port: 440, properties: vec![], topics: vec![], active: true, 
+            size: vec![], s: 0, ops: None };
+        assert_eq!(subject.len(), 11);
     }
 
     #[test]
