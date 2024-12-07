@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt::Display;
 
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
@@ -175,5 +176,14 @@ impl<'a> ControlPacket for Property<'a> {
         if buf.is_empty() { return Err(MQTTError::IncompleteData("MQTT Property", 1, 0))}
 
         Self::try_from(buf.get_u8())
+    }
+}
+
+
+
+/// this would eventually be changed to use derive_more lib
+impl<'a> Display for Property<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "this would be changed eventually to use derive_more::Error")
     }
 }

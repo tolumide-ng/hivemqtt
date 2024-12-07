@@ -1,4 +1,6 @@
-#[derive(Clone, Copy, Debug, thiserror::Error)]
+use std::string::FromUtf8Error;
+
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum MQTTError {
     #[error("Malformed mqtt packet")]
     MalformedPacket,
@@ -12,4 +14,10 @@ pub enum MQTTError {
     IncompleteData(&'static str, usize, usize),
     #[error("Received an Unknown Property: {0}")]
     UnknownProperty(u8),
+    #[error("Multiple instances of {0} Property found")]
+    DuplicateProperty(String), // property converted to string
+    #[error("Error generating utf-8 string from {0}")]
+    Utf8Error(FromUtf8Error),
+    #[error("{0} is not allowed on: {1}")]
+    UnexpectedProperty(String, String),
 }

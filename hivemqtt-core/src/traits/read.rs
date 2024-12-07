@@ -34,3 +34,27 @@ impl Read for u32 {
         Ok(buf.get_u32())
     }
 }
+
+
+impl Read for String {
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+        let data = Bytes::read(buf)?;
+
+        match String::from_utf8(data.to_vec()) {
+            Ok(d) => Ok(d),
+            Err(e) => Err(MQTTError::Utf8Error(e)),
+        }
+    }
+}
+
+
+impl Read for Bytes {
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+        let len = buf.get_u16() as usize;
+
+        if len > buf.len() {
+            return Err(MQTTError::IncompleteData("Bytes", len, buf.len()))
+        }
+        Ok(buf.split_to(len))
+    }
+}

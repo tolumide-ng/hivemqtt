@@ -76,7 +76,18 @@ impl ControlPacket for SubcribeProperties {
         let mut data = buf.split_to(len);
 
         loop {
-            // match 
+            match Property::read(&mut data)? {
+                Property::SubscriptionIdentifier(_) => {
+                    if properties.subscription_id.is_some() { return Err(MQTTError::DuplicateProperty("".to_string()))}
+                    let (subscription_id, _) = Self::read_variable_integer(&mut data)?;
+                    properties.subscription_id = Some(subscription_id);
+                }
+                Property::UserProperty(_) => {
+                    properties.user_property.push((String::read(&mut data)?, String::read(&mut data)?));
+                }
+                p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string()))
+            }
+
             if data.is_empty() {
                 break;
             }
