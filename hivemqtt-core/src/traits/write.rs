@@ -1,8 +1,9 @@
-use bytes::{BufMut, BytesMut};
+use bytes::{BufMut, Bytes, BytesMut};
 
 use crate::commons::error::MQTTError;
 
-pub(crate) trait ControlPacket {
+pub(crate) trait ControlPacket: Sized {
+
     fn w(&self, buf: &mut BytesMut);
 
     fn get_variable_length(len: usize) -> usize {
@@ -57,4 +58,8 @@ pub(crate) trait ControlPacket {
     ///     make `.len()` internal while probably enforcing that all struct's implementing this method/trait
     ///     must also implement `DataSize` proc. So that there is a default accurate length property
     fn length(&self) -> usize { 0 }
+
+    fn read(bytes: &mut Bytes) -> Result<Self, MQTTError> {
+        Err(MQTTError::MalformedPacket)
+    }
 }

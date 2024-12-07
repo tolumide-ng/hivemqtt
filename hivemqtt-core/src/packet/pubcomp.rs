@@ -13,7 +13,18 @@ pub  struct PubComp {
 
 impl ControlPacket for PubComp {
     fn length(&self) -> usize {
-        0
+        let mut len = 2; // packet identifier
+
+        // only add reason code if there's no properties
+        if self.reason_code == PubCompReasonCode::Success && self.properties.is_none() {
+            return len;
+        }
+        len += 1; // reason code
+
+        if let Some(ppt) = &self.properties {
+            len += ppt.len() + Self::get_variable_length(ppt.len())
+        }
+        len
     }
 
     fn w(&self, buf: &mut bytes::BytesMut) {

@@ -97,6 +97,8 @@ pub(crate) struct ConnAck {
 
 
 impl ControlPacket for ConnAck {
+    
+
     /// In this case:
     /// This is the length of the Variable Header
     fn length(&self) -> usize {

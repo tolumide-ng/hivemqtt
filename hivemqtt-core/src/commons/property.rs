@@ -84,6 +84,8 @@ impl<'a> Property<'a> {
 }
 
 impl<'a> ControlPacket for Property<'a> {
+     // not needed in this case
+
     fn w(&self, buf: &mut BytesMut) {
         match self {
             Self::SessionExpiryInterval(Some(p)) => self.with_id(buf, |b| b.put_u32(*p)),

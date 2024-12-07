@@ -58,6 +58,7 @@ pub(crate) struct PubAckProperties {
 }
 
 impl ControlPacket for PubAckProperties {
+    
     fn w(&self, buf: &mut bytes::BytesMut) {
         let _ = Self::encode_variable_length(buf, self.len());
         
