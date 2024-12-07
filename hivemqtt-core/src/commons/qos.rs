@@ -1,3 +1,5 @@
+use crate::commons::error::MQTTError;
+
 #[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd)]
 pub enum QoS {
     #[default]
@@ -16,13 +18,19 @@ impl From<QoS> for u8 {
     }
 }
 
-impl From<u8> for QoS {
-    fn from(value: u8) -> Self {
+
+
+impl TryFrom<u8> for QoS {
+    type Error = MQTTError;
+    
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        type Error = MQTTError;
+
         match value {
-            0 => QoS::Zero,
-            1 => QoS::One,
-            2 => QoS::Two,
-            _ => unimplemented!("Unrecognized QoS {}", value)
+            0 => Ok(QoS::Zero),
+            1 => Ok(QoS::One),
+            2 => Ok(QoS::Two),
+            _ => Err(MQTTError::UnsupportedQoS(value))
         }
     }
 }

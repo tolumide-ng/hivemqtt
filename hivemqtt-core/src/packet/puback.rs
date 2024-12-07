@@ -32,7 +32,7 @@ impl ControlPacket for PubAck {
 
     fn w(&self, buf: &mut bytes::BytesMut) {
         buf.put_u8(u8::from(Packet::PubAck));
-        let _ = Self::encode_variable_length(buf, self.length());
+        let _ = Self::write_variable_integer(buf, self.length());
         
         buf.put_u16(self.packet_identifier);
 
@@ -45,7 +45,7 @@ impl ControlPacket for PubAck {
         if let Some(ppts) = &self.properties {
             ppts.w(buf);
         } else {
-            let _ = Self::encode_variable_length(buf, 0);
+            let _ = Self::write_variable_integer(buf, 0);
         }
     }
 }
@@ -60,7 +60,7 @@ pub(crate) struct PubAckProperties {
 impl ControlPacket for PubAckProperties {
     
     fn w(&self, buf: &mut bytes::BytesMut) {
-        let _ = Self::encode_variable_length(buf, self.len());
+        let _ = Self::write_variable_integer(buf, self.len());
         
         Property::ReasonString(self.reason_string.as_deref().map(Cow::Borrowed)).w(buf);
         Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buf);

@@ -5,7 +5,7 @@ pub(crate) mod properties;
 use bytes::BufMut;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{packets::Packet, qos::QoS, variable_byte_integer::{variable_integer, variable_length}, version::Version}, constants::PROTOCOL_NAME, traits::write::ControlPacket};
+use crate::{commons::{error::MQTTError, packets::Packet, qos::QoS, variable_byte_integer::{variable_integer, variable_length}, version::Version}, constants::PROTOCOL_NAME, traits::write::ControlPacket};
 use crate::packet::connect::{properties::ConnectProperties, will::Will};
 
 
@@ -37,15 +37,17 @@ impl From<ConnectFlags> for u8 {
 }
 
 
-impl From<u8> for ConnectFlags {
-    fn from(value: u8) -> Self {
+impl TryFrom<u8> for ConnectFlags {
+    type Error = MQTTError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
         let username = (value & Self::USERNAME_MASK) != 0;
         let password = (value & Self::PASSWORD_MASK) != 0;
         let will_retain = (value & Self::WILL_RETAIN_MASK) != 0;
-        let will_qos = QoS::from((value & Self::QOS_MASK) >> 3);
+        let will_qos = QoS::try_from((value & Self::QOS_MASK) >> 3)?;
         let will_flag = (value & Self::WILL_FLAG_MASK) != 0;
         let clean_start = (value & Self::CLEAN_START_MASK) != 0;
-        Self { username, password, will_retain, will_qos, will_flag, clean_start }
+
+        Ok(Self { username, password, will_retain, will_qos, will_flag, clean_start })
     }
 }
 

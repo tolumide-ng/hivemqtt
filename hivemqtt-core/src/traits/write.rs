@@ -20,7 +20,7 @@ pub(crate) trait ControlPacket: Sized {
         else { 1 }
     }
 
-    fn encode_variable_length(buf: &mut BytesMut, len: usize) -> Result<usize, MQTTError> {
+    fn write_variable_integer(buf: &mut BytesMut, len: usize) -> Result<usize, MQTTError> {
          // 268_435_455
         if len > 0xFFFFFFF {
             return Err(MQTTError::PayloadTooLong)
@@ -43,7 +43,28 @@ pub(crate) trait ControlPacket: Sized {
         Ok(count)
     }
 
-    fn decode_variable_length(buf: &mut BytesMut) {}
+    fn read_variable_integer(buf: &mut Bytes) -> Result<(usize, usize), MQTTError> {
+        let mut result = 0;
+        let mut shift = 0;
+
+        for (len, &byte) in buf.iter().enumerate() {
+            // The least significant seven bits of each byte encode the data
+            result |= (byte as usize & 0x7F) << shift;
+            shift += 7;
+
+            // Continuation bit: The most significant bit is used to indicate whether there are still more bytes the representation
+            if (byte & 0x80) == 0 {
+                return Ok((result, len))
+            }
+            
+            // 0, 1, 2, 3 (the maximum possible value that we expect is 268_435_455)
+            if len >= 3 {
+                break;
+            }
+        }
+
+        return Err(MQTTError::MalformedPacket); 
+    }
 
     /// Writes the length of the bytes and itself into the buffer
     fn ws(&self, buf: &mut BytesMut, value: &[u8]) {
@@ -59,7 +80,7 @@ pub(crate) trait ControlPacket: Sized {
     ///     must also implement `DataSize` proc. So that there is a default accurate length property
     fn length(&self) -> usize { 0 }
 
-    fn read(bytes: &mut Bytes) -> Result<Self, MQTTError> {
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
         Err(MQTTError::MalformedPacket)
     }
 }

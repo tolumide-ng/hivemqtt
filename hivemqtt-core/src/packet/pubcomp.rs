@@ -29,14 +29,14 @@ impl ControlPacket for PubComp {
 
     fn w(&self, buf: &mut bytes::BytesMut) {
         buf.put_u8(u8::from(Packet::PubComp));
-        let _ = Self::encode_variable_length(buf, self.length());
+        let _ = Self::write_variable_integer(buf, self.length());
 
         buf.put_u16(self.packet_identifier);
 
         if self.reason_code == PubCompReasonCode::Success && self.properties.is_none() {
             return;
         } else {
-            let _ = Self::encode_variable_length(buf, 0);
+            let _ = Self::write_variable_integer(buf, 0);
         }
     }
 }
@@ -51,7 +51,7 @@ pub struct PubCompProperties {
 
 impl ControlPacket for PubCompProperties {
     fn w(&self, buf: &mut bytes::BytesMut) {
-        let _ = Self::encode_variable_length(buf, self.len());
+        let _ = Self::write_variable_integer(buf, self.len());
 
         Property::ReasonString(self.reason_string.as_deref().map(Cow::Borrowed)).w(buf);
         Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buf);

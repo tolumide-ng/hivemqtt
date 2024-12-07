@@ -1,8 +1,9 @@
 use std::borrow::Cow;
 
-use bytes::{BufMut, BytesMut};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 use crate::traits::write::ControlPacket;
+use crate::commons::error::MQTTError;
 
 use super::variable_byte_integer::variable_integer;
 
@@ -74,6 +75,44 @@ impl<'a> From<&Property<'a>> for u8 {
 }
 
 
+impl<'a> TryFrom<u8> for Property<'a> {
+    type Error = MQTTError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        
+        match value {
+            1 => Ok(Property::PayloadFormatIndicator(None)),
+            2 => Ok(Property::MessageExpiryInterval(None)),
+            3 => Ok(Property::ContentType(None)),
+            8 => Ok(Property::ResponseTopic(None)),
+            9 => Ok(Property::CorrelationData(None)),
+            11 => Ok(Property::SubscriptionIdentifier(Cow::Owned(Vec::with_capacity(0)))),
+            17 => Ok(Property::SessionExpiryInterval(None)),
+            18 => Ok(Property::AssignedClientIdentifier(None)),
+            19 => Ok(Property::ServerKeepAlive(None)),
+            21 => Ok(Property::AuthenticationMethod(None)),
+            22 => Ok(Property::AuthenticationData(None)),
+            23 => Ok(Property::RequestProblemInformation(None)),
+            24 => Ok(Property::WillDelayInterval(None)),
+            25 => Ok(Property::RequestResponseInformation(None)),
+            26 => Ok(Property::ResponseInformation(None)),
+            28 => Ok(Property::ServerReference(None)),
+            31 => Ok(Property::ReasonString(None)),
+            33 => Ok(Property::ReceiveMaximum(None)),
+            34 => Ok(Property::TopicAliasMaximum(None)),
+            35 => Ok(Property::TopicAlias(None)),
+            36 => Ok(Property::MaximumQoS(None)),
+            37 => Ok(Property::RetainAvailable(None)),
+            38 => Ok(Property::UserProperty(Cow::Owned(Vec::with_capacity(0)))),
+            39 => Ok(Property::MaximumPacketSize(None)),
+            40 => Ok(Property::WildCardSubscription(None)),
+            41 => Ok(Property::SubscriptionIdentifierAvailable(None)),
+            42 => Ok(Property::SharedSubscriptionAvailable(None)),
+            v => Err(MQTTError::UnknownProperty(v))
+        }
+    }
+}
+
+
 
 impl<'a> Property<'a> {
     fn with_id<F>(&self, buf: &mut BytesMut, func: F)
@@ -84,8 +123,6 @@ impl<'a> Property<'a> {
 }
 
 impl<'a> ControlPacket for Property<'a> {
-     // not needed in this case
-
     fn w(&self, buf: &mut BytesMut) {
         match self {
             Self::SessionExpiryInterval(Some(p)) => self.with_id(buf, |b| b.put_u32(*p)),
@@ -131,5 +168,12 @@ impl<'a> ControlPacket for Property<'a> {
             Self::SharedSubscriptionAvailable(Some(i)) => self.with_id(buf, |b| b.put_u8(*i)),
             _ => {unreachable!("Unrecognized enum variant or argument!")}
         }
+    }
+
+
+    fn read(buf: &mut Bytes) -> Result<Self, super::error::MQTTError> {
+        if buf.is_empty() { return Err(MQTTError::IncompleteData("MQTT Property", 1, 0))}
+
+        Self::try_from(buf.get_u8())
     }
 }
