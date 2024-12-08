@@ -143,6 +143,7 @@ pub(crate) enum ReasonCode {
 impl From<ReasonCode> for u8 {
     fn from(value: ReasonCode) -> Self {
         match value {
+        
             ReasonCode::Success | ReasonCode::NormalDisconnection | ReasonCode::GrantedQoS0 => 0x00,
             ReasonCode::GrantedQoS1 => 0x01,
             ReasonCode::GrantedQoS2 => 0x02,
