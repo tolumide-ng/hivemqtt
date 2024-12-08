@@ -15,7 +15,8 @@ pub struct SubAck {
 impl ControlPacket for SubAck {
     // Length of the Variable Header plus the length of the Payload
     fn length(&self) -> usize {
-        0
+        // packet identifier + ...
+        2 + self.payload.len() + self.properties.len() + Self::get_variable_length(self.properties.len())
     }
 
     fn w(&self, buf: &mut bytes::BytesMut) {

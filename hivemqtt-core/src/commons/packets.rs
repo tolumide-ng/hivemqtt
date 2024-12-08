@@ -1,3 +1,5 @@
+use bytes::BytesMut;
+
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum Packet {
@@ -27,6 +29,8 @@ impl From<Packet> for u8 {
 
 
 impl Packet {
+    // returns the fixed header of the requested variant
+    // fn fixed(&self) -> BytesMut {}
 }
 
 
