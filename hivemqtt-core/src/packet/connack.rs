@@ -45,7 +45,7 @@ impl ControlPacket for Properties {
         Property::AssignedClientIdentifier(self.assigned_client_id.as_deref().map(Cow::Borrowed)).w(buff);
         Property::TopicAliasMaximum(self.topic_alias_maximum).w(buff);
         Property::ReasonString(self.reason_string.borrow().as_deref().map(Cow::Borrowed)).w(buff);
-        Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buff);
+        self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buff));
         Property::WildCardSubscription(self.wildcard_subscription_available.map(|x| x as u8)).w(buff);
         Property::SubscriptionIdentifierAvailable(self.session_expiry_interval.map(|x| x as u8)).w(buff);
         Property::SharedSubscriptionAvailable(self.shared_subscription_available.map(|x| x as u8)).w(buff);

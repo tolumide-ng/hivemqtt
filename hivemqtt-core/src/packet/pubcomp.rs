@@ -54,7 +54,7 @@ impl ControlPacket for PubCompProperties {
         let _ = Self::write_variable_integer(buf, self.len());
 
         Property::ReasonString(self.reason_string.as_deref().map(Cow::Borrowed)).w(buf);
-        Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buf);
+        self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
     }
 }
 

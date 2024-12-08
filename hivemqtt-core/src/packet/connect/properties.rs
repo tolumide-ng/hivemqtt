@@ -31,7 +31,7 @@ impl ControlPacket for ConnectProperties {
         Property::TopicAliasMaximum(self.topic_alias_maximum).w(buf);
         Property::RequestResponseInformation(self.request_response_information).w(buf);
         Property::RequestProblemInformation(self.request_problem_information).w(buf);
-        Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buf);
+        self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
         Property::AuthenticationMethod(self.authentication_method.as_deref().map(Cow::Borrowed)).w(buf);
         Property::AuthenticationData(self.authentication_data.as_deref().map(Cow::Borrowed)).w(buf);
     }

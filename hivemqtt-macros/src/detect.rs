@@ -43,9 +43,9 @@ fn get_size(f_name: &Ident, type_name: &Ident, segment: &PathSegment, is_optiona
     return match type_name.to_string().as_str() {
         "String" | "Bytes" => {
             if is_optional {
-                return quote! { if let Some(ref value) = self.#f_name { size += value.len() + 1 + 2; } }
+                return quote! { if let Some(ref value) = self.#f_name { size += value.len() + 2; } }
             } else  {
-                return quote! {size += self.#f_name.len() + 1 + 2;}
+                return quote! {size += self.#f_name.len() + 2;}
             }
         }
         "Vec" => { // we only expect a vector of (String|Bytes, String|Bytes), String, or Bytes, and now Vec<usize>
@@ -63,7 +63,7 @@ fn get_size(f_name: &Ident, type_name: &Ident, segment: &PathSegment, is_optiona
                      };
                     }
                     if inner_path.path.segments.last().filter(|ps| ps.ident == "String" || ps.ident == "Bytes").is_none() { return result };
-                    return quote! { size += self.#f_name.iter().map(|s| s.len() + 2 + 1).sum::<usize>(); }
+                    return quote! { size += self.#f_name.iter().map(|s| s.len() + 2).sum::<usize>(); }
                 }
                 syn::Type::Tuple(tuple) => { // Vec<(String|Bytes, String|Bytes)>
                     if tuple.elems.len() != 2 { return result };

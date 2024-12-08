@@ -27,7 +27,7 @@ impl ControlPacket for WillProperties {
         Property::ContentType(self.content_type.as_deref().map(Cow::Borrowed)).w(buff);
         Property::ResponseTopic(self.response_topic.as_deref().map(Cow::Borrowed)).w(buff);
         Property::CorrelationData(self.correlation_data.as_deref().map(Cow::Borrowed)).w(buff);
-        Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buff);
+        self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buff));
     }
 
     fn length(&self) -> usize {

@@ -63,8 +63,8 @@ impl ControlPacket for PublishProperties {
         Property::TopicAlias(self.topic_alias).w(buf);
         Property::ResponseTopic(self.response_topic.as_deref().map(Cow::Borrowed)).w(buf);
         Property::CorrelationData(self.correlation_data.as_deref().map(Cow::Borrowed)).w(buf);
-        Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buf);
-        Property::SubscriptionIdentifier(Cow::Borrowed(&self.subscription_identifier)).w(buf);
+        self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
+        self.subscription_identifier.iter().for_each(|si| Property::SubscriptionIdentifier(Cow::Borrowed(&si)).w(buf));
         Property::ContentType(self.content_type.as_deref().map(Cow::Borrowed)).w(buf);
     }
 }

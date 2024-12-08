@@ -16,7 +16,8 @@ pub struct  Subscribe {
 impl ControlPacket for Subscribe {
     /// (Length of Variable Header + Length of the Payload)
     fn length(&self) -> usize {
-        let mut len = 0;
+        let mut len = 2 + self.properties.length(); // packet identifier + properties
+        len += self.payload.iter().fold(0, |acc, x| acc + (1 + (2 + x.0.len()))); // u8(len) + (string(2) + topic.len())
 
         len
     }
@@ -31,7 +32,7 @@ impl ControlPacket for Subscribe {
 
         for (topic, options) in &self.payload {
             self.ws(buf, topic.as_bytes());
-            buf.put_u8(u8::from(*options));
+            options.w(buf);
         }
     }
 
@@ -39,7 +40,18 @@ impl ControlPacket for Subscribe {
         // the assumption here is that the provided buffer has already been advanced by the Fixed Header length
         let packet_identifier = u16::read(buf)?;
         let properties = SubcribeProperties::read(buf)?;
-        Err(MQTTError::MalformedPacket)
+        let mut payload = Vec::new();
+
+        loop {
+            let topic = String::read(buf)?;
+            let options = SubscriptionOptions::read(buf)?;
+
+            payload.push((topic, options));
+
+            if buf.is_empty() { break }
+        }
+
+        Ok(Self { packet_identifier, properties, payload })
     }
 }
 
@@ -58,8 +70,8 @@ impl ControlPacket for SubcribeProperties {
         let _ = Self::write_variable_integer(buf, self.length());
         
         if let Some(id) = self.subscription_id {
-            Property::SubscriptionIdentifier(Cow::Borrowed(&vec![id])).w(buf);
-            Property::UserProperty(Cow::Borrowed(&self.user_property)).w(buf);
+            Property::SubscriptionIdentifier(Cow::Borrowed(&id)).w(buf);
+            self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
         }
     }
 
@@ -77,20 +89,16 @@ impl ControlPacket for SubcribeProperties {
 
         loop {
             match Property::read(&mut data)? {
-                Property::SubscriptionIdentifier(_) => {
+                Property::SubscriptionIdentifier(value) => {
                     if properties.subscription_id.is_some() { return Err(MQTTError::DuplicateProperty("".to_string()))}
-                    let (subscription_id, _) = Self::read_variable_integer(&mut data)?;
-                    properties.subscription_id = Some(subscription_id);
+                    properties.subscription_id = Some(*value);
                 }
-                Property::UserProperty(_) => {
-                    properties.user_property.push((String::read(&mut data)?, String::read(&mut data)?));
+                Property::UserProperty(value) => {
+                    properties.user_property.push(value.into_owned());
                 }
                 p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string()))
             }
-
-            if data.is_empty() {
-                break;
-            }
+            if data.is_empty() { break; }
         }
         
         Err(MQTTError::MalformedPacket)
@@ -111,6 +119,26 @@ impl From<SubscriptionOptions> for u8 {
         u8::from(v.qos) | u8::from(v.no_local) << 2 | u8::from(v.retain_as_published) << 3 | (v.retain_handling as u8) << 4
     }
 }
+
+impl ControlPacket for SubscriptionOptions {
+    fn length(&self) -> usize { 1 }
+
+    fn w(&self, buf: &mut bytes::BytesMut) {
+        buf.put_u8(u8::from(*self));
+    }
+
+    fn read(buf: &mut bytes::Bytes) -> Result<Self, crate::commons::error::MQTTError> {
+        let byte = buf.get_u8();
+
+        let qos = QoS::try_from(byte & 0b0000_0011)?;
+        let no_local = (byte & 0b0000_0100) != 0;
+        let retain_as_published = (byte & 0b0000_1000) != 0;
+        let retain_handling = RetainHandling::try_from(byte & 0b0011_0000)?;
+
+        Ok(Self { qos, no_local, retain_as_published, retain_handling })
+    }
+}
+
 
 
 #[repr(u8)]
@@ -136,21 +164,4 @@ impl TryFrom<u8> for RetainHandling {
         }
     }
     
-}
-
-impl ControlPacket for SubscriptionOptions {
-    fn w(&self, buf: &mut bytes::BytesMut) {
-        
-    }
-
-    fn read(buf: &mut bytes::Bytes) -> Result<Self, crate::commons::error::MQTTError> {
-        let byte = buf.get_u8();
-
-        let qos = QoS::try_from(byte & 0b0000_0011)?;
-        let no_local = (byte & 0b0000_0100) != 0;
-        let retain_as_published = (byte & 0b0000_1000) != 0;
-        let retain_handling = RetainHandling::try_from(byte & 0b0011_0000)?;
-
-        Ok(Self { qos, no_local, retain_as_published, retain_handling })
-    }
 }

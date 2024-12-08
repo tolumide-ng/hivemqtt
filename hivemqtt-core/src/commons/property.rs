@@ -3,6 +3,7 @@ use std::fmt::Display;
 
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
+use crate::traits::read::Read;
 use crate::traits::write::ControlPacket;
 use crate::commons::error::MQTTError;
 
@@ -17,7 +18,7 @@ pub(crate) enum Property<'a> {
     ContentType(Option<Cow<'a, str>>) = 3,
     ResponseTopic(Option<Cow<'a, str>>) = 8,
     CorrelationData(Option<Cow<'a, [u8]>>) = 9,
-    SubscriptionIdentifier(Cow<'a, Vec<usize>>) = 11, 
+    SubscriptionIdentifier(Cow<'a, usize>) = 11, 
     SessionExpiryInterval(Option<u32>) = 17,
     AssignedClientIdentifier(Option<Cow<'a, str>>) = 18,
     ServerKeepAlive(Option<u16>) = 19,
@@ -34,7 +35,7 @@ pub(crate) enum Property<'a> {
     TopicAlias(Option<u16>) = 35,
     MaximumQoS(Option<u8>) = 36,
     RetainAvailable(Option<u8>) = 37,
-    UserProperty(Cow<'a, Vec<(String, String)>>) = 38,
+    UserProperty(Cow<'a, (String, String)>) = 38,
     MaximumPacketSize(Option<u32>) = 39,
     WildCardSubscription(Option<u8>) = 40,
     SubscriptionIdentifierAvailable(Option<u8>) = 41,
@@ -86,7 +87,7 @@ impl<'a> TryFrom<u8> for Property<'a> {
             3 => Ok(Property::ContentType(None)),
             8 => Ok(Property::ResponseTopic(None)),
             9 => Ok(Property::CorrelationData(None)),
-            11 => Ok(Property::SubscriptionIdentifier(Cow::Owned(Vec::with_capacity(0)))),
+            11 => Ok(Property::SubscriptionIdentifier(Cow::Owned(0))),
             17 => Ok(Property::SessionExpiryInterval(None)),
             18 => Ok(Property::AssignedClientIdentifier(None)),
             19 => Ok(Property::ServerKeepAlive(None)),
@@ -103,7 +104,7 @@ impl<'a> TryFrom<u8> for Property<'a> {
             35 => Ok(Property::TopicAlias(None)),
             36 => Ok(Property::MaximumQoS(None)),
             37 => Ok(Property::RetainAvailable(None)),
-            38 => Ok(Property::UserProperty(Cow::Owned(Vec::with_capacity(0)))),
+            38 => Ok(Property::UserProperty(Cow::Owned((String::from(""), String::from(""))))),
             39 => Ok(Property::MaximumPacketSize(None)),
             40 => Ok(Property::WildCardSubscription(None)),
             41 => Ok(Property::SubscriptionIdentifierAvailable(None)),
@@ -120,7 +121,7 @@ impl<'a> Property<'a> {
         where F: Fn(&mut BytesMut) {
             buf.put_u8(u8::from(self));
             func(buf);
-        }
+    }
 }
 
 impl<'a> ControlPacket for Property<'a> {
@@ -133,13 +134,11 @@ impl<'a> ControlPacket for Property<'a> {
             Self::TopicAlias(Some(p)) => self.with_id(buf, |b| b.put_u16(*p)),
             Self::RequestResponseInformation(Some(p)) => self.with_id(buf, |b| b.put_u8(*p)),
             Self::RequestProblemInformation(Some(p)) => self.with_id(buf, |b| b.put_u8(*p)),
-            Self::UserProperty(p) => {
-                p.iter().for_each(|(k, v)| {
-                    self.with_id(buf, |b| {
+            Self::UserProperty(Cow::Borrowed((ref k, ref v))) => {
+                self.with_id(buf, |b| {
                         self.ws(b, k.as_bytes());
-                        self.ws(b, v.as_bytes());
+                        self.ws(b, v.as_bytes()) 
                     });
-                });
             }
             Self::AuthenticationMethod(Some(data)) => self.with_id(buf, |b| self.ws(b, data.as_bytes())),
             Self::AuthenticationData(Some(data)) => self.with_id(buf, |b| self.ws(b, &data)),
@@ -150,12 +149,8 @@ impl<'a> ControlPacket for Property<'a> {
             Self::ResponseTopic(Some(p)) => self.with_id(buf, |b| self.ws(b, p.as_bytes())),
             Self::CorrelationData(Some(p)) => self.with_id(buf, |b| self.ws(b, p)),
             // NOTE: this needs to be tested for if this method of writing is correct or not!
-            Self::SubscriptionIdentifier(i) => {
-                i.iter().for_each(|id| {
-                    self.with_id(buf, |b| {
-                        let _ = variable_integer(b, *id).unwrap();
-                    });
-                });
+            Self::SubscriptionIdentifier(id) => {
+                self.with_id(buf, |b| { let _ = variable_integer(b, **id).unwrap(); });
             },
             Self::AssignedClientIdentifier(Some(data)) => self.with_id(buf, |b| self.ws(b, data.as_bytes())),
             Self::ServerKeepAlive(Some(i)) => self.with_id(buf, |b| b.put_u16(*i)),
@@ -175,7 +170,42 @@ impl<'a> ControlPacket for Property<'a> {
     fn read(buf: &mut Bytes) -> Result<Self, super::error::MQTTError> {
         if buf.is_empty() { return Err(MQTTError::IncompleteData("MQTT Property", 1, 0))}
 
-        Self::try_from(buf.get_u8())
+        match buf.get_u8() {
+            // 1  =>  Property::PayloadFormatIndicator(_),
+            // 2  =>  Property::MessageExpiryInterval(_),
+            // 3  =>  Property::ContentType(_),
+            // 8  =>  Property::ResponseTopic(_),
+            // 9  =>  Property::CorrelationData(_),
+            11 =>  {
+                Ok(Property::SubscriptionIdentifier(Cow::Owned(Self::read_variable_integer(buf)?.0)))
+            },
+            // 17 =>  Property::SessionExpiryInterval(_),
+            // 18 =>  Property::AssignedClientIdentifier(_),
+            // 19 =>  Property::ServerKeepAlive(_),
+            // 21 =>  Property::AuthenticationMethod(_),
+            // 22 =>  Property::AuthenticationData(_),
+            // 23 =>  Property::RequestProblemInformation(_),
+            // 24 =>  Property::WillDelayInterval(_),
+            // 25 =>  Property::RequestResponseInformation(_),
+            // 26 =>  Property::ResponseInformation(_),
+            // 28 =>  Property::ServerReference(_),
+            // 31 =>  Property::ReasonString(_),
+            // 33 =>  Property::ReceiveMaximum(_),
+            // 34 =>  Property::TopicAliasMaximum(_),
+            // 35 =>  Property::TopicAlias(_),
+            // 36 =>  Property::MaximumQoS(_),
+            // 37 =>  Property::RetainAvailable(_),
+            38 =>  {
+                Ok(Property::UserProperty(Cow::Owned((String::read(buf)?, String::read(buf)?))))
+            },
+            // 39 =>  Property::MaximumPacketSize(_),
+            // 40 =>  Property::WildCardSubscription(_),
+            // 41 =>  Property::SubscriptionIdentifierAvailable(_),
+            // 42 =>  Property::SharedSubscriptionAvailable(_),
+            v => Err(MQTTError::UnknownProperty(v))
+        }
+
+        // Self::try_from(buf.get_u8())
     }
 }
 
