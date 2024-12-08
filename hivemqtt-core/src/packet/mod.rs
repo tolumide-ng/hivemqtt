@@ -6,3 +6,4 @@ pub(crate) mod pubrec;
 pub(crate) mod pubrel;
 pub(crate) mod pubcomp;
 pub(crate) mod subscribe;
+pub(crate) mod suback;

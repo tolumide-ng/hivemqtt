@@ -101,7 +101,7 @@ impl ControlPacket for SubcribeProperties {
             if data.is_empty() { break; }
         }
         
-        Err(MQTTError::MalformedPacket)
+        Ok(properties)
     }
 }
 
@@ -148,7 +148,7 @@ pub enum RetainHandling {
     Zero = 0,
     /// Send retained messages at subscribe only if subscription does not currently exist
     One = 1,
-    /// Do not send reatined messages at the time of the subscription
+    /// Do not send retained messages at the time of the subscription
     Two = 2,
 }
 

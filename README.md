@@ -1,4 +1,5 @@
 ### HiveMQTT
+[MQTT5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html)
 
 ### Plans
 - [ ] Protocol Support
