@@ -1,7 +1,7 @@
 use bytes::BytesMut;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Packet {
     Connect = 0x10, // 0b0001_0000
     ConnAck = 0x20, // 0b0010_0000

@@ -171,41 +171,35 @@ impl<'a> BufferIO for Property<'a> {
         if buf.is_empty() { return Err(MQTTError::IncompleteData("MQTT Property", 1, 0))}
 
         match buf.get_u8() {
-            // 1  =>  Property::PayloadFormatIndicator(_),
-            // 2  =>  Property::MessageExpiryInterval(_),
-            // 3  =>  Property::ContentType(_),
-            // 8  =>  Property::ResponseTopic(_),
-            // 9  =>  Property::CorrelationData(_),
-            11 =>  {
-                Ok(Property::SubscriptionIdentifier(Cow::Owned(Self::read_variable_integer(buf)?.0)))
-            },
-            // 17 =>  Property::SessionExpiryInterval(_),
-            // 18 =>  Property::AssignedClientIdentifier(_),
-            // 19 =>  Property::ServerKeepAlive(_),
-            // 21 =>  Property::AuthenticationMethod(_),
-            // 22 =>  Property::AuthenticationData(_),
-            // 23 =>  Property::RequestProblemInformation(_),
-            // 24 =>  Property::WillDelayInterval(_),
-            // 25 =>  Property::RequestResponseInformation(_),
-            // 26 =>  Property::ResponseInformation(_),
-            // 28 =>  Property::ServerReference(_),
-            // 31 =>  Property::ReasonString(_),
-            // 33 =>  Property::ReceiveMaximum(_),
-            // 34 =>  Property::TopicAliasMaximum(_),
-            // 35 =>  Property::TopicAlias(_),
-            // 36 =>  Property::MaximumQoS(_),
-            // 37 =>  Property::RetainAvailable(_),
-            38 =>  {
-                Ok(Property::UserProperty(Cow::Owned((String::read(buf)?, String::read(buf)?))))
-            },
-            // 39 =>  Property::MaximumPacketSize(_),
-            // 40 =>  Property::WildCardSubscription(_),
-            // 41 =>  Property::SubscriptionIdentifierAvailable(_),
-            // 42 =>  Property::SharedSubscriptionAvailable(_),
+            1  =>  Ok(Property::PayloadFormatIndicator(Some(u8::read(buf)?))),
+            2  =>  Ok(Property::MessageExpiryInterval(Some(u32::read(buf)?))),
+            3  =>  Ok(Property::ContentType(Some(Cow::Owned(String::read(buf)?)))),
+            8  =>  Ok(Property::ResponseTopic(Some(Cow::Owned(String::read(buf)?)))),
+            9  =>  Ok(Property::CorrelationData(Some(Cow::Owned(Bytes::read(buf)?.to_vec())))),
+            11 =>  Ok(Property::SubscriptionIdentifier(Cow::Owned(Self::read_variable_integer(buf)?.0))),
+            17 =>  Ok(Property::SessionExpiryInterval(Some(u32::read(buf)?))),
+            18 =>  Ok(Property::AssignedClientIdentifier(Some(Cow::Owned(String::read(buf)?)))),
+            19 =>  Ok(Property::ServerKeepAlive(Some(u16::read(buf)?))),
+            21 =>  Ok(Property::AuthenticationMethod(Some(Cow::Owned(String::read(buf)?)))),
+            22 =>  Ok(Property::AuthenticationData(Some(Cow::Owned(Bytes::read(buf)?.to_vec())))),
+            23 =>  Ok(Property::RequestProblemInformation(Some(u8::read(buf)?))),
+            24 =>  Ok(Property::WillDelayInterval(Some(u32::read(buf)?))),
+            25 =>  Ok(Property::RequestResponseInformation(Some(u8::read(buf)?))),
+            26 =>  Ok(Property::ResponseInformation(Some(Cow::Owned(String::read(buf)?)))),
+            28 =>  Ok(Property::ServerReference(Some(Cow::Owned(String::read(buf)?)))),
+            31 =>  Ok(Property::ReasonString(Some(Cow::Owned(String::read(buf)?)))),
+            33 =>  Ok(Property::ReceiveMaximum(Some(u16::read(buf)?))),
+            34 =>  Ok(Property::TopicAliasMaximum(Some(u16::read(buf)?))),
+            35 =>  Ok(Property::TopicAlias(Some(u16::read(buf)?))),
+            36 =>  Ok(Property::MaximumQoS(Some(u8::read(buf)?))),
+            37 =>  Ok(Property::RetainAvailable(Some(u8::read(buf)?))),
+            38 =>  Ok(Property::UserProperty(Cow::Owned((String::read(buf)?, String::read(buf)?)))),
+            39 =>  Ok(Property::MaximumPacketSize(Some(u32::read(buf)?))),
+            40 =>  Ok(Property::WildCardSubscription(Some(u8::read(buf)?))),
+            41 =>  Ok(Property::SubscriptionIdentifierAvailable(Some(u8::read(buf)?))),
+            42 =>  Ok(Property::SharedSubscriptionAvailable(Some(u8::read(buf)?))),
             v => Err(MQTTError::UnknownProperty(v))
         }
-
-        // Self::try_from(buf.get_u8())
     }
 }
 
