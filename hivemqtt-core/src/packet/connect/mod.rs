@@ -5,7 +5,7 @@ pub(crate) mod properties;
 use bytes::BufMut;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{error::MQTTError, packets::Packet, qos::QoS, variable_byte_integer::{variable_integer, variable_length}, version::Version}, constants::PROTOCOL_NAME, traits::write::ControlPacket};
+use crate::{commons::{error::MQTTError, packets::Packet, qos::QoS, variable_byte_integer::{variable_integer, variable_length}, version::Version}, constants::PROTOCOL_NAME, traits::write::BufferIO};
 use crate::packet::connect::{properties::ConnectProperties, will::Will};
 
 
@@ -69,7 +69,7 @@ pub struct Connect {
     conn_ppts: ConnectProperties,
 }
 
-impl ControlPacket for Connect {
+impl BufferIO for Connect {
     fn length(&self) -> usize {
         let mut len = (2 + PROTOCOL_NAME.len()) + 1 + 1 + 2; // version + connect flags + keep alive
         len += self.conn_ppts.length();

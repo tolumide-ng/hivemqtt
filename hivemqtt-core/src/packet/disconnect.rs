@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::BufMut;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{error::MQTTError, packets::Packet, property::Property}, traits::{write::ControlPacket, read::Read}};
+use crate::{commons::{error::MQTTError, packets::Packet, property::Property}, traits::{write::BufferIO, read::Read}};
 
 
 pub struct Disconnect {
@@ -11,7 +11,7 @@ pub struct Disconnect {
     properties: DisconnectProperties,
 }
 
-impl ControlPacket for Disconnect {
+impl BufferIO for Disconnect {
     // the length of the dsiconnect variable header
     fn length(&self) -> usize {
          // The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Normal disconnecton) and there are no Properties. In this case the DISCONNECT has a Remaining Length of 0.
@@ -51,7 +51,7 @@ pub struct DisconnectProperties {
     server_reference: Option<String>,
 }
 
-impl ControlPacket for DisconnectProperties {
+impl BufferIO for DisconnectProperties {
     fn w(&self, buf: &mut bytes::BytesMut) {
         let _ = Self::write_variable_integer(buf, self.len());
         Property::SessionExpiryInterval(self.session_expiry_interval).w(buf);

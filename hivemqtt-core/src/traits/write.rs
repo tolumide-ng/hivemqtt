@@ -2,7 +2,7 @@ use bytes::{BufMut, Bytes, BytesMut};
 
 use crate::commons::error::MQTTError;
 
-pub(crate) trait ControlPacket: Sized {
+pub(crate) trait BufferIO: Sized {
 
     fn w(&self, buf: &mut BytesMut);
 

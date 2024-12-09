@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{property::Property, qos::QoS, variable_byte_integer::{variable_integer, variable_length}}, traits::write::ControlPacket};
+use crate::{commons::{property::Property, qos::QoS, variable_byte_integer::{variable_integer, variable_length}}, traits::write::BufferIO};
 
 
 #[derive(Length, Debug, Clone)]
@@ -18,7 +18,7 @@ pub(crate) struct WillProperties {
 }
 
 
-impl ControlPacket for WillProperties {
+impl BufferIO for WillProperties {
     fn w(&self, buff: &mut bytes::BytesMut) {
         let _ = variable_integer(buff, self.len()).unwrap();
         Property::WillDelayInterval(self.delay_interval).w(buff);
@@ -48,7 +48,7 @@ pub(crate) struct Will {
 }
 
 
-impl ControlPacket for Will {
+impl BufferIO for Will {
     fn w(&self, buff: &mut bytes::BytesMut) {
         self.properties.w(buff);
         self.ws(buff, self.topic.as_bytes());

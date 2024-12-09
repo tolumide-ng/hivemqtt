@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::BufMut;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{error::MQTTError, packets::Packet, property::Property}, traits::{write::ControlPacket, read::Read}};
+use crate::{commons::{error::MQTTError, packets::Packet, property::Property}, traits::{write::BufferIO, read::Read}};
 
 /// 3.9: Sent by the Server to the Client to confirm receipt and processing of a SUBSCRIBE packet.
 pub struct SubAck {
@@ -12,7 +12,7 @@ pub struct SubAck {
     properties: SubAckProperties,
 }
 
-impl ControlPacket for SubAck {
+impl BufferIO for SubAck {
     // Length of the Variable Header plus the length of the Payload
     fn length(&self) -> usize {
         // packet identifier + ...
@@ -52,7 +52,7 @@ pub struct SubAckProperties {
     user_property: Vec<(String, String)>,
 }
 
-impl ControlPacket for SubAckProperties {
+impl BufferIO for SubAckProperties {
     fn w(&self, buf: &mut bytes::BytesMut) {
         let _ = Self::write_variable_integer(buf, self.len());
         Property::ReasonString(self.reason_string.as_deref().map(Cow::Borrowed)).w(buf);

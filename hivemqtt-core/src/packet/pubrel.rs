@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::BufMut;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{packets::Packet, property::Property}, traits::write::ControlPacket};
+use crate::{commons::{packets::Packet, property::Property}, traits::write::BufferIO};
 
 pub struct PubRel {
     packet_identifier: u16,
@@ -11,7 +11,7 @@ pub struct PubRel {
     properties: Option<PubRelProperties>,
 }
 
-impl ControlPacket for PubRel {
+impl BufferIO for PubRel {
     fn length(&self) -> usize {
         0
     }
@@ -42,7 +42,7 @@ pub struct PubRelProperties {
     user_property: Vec<(String, String)>
 }
 
-impl ControlPacket for PubRelProperties {
+impl BufferIO for PubRelProperties {
     fn w(&self, buf: &mut bytes::BytesMut) {
         let _ = Self::write_variable_integer(buf, self.len());
 

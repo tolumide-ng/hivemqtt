@@ -30,7 +30,7 @@ impl From<Packet> for u8 {
 
 impl Packet {
     // returns the fixed header of the requested variant
-    // fn fixed(&self) -> BytesMut {}
+    // fn write_fixed_header(&self) -> BytesMut {}
 }
 
 

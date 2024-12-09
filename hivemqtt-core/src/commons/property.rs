@@ -4,7 +4,7 @@ use std::fmt::Display;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 use crate::traits::read::Read;
-use crate::traits::write::ControlPacket;
+use crate::traits::write::BufferIO;
 use crate::commons::error::MQTTError;
 
 use super::variable_byte_integer::variable_integer;
@@ -124,7 +124,7 @@ impl<'a> Property<'a> {
     }
 }
 
-impl<'a> ControlPacket for Property<'a> {
+impl<'a> BufferIO for Property<'a> {
     fn w(&self, buf: &mut BytesMut) {
         match self {
             Self::SessionExpiryInterval(Some(p)) => self.with_id(buf, |b| b.put_u32(*p)),

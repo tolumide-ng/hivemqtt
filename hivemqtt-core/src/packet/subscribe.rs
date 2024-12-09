@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::{Buf, BufMut, Bytes};
 use hivemqtt_macros::Length;
 
-use crate::{commons::{error::MQTTError, packets::Packet, property::Property, qos::QoS}, traits::{write::ControlPacket, read::Read}};
+use crate::{commons::{error::MQTTError, packets::Packet, property::Property, qos::QoS}, traits::{write::BufferIO, read::Read}};
 
 
 pub struct  Subscribe {
@@ -13,7 +13,7 @@ pub struct  Subscribe {
 }
 
 
-impl ControlPacket for Subscribe {
+impl BufferIO for Subscribe {
     /// (Length of Variable Header + Length of the Payload)
     fn length(&self) -> usize {
         let mut len = 2 + self.properties.length(); // packet identifier + properties
@@ -63,7 +63,7 @@ pub struct SubcribeProperties {
     user_property: Vec<(String, String)>,
 }
 
-impl ControlPacket for SubcribeProperties {
+impl BufferIO for SubcribeProperties {
     fn length(&self) -> usize { self.len() }
 
     fn w(&self, buf: &mut bytes::BytesMut) {
@@ -120,7 +120,7 @@ impl From<SubscriptionOptions> for u8 {
     }
 }
 
-impl ControlPacket for SubscriptionOptions {
+impl BufferIO for SubscriptionOptions {
     fn length(&self) -> usize { 1 }
 
     fn w(&self, buf: &mut bytes::BytesMut) {

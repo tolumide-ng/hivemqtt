@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{property::Property, variable_byte_integer::variable_integer}, traits::write::ControlPacket};
+use crate::{commons::{property::Property, variable_byte_integer::variable_integer}, traits::write::BufferIO};
 
 
 
@@ -22,7 +22,7 @@ pub(crate) struct ConnectProperties {
 }
 
 
-impl ControlPacket for ConnectProperties {
+impl BufferIO for ConnectProperties {
     fn w(&self, buf: &mut bytes::BytesMut) {
         let _ = variable_integer(buf, self.len()).unwrap(); // from the DataSize macro (3.1.2.11.1)
         Property::SessionExpiryInterval(self.session_expiry_interval).w(buf);

@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::BufMut;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{error::MQTTError, packets::Packet, property::Property}, traits::{write::ControlPacket, read::Read}};
+use crate::{commons::{error::MQTTError, packets::Packet, property::Property}, traits::{write::BufferIO, read::Read}};
 
 /// Sent by the Server to the Client to confirm receipt of an UNSUBSCRIBE packet
 pub struct UnSubAck {
@@ -13,7 +13,7 @@ pub struct UnSubAck {
 }
 
 
-impl ControlPacket for UnSubAck {
+impl BufferIO for UnSubAck {
     // Length of the Variable Header plus the length of the Payload 
     fn length(&self) -> usize {
         2 + self.properties.length() + Self::get_variable_length(self.properties.length()) + self.payload.len()
@@ -51,7 +51,7 @@ pub struct UnSubAckProperties {
     user_property: Vec<(String, String)>,
 }
 
-impl ControlPacket for UnSubAckProperties {
+impl BufferIO for UnSubAckProperties {
     fn length(&self) -> usize { self.len() }
 
     fn read(buf: &mut bytes::Bytes) -> Result<Self, crate::commons::error::MQTTError> {

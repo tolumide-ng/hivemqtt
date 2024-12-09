@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::BufMut;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{error::MQTTError, packets::Packet, property::Property}, traits::{write::ControlPacket, read::Read}};
+use crate::{commons::{error::MQTTError, packets::Packet, property::Property}, traits::{write::BufferIO, read::Read}};
 
 pub struct UnSubscribe {
     packet_identifier: u16,
@@ -11,7 +11,7 @@ pub struct UnSubscribe {
     payload: Vec<String>,
 }
 
-impl ControlPacket for UnSubscribe {
+impl BufferIO for UnSubscribe {
     /// Length of the Variable Header (2 bytes) plus the length of the Payload
     fn length(&self) -> usize {
         // packet identidier + string len
@@ -50,7 +50,7 @@ pub struct UnSubscribeProperties {
     user_property: Vec<(String, String)>,
 }
 
-impl ControlPacket for UnSubscribeProperties {
+impl BufferIO for UnSubscribeProperties {
     fn w(&self, buf: &mut bytes::BytesMut) {
         let _ = Self::write_variable_integer(buf, self.len());
 

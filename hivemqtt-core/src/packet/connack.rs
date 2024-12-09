@@ -4,7 +4,7 @@ use std::borrow::{Borrow, Cow};
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{packets::Packet, variable_byte_integer::{variable_integer, variable_length}}, traits::write::ControlPacket};
+use crate::{commons::{packets::Packet, variable_byte_integer::{variable_integer, variable_length}}, traits::write::BufferIO};
 use crate::commons::property::Property;
 
 #[derive(Debug, Length)]
@@ -28,7 +28,7 @@ pub(crate) struct Properties {
     authentication_data: Option<Bytes>
 }
 
-impl ControlPacket for Properties {
+impl BufferIO for Properties {
     /// Length of the properties in the CONNACK packet Variable Header encoded as Variable Byte Integer
     fn length(&self) -> usize {
         self.len()
@@ -96,7 +96,7 @@ pub(crate) struct ConnAck {
 }
 
 
-impl ControlPacket for ConnAck {
+impl BufferIO for ConnAck {
     
 
     /// In this case:

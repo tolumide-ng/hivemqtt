@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::{BufMut, Bytes};
 use hivemqtt_macros::Length;
 
-use crate::{commons::{packets::Packet, property::Property, qos::QoS}, traits::write::ControlPacket};
+use crate::{commons::{packets::Packet, property::Property, qos::QoS}, traits::write::BufferIO};
 
 #[derive(Debug)]
 pub(crate) struct Publish {
@@ -16,7 +16,7 @@ pub(crate) struct Publish {
     payload: Bytes,
 }
 
-impl ControlPacket for Publish {
+impl BufferIO for Publish {
     fn length(&self) -> usize {
         // (variable header + length of the payload), encoded as Variable Byte Integer
         let mut len = self.topic.len() + 2;
@@ -52,7 +52,7 @@ pub(crate) struct PublishProperties {
     content_type: Option<String>,
 }
 
-impl ControlPacket for PublishProperties {
+impl BufferIO for PublishProperties {
     fn length(&self) -> usize {
         self.len()
     }

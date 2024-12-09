@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::BufMut;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{packets::Packet, property::Property}, traits::write::ControlPacket};
+use crate::{commons::{packets::Packet, property::Property}, traits::write::BufferIO};
 
 #[derive(Debug)]
 pub(crate) struct PubAck {
@@ -13,7 +13,7 @@ pub(crate) struct PubAck {
 }
 
 
-impl ControlPacket for PubAck {
+impl BufferIO for PubAck {
     /// Length of the Variable Header, encoded as Variable Byte Integer
     fn length(&self) -> usize {
         let mut len = 2; // packet identifier
@@ -57,7 +57,7 @@ pub(crate) struct PubAckProperties {
     user_property: Vec<(String, String)>,
 }
 
-impl ControlPacket for PubAckProperties {
+impl BufferIO for PubAckProperties {
     
     fn w(&self, buf: &mut bytes::BytesMut) {
         let _ = Self::write_variable_integer(buf, self.len());

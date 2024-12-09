@@ -3,14 +3,14 @@ use std::borrow::Cow;
 use bytes::{BufMut, Bytes};
 use hivemqtt_macros::Length;
 
-use crate::{commons::{error::MQTTError, packets::Packet, property::Property}, traits::{write::ControlPacket, read::Read}};
+use crate::{commons::{error::MQTTError, packets::Packet, property::Property}, traits::{write::BufferIO, read::Read}};
 
 pub struct Auth {
     reason_code: AuthReasonCode,
     properties: AuthProperties,
 }
 
-impl ControlPacket for Auth {
+impl BufferIO for Auth {
     fn length(&self) -> usize {
         1 + 1 + self.properties.length()
     }
@@ -44,7 +44,7 @@ pub struct AuthProperties {
     user_property: Vec<(String, String)>,
 }
 
-impl ControlPacket for AuthProperties {
+impl BufferIO for AuthProperties {
     fn w(&self, buf: &mut bytes::BytesMut) {
         let _ = Self::write_variable_integer(buf, self.len()).unwrap();
 
