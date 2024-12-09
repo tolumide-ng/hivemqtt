@@ -2,7 +2,7 @@ use bytes::{Buf, Bytes};
 
 use crate::commons::error::MQTTError;
 
-pub trait Read: Sized {
+pub(crate) trait Read: Sized {
     fn read(buf: &mut Bytes) -> Result<Self, MQTTError>;
 }
 
