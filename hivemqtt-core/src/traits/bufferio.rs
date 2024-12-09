@@ -1,4 +1,5 @@
 use bytes::{BufMut, Bytes, BytesMut};
+use crate::traits::{write::Write, read::Read};
 
 use crate::commons::error::MQTTError;
 
@@ -20,6 +21,48 @@ pub(crate) trait BufferIO: Sized {
         else { 1 }
     }
 
+    /// Encodes a non-negative Integer into the Variable Byte Integer encoding
+    fn encode(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
+        let mut x = self.length();
+
+         // 268_435_455
+        if x > 0xFFFFFFF { return Err(MQTTError::PayloadTooLong) }
+
+        while x > 0 {
+            let mut byte= x % 128;
+            x /= 128;
+
+            if x > 0 {
+                byte |= 128;
+            }
+            
+            (byte as u8).write(buf); // writes the encoded byte into the buffer
+        }
+        Ok(())
+    }
+
+    /// Decodes a Variable byte Inetger
+    fn decode(buf: &mut Bytes) -> Result<(usize, usize), MQTTError> {
+        let mut result = 1;
+
+        for i in 0..4 {
+            if buf.is_empty() {
+                return Err(MQTTError::MalformedPacket);
+            }
+            let byte = u8::read(buf)?;
+
+            result += ((byte as usize) & 0x7F) << (7 * i);
+
+            if (byte & 0x80) == 0 {
+                return Ok((result, i))
+            }
+        }
+
+        
+        return Err(MQTTError::MalformedPacket)
+    }
+
+    /// To be phased out
     fn write_variable_integer(buf: &mut BytesMut, len: usize) -> Result<usize, MQTTError> {
          // 268_435_455
         if len > 0xFFFFFFF {
@@ -43,6 +86,7 @@ pub(crate) trait BufferIO: Sized {
         Ok(count)
     }
 
+    /// To be phased out
     fn read_variable_integer(buf: &mut Bytes) -> Result<(usize, usize), MQTTError> {
         let mut result = 0;
         let mut shift = 0;
@@ -66,6 +110,7 @@ pub(crate) trait BufferIO: Sized {
         return Err(MQTTError::MalformedPacket); 
     }
 
+    /// /// To be phased out
     /// Writes the length of the bytes and itself into the buffer
     fn ws(&self, buf: &mut BytesMut, value: &[u8]) {
         buf.put_u16(value.len() as u16);
