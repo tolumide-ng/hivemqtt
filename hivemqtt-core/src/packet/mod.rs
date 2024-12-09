@@ -11,3 +11,4 @@ pub(crate) mod unsubscribe;
 pub(crate) mod unsuback;
 pub(crate) mod ping;
 pub(crate) mod disconnect;
+pub(crate) mod auth;
