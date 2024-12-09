@@ -1,6 +1,6 @@
 use bytes::BufMut;
 
-use crate::{commons::packets::Packet, traits::write::BufferIO};
+use crate::{commons::packets::Packet, traits::bufferio::BufferIO};
 
 pub struct PingReq {}
 

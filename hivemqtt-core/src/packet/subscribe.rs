@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::{Buf, BufMut, Bytes};
 use hivemqtt_macros::Length;
 
-use crate::{commons::{error::MQTTError, packets::Packet, property::Property, qos::QoS}, traits::{write::BufferIO, read::Read}};
+use crate::{commons::{error::MQTTError, packets::Packet, property::Property, qos::QoS}, traits::{bufferio::BufferIO, read::Read}};
 
 
 pub struct  Subscribe {

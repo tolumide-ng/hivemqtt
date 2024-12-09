@@ -4,7 +4,7 @@ use std::fmt::Display;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 use crate::traits::read::Read;
-use crate::traits::write::BufferIO;
+use crate::traits::bufferio::BufferIO;
 use crate::commons::error::MQTTError;
 
 use super::variable_byte_integer::variable_integer;

@@ -1,2 +1,2 @@
-pub(crate) mod write;
+pub(crate) mod bufferio;
 pub mod read;

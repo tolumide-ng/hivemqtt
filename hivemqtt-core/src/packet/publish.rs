@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::{BufMut, Bytes};
 use hivemqtt_macros::Length;
 
-use crate::{commons::{packets::Packet, property::Property, qos::QoS}, traits::write::BufferIO};
+use crate::{commons::{packets::Packet, property::Property, qos::QoS}, traits::bufferio::BufferIO};
 
 #[derive(Debug)]
 pub(crate) struct Publish {

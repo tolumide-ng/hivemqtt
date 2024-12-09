@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::{BufMut, Bytes};
 use hivemqtt_macros::Length;
 
-use crate::{commons::{error::MQTTError, packets::Packet, property::Property, qos::QoS, variable_byte_integer::{variable_integer, variable_length}, version::Version}, constants::PROTOCOL_NAME, traits::write::BufferIO};
+use crate::{commons::{error::MQTTError, packets::Packet, property::Property, qos::QoS, variable_byte_integer::{variable_integer, variable_length}, version::Version}, constants::PROTOCOL_NAME, traits::bufferio::BufferIO};
 
 #[derive(Debug, Default)]
 pub(crate) struct ConnectFlags {
@@ -18,7 +18,7 @@ pub(crate) struct ConnectFlags {
 impl ConnectFlags {
     const USERNAME_MASK: u8 = 1 << 7;
     const PASSWORD_MASK: u8 = 1 << 6;
-const WILL_RETAIN_MASK: u8 = 1 << 5;
+    const WILL_RETAIN_MASK: u8 = 1 << 5;
     const QOS_MASK: u8 = 1 << 4 | 1 << 3;
     const WILL_FLAG_MASK: u8 = 1 << 2;
     const CLEAN_START_MASK: u8 = 1 << 1;

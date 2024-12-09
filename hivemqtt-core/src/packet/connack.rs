@@ -4,7 +4,7 @@ use std::borrow::{Borrow, Cow};
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{packets::Packet, variable_byte_integer::{variable_integer, variable_length}}, traits::write::BufferIO};
+use crate::{commons::{packets::Packet, variable_byte_integer::{variable_integer, variable_length}}, traits::bufferio::BufferIO};
 use crate::commons::property::Property;
 
 #[derive(Debug, Length)]
