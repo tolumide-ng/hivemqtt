@@ -1,5 +1,3 @@
-use bytes::BytesMut;
-
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Packet {
@@ -28,16 +26,10 @@ impl From<Packet> for u8 {
 }
 
 
-impl Packet {
-    // returns the fixed header of the requested variant
-    // fn write_fixed_header(&self) -> BytesMut {}
-}
-
-
-
 #[cfg(test)]
 mod packet_type {
     use super::Packet;
+
 
     #[test]
     fn should_return_the_right_enum_discriminant() {

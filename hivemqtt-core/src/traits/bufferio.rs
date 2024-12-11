@@ -1,11 +1,16 @@
 use bytes::{BufMut, Bytes, BytesMut};
+use crate::commons::property::Property;
 use crate::traits::{write::Write, read::Read};
 
 use crate::commons::error::MQTTError;
 
 pub(crate) trait BufferIO: Sized {
 
-    fn w(&self, buf: &mut BytesMut);
+    fn w(&self, buf: &mut BytesMut) {}
+
+    fn write(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
+        Ok(())
+    }
 
     fn get_variable_length(len: usize) -> usize {
         if len >= 2_097_152 { 4 }
@@ -42,7 +47,7 @@ pub(crate) trait BufferIO: Sized {
     }
 
     /// Decodes a Variable byte Inetger
-    fn decode(buf: &mut Bytes) -> Result<(usize, usize), MQTTError> {
+    fn decode(buf: &mut Bytes) -> Result<usize, MQTTError> {
         let mut result = 1;
 
         for i in 0..4 {
@@ -54,12 +59,21 @@ pub(crate) trait BufferIO: Sized {
             result += ((byte as usize) & 0x7F) << (7 * i);
 
             if (byte & 0x80) == 0 {
-                return Ok((result, i))
+                return Ok(result)
             }
         }
 
         
         return Err(MQTTError::MalformedPacket)
+    }
+
+    fn check_duplicate(duplicate: bool) -> impl Fn(Property) -> Result<(), MQTTError> {
+        move |ppt| {
+            if duplicate { return Err(MQTTError::DuplicateProperty(ppt.to_string())); }
+            
+            return Ok(())
+        }
+
     }
 
     /// To be phased out

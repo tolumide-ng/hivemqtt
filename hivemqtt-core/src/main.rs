@@ -1,3 +1,5 @@
+// If there are no properties, the Property Length must be indicated by including a Property length of zero(0)
+
 macro_rules! packet_props {
     ($($property:ident),*) => {
         {

@@ -3,7 +3,9 @@ use std::borrow::Cow;
 use bytes::{BufMut, Bytes};
 use hivemqtt_macros::Length;
 
-use crate::{commons::{error::MQTTError, packets::Packet, property::Property, qos::QoS, variable_byte_integer::{variable_integer, variable_length}, version::Version}, constants::PROTOCOL_NAME, traits::bufferio::BufferIO};
+use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property, qos::QoS, variable_byte_integer::{variable_integer, variable_length}, version::Version}, constants::PROTOCOL_NAME, traits::bufferio::BufferIO};
+use crate::traits::{write::Write, read::Read};
+
 
 #[derive(Debug, Default)]
 pub(crate) struct ConnectFlags {
@@ -63,9 +65,12 @@ pub struct Connect {
     conn_ppts: ConnectProperties,
 }
 
+
 impl BufferIO for Connect {
+    /// Length og the Variable Header + the length of the Payload
     fn length(&self) -> usize {
-        let mut len = (2 + PROTOCOL_NAME.len()) + 1 + 1 + 2; // version + connect flags + keep alive
+        let mut len: usize = (2 + PROTOCOL_NAME.len()) + 1 + 1 + 2; // version + connect flags + keep alive
+        
         len += self.conn_ppts.length();
         len += variable_length(self.conn_ppts.length());
         if let Some(will) = &self.will { len += will.length() }
@@ -74,9 +79,27 @@ impl BufferIO for Connect {
         len
     }
 
+    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
+        FixedHeader::new(Packet::Connect, 0, self.length()).write(buf)?;
+
+        let mut flags = ConnectFlags {
+            clean_start: self.clean_start,
+            password: self.password.is_some(),
+            username: self.username.is_some(),
+            ..Default::default()
+        };
+        
+        (PROTOCOL_NAME.to_string()).write(buf);
+        (self.version as u8).write(buf);
+
+        Ok(())
+    }
+
     fn w(&self, buf: &mut bytes::BytesMut) {
         buf.put_u8(Packet::Connect.into());
         let _ = variable_integer(buf, self.length());
+
+
         self.ws(buf, PROTOCOL_NAME.as_bytes());
         buf.put_u8(self.version as u8);
         
@@ -105,7 +128,7 @@ impl BufferIO for Connect {
 
 
 /// CONNECT Properties (3.1.2.11)
-#[derive(Debug, Clone, Length)]
+#[derive(Debug, Clone, Length, Default)]
 pub(crate) struct ConnectProperties {
     session_expiry_interval: Option<u32>,
     receive_maximum: Option<u16>,
@@ -120,8 +143,10 @@ pub(crate) struct ConnectProperties {
 
 
 impl BufferIO for ConnectProperties {
-    fn w(&self, buf: &mut bytes::BytesMut) {
-        let _ = variable_integer(buf, self.len()).unwrap(); // from the DataSize macro (3.1.2.11.1)
+    fn length(&self) -> usize { self.len() }
+
+    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
+        self.encode(buf)?; // 3.1.2.11.1 (Property Length)
         Property::SessionExpiryInterval(self.session_expiry_interval).w(buf);
         Property::ReceiveMaximum(self.receive_maximum).w(buf);
         Property::MaximumPacketSize(self.maximum_packet_size).w(buf);
@@ -131,10 +156,31 @@ impl BufferIO for ConnectProperties {
         self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
         Property::AuthenticationMethod(self.authentication_method.as_deref().map(Cow::Borrowed)).w(buf);
         Property::AuthenticationData(self.authentication_data.as_deref().map(Cow::Borrowed)).w(buf);
+        Ok(())  
     }
 
-    fn length(&self) -> usize {
-        self.len()
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+        let len = <Self as BufferIO>::decode(buf)?;
+        let mut properties = Self::default();
+
+        if len == 0 { return Ok(properties) }
+        else if len > buf.len() { return Err(MQTTError::IncompleteData("ConnectionProperties", len, buf.len()) )}
+
+        let mut data = buf.split_to(len);
+
+        loop {
+            match Property::read(&mut data)? {
+                Property::SessionExpiryInterval(value) => {
+                    Self::check_duplicate(properties.session_expiry_interval.is_some())(Property::SessionExpiryInterval(None))?;
+                    properties.session_expiry_interval = value;
+                }
+                Property::ReceiveMaximum(value) => {}
+                p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string()))
+            }
+            if data.is_empty() { break; }
+        }
+        
+        Ok(properties)
     }
 }
 
@@ -192,4 +238,14 @@ impl BufferIO for Will {
         let ppts = self.properties.length();
         self.len() + variable_length(ppts) + ppts
     }
+}
+
+
+
+
+
+#[cfg(test)]
+mod connect_packet {
+    // #[test]
+    // fn should_create_connection_properties() {}
 }
