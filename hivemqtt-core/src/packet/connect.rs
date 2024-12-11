@@ -169,12 +169,19 @@ impl BufferIO for ConnectProperties {
         let mut data = buf.split_to(len);
 
         loop {
-            match Property::read(&mut data)? {
-                Property::SessionExpiryInterval(value) => {
-                    Self::check_duplicate(properties.session_expiry_interval.is_some())(Property::SessionExpiryInterval(None))?;
-                    properties.session_expiry_interval = value;
+            let property = Property::read(&mut data)?;
+            match property {
+                Property::SessionExpiryInterval(value) => Self::try_update(&mut properties.session_expiry_interval, value)(property)?,
+                Property::ReceiveMaximum(value) => Self::try_update(&mut properties.receive_maximum, value)(property)?,
+                Property::MaximumPacketSize(value) => { Self::try_update(&mut properties.maximum_packet_size, value)(property)?; },
+                Property::TopicAliasMaximum(value) => { Self::try_update(&mut properties.topic_alias_maximum, value)(property)?; },
+                Property::RequestResponseInformation(value) => { Self::try_update(&mut properties.request_response_information, value)(property)? }
+                Property::RequestProblemInformation(value) => { Self::try_update(&mut properties.request_problem_information, value)(property)? }
+                Property::UserProperty(value) => { properties.user_property.push(value.into_owned()); }
+                Property::AuthenticationMethod(ref value) => { Self::try_update(&mut properties.authentication_method, value.as_deref().map(|x| String::from(x)))(property)? }
+                Property::AuthenticationData(ref value) => {
+                    Self::try_update(&mut properties.authentication_data, value.to_owned().map(|x| Bytes::from_iter(x.into_owned())))(property)?
                 }
-                Property::ReceiveMaximum(value) => {}
                 p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string()))
             }
             if data.is_empty() { break; }

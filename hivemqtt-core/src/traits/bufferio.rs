@@ -66,14 +66,16 @@ pub(crate) trait BufferIO: Sized {
         
         return Err(MQTTError::MalformedPacket)
     }
+    
+    /// Applies to fields that results in Protocol Error if their value appears more than once
+    fn try_update<T>(field: &mut Option<T>, value: Option<T>) -> impl Fn(Property) -> Result<(), MQTTError> {
+        let is_duplicate = field.is_some();
+        *field = value;
 
-    fn check_duplicate(duplicate: bool) -> impl Fn(Property) -> Result<(), MQTTError> {
         move |ppt| {
-            if duplicate { return Err(MQTTError::DuplicateProperty(ppt.to_string())); }
-            
+            if is_duplicate { return Err(MQTTError::DuplicateProperty(ppt.to_string())) }
             return Ok(())
         }
-
     }
 
     /// To be phased out
