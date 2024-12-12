@@ -42,13 +42,15 @@ fn get_size(f_name: &Ident, type_name: &Ident, segment: &PathSegment, is_optiona
     let result = quote! { size +=  0; };
     return match type_name.to_string().as_str() {
         "String" | "Bytes" => {
+            // Each of these strings is prefixed with a Two Byte Integer length field that gives the number of bytes in a 261 UTF-8 encoded string itself (1.5.4)
             if is_optional {
-                return quote! { if let Some(ref value) = self.#f_name { size += value.len() + 2 + 1; } }
+                return quote! { if let Some(ref value) = self.#f_name { size += value.len() + 2 + 1; } } // 2 for the length of the string, and 1 for the property identifier that specifies whatever this value represents
             } else  {
-                return quote! {size += self.#f_name.len() + 2 + 1;}
+                return quote! {size += self.#f_name.len() + 2 + 1;} // 2 for the length of the string, and 1 for the property identifier that specifies whatever this value represents
             }
         }
         "Vec" => { // we only expect a vector of (String|Bytes, String|Bytes), String, or Bytes, and now Vec<usize>
+            // The first string serves as the name, and the second string contains the value.
             let PathArguments::AngleBracketed(args) = &segment.arguments else { return result };
             let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first() else { return result };
             match inner_ty {
@@ -62,6 +64,7 @@ fn get_size(f_name: &Ident, type_name: &Ident, segment: &PathSegment, is_optiona
                             // }
                      };
                     }
+                    
                     if inner_path.path.segments.last().filter(|ps| ps.ident == "String" || ps.ident == "Bytes").is_none() { return result };
                     return quote! { size += self.#f_name.iter().map(|s| s.len() + 2).sum::<usize>(); }
                 }

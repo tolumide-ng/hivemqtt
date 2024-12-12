@@ -42,7 +42,7 @@ impl Read for String {
 
         match String::from_utf8(data.to_vec()) {
             Ok(d) => Ok(d),
-            Err(e) => Err(MQTTError::Utf8Error(e)),
+            Err(e) => Err(MQTTError::Utf8Error(e)), // should be Malformed packet see 1.5.4 (UTF-8 Encoded String)
         }
     }
 }
