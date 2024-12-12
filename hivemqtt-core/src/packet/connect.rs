@@ -36,9 +36,7 @@ impl BufferIO for Connect {
         len += self.conn_ppts.length();
         len += variable_length(self.conn_ppts.length());
         if let Some(will) = &self.will { len += will.length() }
-        // len += self.len(); // client id + username + password
-        let xx = self.username.as_ref().map(|x| x.len()).unwrap_or(0);
-        len += self.username.as_ref().map(|ref x| x.len()).unwrap_or(0) + self.password.as_ref().map(|x| x.len()).unwrap_or(0) + self.client_id.len();
+        len += self.len(); // client id + username + password
 
         len
     }
@@ -66,8 +64,7 @@ impl BufferIO for Connect {
         self.keep_alive.write(buf); // 3.1.2.10
         self.conn_ppts.write(buf)?; // 3.1.2.11
         // CONNECT Payload: length-prefixed fields
-        // ClientId, willProperties, willTopic, willPayload, userName, password
-        self.client_id.write(buf);
+        self.client_id.write(buf); // ClientId, willProperties, willTopic, willPayload, userName, password
         if let Some(will) = &self.will { will.write(buf)?; }
         if let Some(username) = &self.username { username.write(buf); } // 3.1.3.5
         if let Some(password) = &self.password { password.write(buf); } // 3.1.3.6
@@ -75,35 +72,12 @@ impl BufferIO for Connect {
         Ok(())
     }
 
-    fn w(&self, buf: &mut bytes::BytesMut) {
-        buf.put_u8(Packet::Connect.into());
-        let _ = variable_integer(buf, self.length());
+    // fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+    //     // 
+    //     Ok(())
+    // }
 
 
-        self.ws(buf, PROTOCOL_NAME.as_bytes());
-        buf.put_u8(self.version as u8);
-        
-        let mut flags = ConnectFlags {
-            clean_start: self.clean_start,
-            password: self.password.is_some(),
-            username: self.username.is_some(),
-            ..Default::default()
-        };
-
-        if let Some(will) = &self.will {
-            flags.will_retain = will.retain;
-            flags.will_flag = true;
-            flags.will_qos = will.qos;
-        }
-        
-        buf.put_u8(u8::from(flags));
-        buf.put_u16(self.keep_alive);
-        self.conn_ppts.w(buf);
-        self.ws(buf, self.client_id.as_bytes());
-        if let Some(will) = &self.will { will.w(buf) }
-        if let Some(username) = &self.username { self.ws(buf, username.as_bytes()) }
-        if let Some(password) = &self.password { self.ws(buf, password.as_bytes()) }   
-    }
 }
 
 
@@ -124,9 +98,7 @@ pub(crate) struct ConnectProperties {
 
 impl BufferIO for ConnectProperties {
     /// The length of the Properties in the CONNECT packet Variable Header encoded as a Variable Byte Integer 3.1.2.11.1
-    fn length(&self) -> usize { 
-        // let xx = self.session_expiry_interval.map(|x| std::mem::size_of::<u32>());
-        self.len() }
+    fn length(&self) -> usize { self.len() }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         self.encode(buf)?; // 3.1.2.11.1 (Property Length)
@@ -143,7 +115,7 @@ impl BufferIO for ConnectProperties {
     }
 
     fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-        let len = <Self as BufferIO>::decode(buf)?;
+        let len = Self::decode(buf)?;
         let mut properties = Self::default();
 
         if len == 0 { return Ok(properties) }
@@ -218,7 +190,7 @@ impl TryFrom<u8> for ConnectFlags {
 
 
 
-#[derive(Length, Debug, Clone)]
+#[derive(Length, Debug, Clone, Default)]
 pub(crate) struct WillProperties {
     delay_interval: Option<u32>,
     payload_format_indicator: Option<u8>,
@@ -231,6 +203,8 @@ pub(crate) struct WillProperties {
 
 
 impl BufferIO for WillProperties {
+    fn length(&self) -> usize { self.len() }
+
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         self.encode(buf)?; // 3.1.3.2.1
 
@@ -245,8 +219,26 @@ impl BufferIO for WillProperties {
         Ok(())
     }
 
-    fn length(&self) -> usize {
-        self.len()
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+        let length = Self::decode(buf)?;
+        let mut properties = Self::default();
+
+        if length == 0 { return Ok(properties) }
+        else if length > buf.len() { return Err(MQTTError::IncompleteData("WillProperties", length, buf.len()) )};
+
+        let mut data = buf.split_to(length);
+
+        loop {
+            let property = Property::read(&mut data)?;
+            match property {
+                Property::WillDelayInterval(value) => Self::try_update(&mut properties.delay_interval, value)(property)?,
+                p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string()))
+            }
+
+            if data.is_empty() { break; }
+        }
+
+        Err(MQTTError::MalformedPacket)
     }
 }
 
