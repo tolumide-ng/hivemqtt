@@ -11,7 +11,8 @@ mod tests {
     #[derive(Length)]
     #[allow(dead_code)]
     struct TestOne {
-        title: String, // length + 2 + 1
+        #[bytes(no_id)]
+        title: String, // length + 2 + 0(because we said no_id)
         port: u16, // std::mem::size_of::<u16>() + 1
         properties: Vec<(String, String)>,// ....iter().map(|(k, v)| k.len() + 2 + v.len() + 2 + 1).sum::<usizee>()
         topics: Vec<String>, // ...iter().map(|k| k.len() + 2 + 1).sum::<usize>()
@@ -50,14 +51,14 @@ mod tests {
         let subject = TestOne { 
             title: "A".to_string(),  port: 440, properties: vec![(String::from("abc"), String::from("cde"))], topics: vec![String::from("topic_A")], 
             active: true, size: vec![10], ops: Some(10), s: 10 };
-        assert_eq!(subject.len(), 36);
+        assert_eq!(subject.len(), 34);
     }
 
     #[test]
     fn should_ignore_an_empty_vector() {
         let subject = TestOne { title: "A".to_string(),  port: 440, properties: vec![], topics: vec![], active: true, 
             size: vec![], s: 0, ops: None };
-        assert_eq!(subject.len(), 11);
+        assert_eq!(subject.len(), 10);
     }
 
     #[test]
@@ -72,6 +73,6 @@ mod tests {
     #[test]
     fn should_ignore_fields_with_the_ignore_attribute() {
         let subject = IgnoreField { title: "A".to_string(),  port: 440, properties: vec![(String::from("abc"), String::from("cde"))], topics: vec![String::from("topic_A")], active: true, client_id: None };
-        assert_eq!(subject.len(), 17)
+        assert_eq!(subject.len(), 16)
     }
 }

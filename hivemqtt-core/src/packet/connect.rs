@@ -6,17 +6,25 @@ use hivemqtt_macros::Length;
 use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property, qos::QoS, variable_byte_integer::{variable_integer, variable_length}, version::Version}, constants::PROTOCOL_NAME, traits::bufferio::BufferIO};
 use crate::traits::{write::Write, read::Read};
 
-#[derive(Debug)]
+#[derive(Debug, Length)]
 pub struct Connect {
-    version: Version,
+    #[bytes(no_id)]
     client_id: String,
-    will: Option<Will>,
+    #[bytes(no_id)]
     username: Option<String>,
+    #[bytes(no_id)]
     password: Option<String>,
-
+    
+    #[bytes(ignore)]
+    version: Version,
+    #[bytes(ignore)]
+    will: Option<Will>,
+    #[bytes(ignore)]
     clean_start: bool,
+    #[bytes(ignore)]
     keep_alive: u16,
-    conn_ppts: ConnectProperties, // Connection properties
+    #[bytes(ignore)] // Connection properties
+    conn_ppts: ConnectProperties,
 }
 
 
@@ -28,6 +36,8 @@ impl BufferIO for Connect {
         len += self.conn_ppts.length();
         len += variable_length(self.conn_ppts.length());
         if let Some(will) = &self.will { len += will.length() }
+        // len += self.len(); // client id + username + password
+        let xx = self.username.as_ref().map(|x| x.len()).unwrap_or(0);
         len += self.username.as_ref().map(|ref x| x.len()).unwrap_or(0) + self.password.as_ref().map(|x| x.len()).unwrap_or(0) + self.client_id.len();
 
         len
@@ -114,7 +124,9 @@ pub(crate) struct ConnectProperties {
 
 impl BufferIO for ConnectProperties {
     /// The length of the Properties in the CONNECT packet Variable Header encoded as a Variable Byte Integer 3.1.2.11.1
-    fn length(&self) -> usize { self.len() }
+    fn length(&self) -> usize { 
+        // let xx = self.session_expiry_interval.map(|x| std::mem::size_of::<u32>());
+        self.len() }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         self.encode(buf)?; // 3.1.2.11.1 (Property Length)

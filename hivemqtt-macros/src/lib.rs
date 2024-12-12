@@ -29,7 +29,9 @@ pub fn derive_length(input: TokenStream) -> TokenStream {
         });
 
         if has_bytes_attr.is_some_and(|token| token.to_string().as_str() == "ignore") { continue }
-        field_lens.push(detect::calculate(&field));
+        let add_id_to_length = !(has_bytes_attr.is_some_and(|token| token.to_string().as_str() == "no_id")); // check if the field has a no_id(no identifier attribute)
+
+        field_lens.push(detect::calculate(&field, add_id_to_length));
     }
 
     let output = quote! {
