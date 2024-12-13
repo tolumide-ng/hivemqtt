@@ -8,3 +8,4 @@
     - [ ] TLS
     - [ ] IPV6
 - [ ] All MQTT Packet Support (In Progress)
+- [ ] Easy internal utility for converting -> to string and vice versal (from terminal tool?) - for debugging
