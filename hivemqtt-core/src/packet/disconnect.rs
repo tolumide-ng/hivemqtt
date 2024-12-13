@@ -68,7 +68,6 @@ impl BufferIO for DisconnectProperties {
         if len > buf.len() { return Err(MQTTError::IncompleteData("DisconnectProperties", len, buf.len()))}
 
         let mut data = buf.split_to(len);
-
         loop {
             match Property::read(&mut data)? {
                 Property::SessionExpiryInterval(value) => {

@@ -20,4 +20,6 @@ pub enum MQTTError {
     Utf8Error(FromUtf8Error),
     #[error("{0} is not allowed on: {1}")]
     UnexpectedProperty(String, String),
+    #[error("Version {0} not supported")]
+    VersionNotSupported(u8)
 }

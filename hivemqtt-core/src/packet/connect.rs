@@ -1,12 +1,12 @@
 use std::borrow::Cow;
 
-use bytes::{BufMut, Bytes};
+use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property, qos::QoS, variable_byte_integer::{variable_integer, variable_length}, version::Version}, constants::PROTOCOL_NAME, traits::bufferio::BufferIO};
+use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property, qos::QoS, version::Version}, constants::PROTOCOL_NAME, traits::bufferio::BufferIO};
 use crate::traits::{write::Write, read::Read};
 
-#[derive(Debug, Length)]
+#[derive(Debug, Length, Default)]
 pub struct Connect {
     #[bytes(no_id)]
     client_id: String,
@@ -34,7 +34,7 @@ impl BufferIO for Connect {
         let mut len: usize = (2 + PROTOCOL_NAME.len()) + 1 + 1 + 2; // version + connect flags + keep alive
         
         len += self.conn_ppts.length();
-        len += variable_length(self.conn_ppts.length());
+        len += self.conn_ppts.variable_length();
         if let Some(will) = &self.will { len += will.length() }
         len += self.len(); // client id + username + password
 
@@ -72,10 +72,32 @@ impl BufferIO for Connect {
         Ok(())
     }
 
-    // fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-    //     // 
-    //     Ok(())
-    // }
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+        // Assumption is that the fixed header as been read already
+        String::read(buf).and_then(|x| { if x == "MQTT".to_string() { return Ok(x)} return Err(MQTTError::MalformedPacket)})?;
+
+        let mut packet = Self::default();
+        packet.version = Version::try_from(u8::read(buf)?)?;
+
+
+        let flags = ConnectFlags::try_from(u8::read(buf)?)?;
+        packet.keep_alive = u16::read(buf)?;
+        packet.conn_ppts = ConnectProperties::read(buf)?;
+        packet.client_id = String::read(buf)?;
+        
+        if flags.will_flag {
+            let mut will = Will::read(buf)?;
+            will.retain = flags.will_retain;
+            will.qos = flags.will_qos;
+            packet.will = Some(will); 
+        }
+
+        if flags.username { packet.username = Some(String::read(buf)?) };
+        if flags.password { packet.password = Some(String::read(buf)?) };
+
+
+        Ok(packet)
+    }
 
 
 }
@@ -157,14 +179,6 @@ pub(crate) struct ConnectFlags {
     pub(super) clean_start: bool,
 }
 
-impl ConnectFlags {
-    const USERNAME_MASK: u8 = 1 << 7;
-    const PASSWORD_MASK: u8 = 1 << 6;
-    const WILL_RETAIN_MASK: u8 = 1 << 5;
-    const QOS_MASK: u8 = 1 << 4 | 1 << 3;
-    const WILL_FLAG_MASK: u8 = 1 << 2;
-    const CLEAN_START_MASK: u8 = 1 << 1;
-}
 
 impl From<ConnectFlags> for u8 {
     fn from(value: ConnectFlags) -> Self {
@@ -177,12 +191,12 @@ impl From<ConnectFlags> for u8 {
 impl TryFrom<u8> for ConnectFlags {
     type Error = MQTTError;
     fn try_from(value: u8) -> Result<Self, Self::Error> {
-        let username = (value & Self::USERNAME_MASK) != 0;
-        let password = (value & Self::PASSWORD_MASK) != 0;
-        let will_retain = (value & Self::WILL_RETAIN_MASK) != 0;
-        let will_qos = QoS::try_from((value & Self::QOS_MASK) >> 3)?;
-        let will_flag = (value & Self::WILL_FLAG_MASK) != 0;
-        let clean_start = (value & Self::CLEAN_START_MASK) != 0;
+        let username = (value & (1 << 7)) != 0;
+        let password = (value & (1 << 6)) != 0;
+        let will_retain = (value & (1 << 5)) != 0;
+        let will_qos = QoS::try_from((value & (1 << 4 | 1 << 3)) >> 3)?;
+        let will_flag = (value & (1 << 2)) != 0;
+        let clean_start = (value & (1 << 1)) != 0;
 
         Ok(Self { username, password, will_retain, will_qos, will_flag, clean_start })
     }
@@ -232,22 +246,30 @@ impl BufferIO for WillProperties {
             let property = Property::read(&mut data)?;
             match property {
                 Property::WillDelayInterval(value) => Self::try_update(&mut properties.delay_interval, value)(property)?,
+                Property::PayloadFormatIndicator(value) => Self::try_update(&mut properties.payload_format_indicator, value)(property)?,
+                Property::MessageExpiryInterval(value) => Self::try_update(&mut properties.message_expiry_interval, value)(property)?,
+                Property::ContentType(ref value) => Self::try_update(&mut properties.content_type, value.as_deref().map(|x| String::from(x)))(property)?,
+                Property::ResponseTopic(ref value) => Self::try_update(&mut properties.response_topic, value.as_deref().map(|x| String::from(x)))(property)?,
+                Property::CorrelationData(ref value) => Self::try_update(&mut properties.correlation_data, value.as_deref().map(|x| Bytes::from_iter(x.to_vec())))(property)?,
+                Property::UserProperty(value) => { properties.user_property.push(value.into_owned()); },
                 p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string()))
             }
 
             if data.is_empty() { break; }
         }
 
-        Err(MQTTError::MalformedPacket)
+        Ok(properties)
     }
 }
 
 
-#[derive(Debug, Length)]
+#[derive(Debug, Length, Default)]
 pub(crate) struct Will {
     #[bytes(ignore)]
     properties: WillProperties,
+    #[bytes(no_id)]
     topic: String,
+    #[bytes(no_id)]
     payload: Bytes,
     #[bytes(ignore)]
     pub(super) qos: QoS,
@@ -265,8 +287,16 @@ impl BufferIO for Will {
     }
 
     fn length(&self) -> usize {
-        let ppts = self.properties.length();
-        self.len() + variable_length(ppts) + ppts
+        self.len() + self.properties.variable_length() + self.properties.length()
+    }
+
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+        let mut will = Self::default();
+
+        will.properties = WillProperties::read(buf)?;
+        will.topic = String::read(buf)?;
+        will.payload = Bytes::read(buf)?;
+        Ok(will)
     }
 }
 
