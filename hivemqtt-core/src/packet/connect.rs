@@ -6,25 +6,39 @@ use hivemqtt_macros::Length;
 use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property, qos::QoS, version::Version}, constants::PROTOCOL_NAME, traits::bufferio::BufferIO};
 use crate::traits::{write::Write, read::Read};
 
-#[derive(Debug, Length, Default)]
+#[derive(Debug, Length)]
 pub struct Connect {
     #[bytes(no_id)]
-    client_id: String,
+    pub client_id: String,
     #[bytes(no_id)]
-    username: Option<String>,
+    pub username: Option<String>,
     #[bytes(no_id)]
-    password: Option<String>,
-    
+    pub password: Option<String>,
     #[bytes(ignore)]
-    version: Version,
+    pub version: Version,
     #[bytes(ignore)]
-    will: Option<Will>,
+    pub will: Option<Will>,
     #[bytes(ignore)]
-    clean_start: bool,
+    pub clean_start: bool,
     #[bytes(ignore)]
-    keep_alive: u16,
+    pub keep_alive: u16,
     #[bytes(ignore)] // Connection properties
-    conn_ppts: ConnectProperties,
+    pub properties: ConnectProperties,
+}
+
+impl Default for Connect {
+    fn default() -> Self {
+        Self { 
+            client_id: "HiveMQTT".into(), 
+            username: None, 
+            password: None, 
+            version: Version::V5, 
+            will: None, 
+            clean_start: true, 
+            keep_alive: 0, 
+            properties: ConnectProperties::default()
+        }
+    }
 }
 
 
@@ -33,8 +47,8 @@ impl BufferIO for Connect {
     fn length(&self) -> usize {
         let mut len: usize = (2 + PROTOCOL_NAME.len()) + 1 + 1 + 2; // version + connect flags + keep alive
         
-        len += self.conn_ppts.length();
-        len += self.conn_ppts.variable_length();
+        len += self.properties.length();
+        len += self.properties.variable_length();
         if let Some(will) = &self.will { len += will.length() }
         len += self.len(); // client id + username + password
 
@@ -42,7 +56,7 @@ impl BufferIO for Connect {
     }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        // FixedHeader::new(Packet::Connect, 0, self.length()).write(buf)?;
+        FixedHeader::new(Packet::Connect, 0, self.length()).write(buf)?;
         
         (PROTOCOL_NAME.to_string()).write(buf);
         (self.version as u8).write(buf);
@@ -63,7 +77,7 @@ impl BufferIO for Connect {
 
         u8::from(flags).write(buf); // 3.1.2.3
         self.keep_alive.write(buf); // 3.1.2.10
-        self.conn_ppts.write(buf)?; // 3.1.2.11
+        self.properties.write(buf)?; // 3.1.2.11
         // CONNECT Payload: length-prefixed fields
         self.client_id.write(buf); // ClientId, willProperties, willTopic, willPayload, userName, password
         if let Some(will) = &self.will { will.write(buf)?; }
@@ -83,7 +97,7 @@ impl BufferIO for Connect {
 
         let flags = ConnectFlags::try_from(u8::read(buf)?)?;
         packet.keep_alive = u16::read(buf)?;
-        packet.conn_ppts = ConnectProperties::read(buf)?;
+        packet.properties = ConnectProperties::read(buf)?;
         packet.client_id = String::read(buf)?;
         
         if flags.will_flag {
@@ -99,23 +113,20 @@ impl BufferIO for Connect {
 
         Ok(packet)
     }
-
-
 }
-
 
 /// CONNECT Properties (3.1.2.11)
 #[derive(Debug, Clone, Length, Default)]
-pub(crate) struct ConnectProperties {
-    session_expiry_interval: Option<u32>,
-    receive_maximum: Option<u16>,
-    maximum_packet_size: Option<u32>,
-    topic_alias_maximum: Option<u16>,
-    request_response_information: Option<u8>,
-    request_problem_information: Option<u8>,
-    user_property: Vec<(String, String)>,
-    authentication_method: Option<String>,
-    authentication_data: Option<Bytes>,
+pub struct ConnectProperties {
+    pub session_expiry_interval: Option<u32>,
+    pub receive_maximum: Option<u16>,
+    pub maximum_packet_size: Option<u32>,
+    pub topic_alias_maximum: Option<u16>,
+    pub request_response_information: Option<u8>,
+    pub request_problem_information: Option<u8>,
+    pub user_property: Vec<(String, String)>,
+    pub authentication_method: Option<String>,
+    pub authentication_data: Option<Bytes>,
 }
 
 
@@ -170,6 +181,7 @@ impl BufferIO for ConnectProperties {
 }
 
 
+
 #[derive(Debug, Default)]
 pub(crate) struct ConnectFlags {
     pub(super) username: bool,
@@ -203,19 +215,16 @@ impl TryFrom<u8> for ConnectFlags {
     }
 }
 
-
-
 #[derive(Length, Debug, Clone, Default)]
 pub(crate) struct WillProperties {
-    delay_interval: Option<u32>,
-    payload_format_indicator: Option<u8>,
-    message_expiry_interval: Option<u32>,
-    content_type: Option<String>,
-    response_topic: Option<String>,
-    correlation_data: Option<Bytes>,
-    user_property: Vec<(String, String)>,
+    pub delay_interval: Option<u32>,
+    pub payload_format_indicator: Option<u8>,
+    pub message_expiry_interval: Option<u32>,
+    pub content_type: Option<String>,
+    pub response_topic: Option<String>,
+    pub correlation_data: Option<Bytes>,
+    pub user_property: Vec<(String, String)>,
 }
-
 
 impl BufferIO for WillProperties {
     fn length(&self) -> usize { self.len() }
@@ -267,17 +276,16 @@ impl BufferIO for WillProperties {
 #[derive(Debug, Length, Default)]
 pub(crate) struct Will {
     #[bytes(ignore)]
-    properties: WillProperties,
+    pub properties: WillProperties,
     #[bytes(no_id)]
-    topic: String,
+    pub topic: String,
     #[bytes(no_id)]
-    payload: Bytes,
+    pub payload: Bytes,
     #[bytes(ignore)]
     pub(super) qos: QoS,
     #[bytes(ignore)]
     pub(super) retain: bool,
 }
-
 
 impl BufferIO for Will {
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
@@ -303,13 +311,13 @@ impl BufferIO for Will {
 
 
 
-
-
 #[cfg(test)]
 mod connect_packet {
     use std::io::Read;
 
     use bytes::BytesMut;
+
+    use crate::commons::qos::QoS;
 
     use super::*;
 
@@ -323,13 +331,33 @@ mod connect_packet {
     ]}
 
     #[test]
-    fn create_default_connect_packet() {
+    fn create_connect_packet() -> Result<(), MQTTError> {
         let mut buf = BytesMut::new();
-        let connect = Connect::default();
-        connect.write(&mut buf).expect("Failed to write default connect packet");
-        let expected = b"\0\x04MQTT\x05\0\0\0\0\0\0".as_ref().to_vec();
+
+        Connect::default().write(&mut buf)?;
+        let expected = b"\x10\x15\0\x04MQTT\x05\x02\0\0\0\0\x08HiveMQTT".as_ref().to_vec();
         let received = buf.bytes().flatten().collect::<Vec<u8>>();
         assert_eq!(expected, received);
+
+
+        let mut connect = Connect::default();
+        connect.username = Some("username".into());
+        connect.password = Some("password".into());
+        connect.keep_alive = 170;
+        connect.will = Some(Will::default());
+        let will = connect.will.as_mut().unwrap();
+        will.topic = String::from("auto_warmup");
+        will.qos = QoS::Two;
+        will.properties = WillProperties::default();
+        will.payload = b"will payload".to_vec().into();
+
+        let mut buf = BytesMut::new();
+        connect.write(&mut buf)?;
+        let expected = b"\x10E\0\x04MQTT\x05\xe6\0\xaa\0\0\x08HiveMQTT\0\0\x0bauto_warmup\0\x0cwill payload\0\x08username\0\x08password".as_ref().to_vec();
+        let received = buf.bytes().flatten().collect::<Vec<u8>>();
+
+        assert_eq!(expected, received);
+        Ok(())
     }
 
 
