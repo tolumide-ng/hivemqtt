@@ -42,7 +42,7 @@ impl BufferIO for Connect {
     }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        FixedHeader::new(Packet::Connect, 0, self.length()).write(buf)?;
+        // FixedHeader::new(Packet::Connect, 0, self.length()).write(buf)?;
         
         (PROTOCOL_NAME.to_string()).write(buf);
         (self.version as u8).write(buf);
@@ -316,62 +316,18 @@ mod connect_packet {
     fn packet () -> [u8; 42] {[
             // 0x10, // Packet type + Reserved
             // 0x3f, // Remaining length
-            0x4,
-            0x4d,
-            0x51,
-            0x54,
-            0x54,
-            0x5,
-            0xef,
-            0xbf,
-            0xbd,
-            0xa,
-            0x74,
-            0x65,
-            0x73,
-            0x74,
-            0x2,
-            0x2f,
-            0x61,
-            0xb,
-            0x68,
-            0x65,
-            0x6c,
-            0x6c,
-            0x6f,
-            0x57,
-            0x6f,
-            0x72,
-            0x6c,
-            0x64,
-            0x21,
-            0x4,
-            0x75,
-            0x73,
-            0x65,
-            0x72,
-            0x4,
-            0x70,
-            0x61,
-            0x73,
-            0x73,
-            0x31,
-            0x32,
-            0x33
+            0x4, 0x4d, 0x51, 0x54, 0x54, 0x5, 0xef, 0xbf, 0xbd, 0xa, 0x74, 
+            0x65, 0x73, 0x74, 0x2, 0x2f, 0x61, 0xb, 0x68, 0x65, 0x6c, 0x6c,
+            0x6f, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21, 0x4, 0x75, 0x73, 0x65,
+            0x72, 0x4, 0x70, 0x61, 0x73, 0x73, 0x31, 0x32, 0x33
     ]}
-
-    // const PACKET: [u8; 43] = [
-    //     0x10, 0x2A, 0x00, 0x04, 0x4D, 0x51, 0x54, 0x54, 0x05, 0x02, 0x00, 0x3C, 
-    //     0x00, 0x07, 0x4D, 0x79, 0x43, 0x6C, 0x69, 0x65, 0x6E, 0x74, 0x00, 0x0B, 
-    //     0x73, 0x61, 0x6D, 0x70, 0x6C, 0x65, 0x2F, 0x74, 0x6F, 0x70, 0x69, 0x63, 
-    //     0x00, 0x05, 0x68, 0x65, 0x6C, 0x6C, 0x6F,
-    // ];
 
     #[test]
     fn create_default_connect_packet() {
         let mut buf = BytesMut::new();
-        Connect::default().write(&mut buf).expect("Failed to write default connect packet");
-        let expected = b"\x10\r\0\x04MQTT\x04\0\0\0\0\0".as_ref().to_vec();
+        let connect = Connect::default();
+        connect.write(&mut buf).expect("Failed to write default connect packet");
+        let expected = b"\0\x04MQTT\x05\0\0\0\0\0\0".as_ref().to_vec();
         let received = buf.bytes().flatten().collect::<Vec<u8>>();
         assert_eq!(expected, received);
     }

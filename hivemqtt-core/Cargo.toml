@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 
+categories = ["network-programming"]
+keywords = ["mqtt", "iot", "mqttv5", "client"]
+
 [lib]
 path = "src/lib.rs"
 

@@ -28,20 +28,19 @@ pub(crate) trait BufferIO: Sized {
 
     /// Encodes a non-negative Integer into the Variable Byte Integer encoding
     fn encode(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
-        let mut x = self.length();
+        let mut len = self.length();
 
          // 268_435_455
-        if x > 0xFFFFFFF { return Err(MQTTError::PayloadTooLong) }
+        if len > 0xFFFFFFF { return Err(MQTTError::PayloadTooLong) }
 
-        while x > 0 {
-            let mut byte= x % 128;
-            x /= 128;
+        for _ in 0..4 {
+            let mut byte= len % 128;
+            len /= 128;
 
-            if x > 0 {
-                byte |= 128;
-            }
+            if len > 0 { byte |= 128; }
             
             (byte as u8).write(buf); // writes the encoded byte into the buffer
+            if len == 0 { break; }
         }
         Ok(())
     }

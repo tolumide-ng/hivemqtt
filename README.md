@@ -5,7 +5,11 @@
 - [ ] Protocol Support
     - [ ] MQTT 3.1.1
     - [ ] MQTT 5.0 (In Progress)
-    - [ ] TLS
+    - [ ] TLS/TCP
     - [ ] IPV6
 - [ ] All MQTT Packet Support (In Progress)
+- [ ] Tests
+- [ ] no_std support
+- [ ] Integrate WASM for easy compiling to Javascript/Typescript/Node.js environments
 - [ ] Easy internal utility for converting -> to string and vice versal (from terminal tool?) - for debugging
+- [ ] Samples for easy learning

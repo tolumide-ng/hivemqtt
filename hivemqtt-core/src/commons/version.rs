@@ -3,8 +3,8 @@ use super::error::MQTTError;
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(u8)]
 pub(crate) enum Version {
-    #[default]
     V4 = 0b0000_0100,
+    #[default]
     V5 = 0b0000_0101
 }
 
