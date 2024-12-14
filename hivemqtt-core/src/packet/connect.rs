@@ -90,11 +90,10 @@ impl BufferIO for Connect {
     fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
         // Assumption is that the fixed header as been read already
         String::read(buf).and_then(|x| { if x == "MQTT".to_string() { return Ok(x)} return Err(MQTTError::MalformedPacket)})?;
-
+        
         let mut packet = Self::default();
         packet.version = Version::try_from(u8::read(buf)?)?;
-
-
+        
         let flags = ConnectFlags::try_from(u8::read(buf)?)?;
         packet.keep_alive = u16::read(buf)?;
         packet.properties = ConnectProperties::read(buf)?;
@@ -104,6 +103,7 @@ impl BufferIO for Connect {
             let mut will = Will::read(buf)?;
             will.retain = flags.will_retain;
             will.qos = flags.will_qos;
+            packet.clean_start = flags.will_retain;
             packet.will = Some(will); 
         }
 
@@ -154,9 +154,8 @@ impl BufferIO for ConnectProperties {
 
         if len == 0 { return Ok(properties) }
         else if len > buf.len() { return Err(MQTTError::IncompleteData("ConnectionProperties", len, buf.len()) )}
-
+        
         let mut data = buf.split_to(len);
-
         loop {
             let property = Property::read(&mut data)?;
             match property {
@@ -182,20 +181,20 @@ impl BufferIO for ConnectProperties {
 
 
 
-#[derive(Debug, Default)]
-pub(crate) struct ConnectFlags {
-    pub(super) username: bool,
-    pub(super) password: bool,
-    pub(super) will_retain: bool,
-    pub(super) will_qos: QoS,
-    pub(super) will_flag: bool,
-    pub(super) clean_start: bool,
+#[derive(Debug, Default, Clone, Copy)]
+pub struct ConnectFlags {
+    pub username: bool,
+    pub password: bool,
+    pub will_retain: bool,
+    pub will_qos: QoS,
+    pub will_flag: bool,
+    pub clean_start: bool,
 }
 
 
 impl From<ConnectFlags> for u8 {
     fn from(value: ConnectFlags) -> Self {
-        let flags = u8::from(value.username) << 7 | u8::from(value.password) << 6 | u8::from(value.will_retain) << 5 | u8::from(value.will_qos) << 4 | 
+        let flags = u8::from(value.username) << 7 | u8::from(value.password) << 6 | u8::from(value.will_retain) << 5 | u8::from(value.will_qos) << 3 |
         u8::from(value.will_flag) << 2 | u8::from(value.clean_start) << 1;
         flags
     }
@@ -207,7 +206,7 @@ impl TryFrom<u8> for ConnectFlags {
         let username = (value & (1 << 7)) != 0;
         let password = (value & (1 << 6)) != 0;
         let will_retain = (value & (1 << 5)) != 0;
-        let will_qos = QoS::try_from((value & (1 << 4 | 1 << 3)) >> 3)?;
+        let will_qos = QoS::try_from((value & (0b11 << 3)) >> 3)?;
         let will_flag = (value & (1 << 2)) != 0;
         let clean_start = (value & (1 << 1)) != 0;
 
@@ -216,7 +215,7 @@ impl TryFrom<u8> for ConnectFlags {
 }
 
 #[derive(Length, Debug, Clone, Default)]
-pub(crate) struct WillProperties {
+pub struct WillProperties {
     pub delay_interval: Option<u32>,
     pub payload_format_indicator: Option<u8>,
     pub message_expiry_interval: Option<u32>,
@@ -274,7 +273,7 @@ impl BufferIO for WillProperties {
 
 
 #[derive(Debug, Length, Default)]
-pub(crate) struct Will {
+pub struct Will {
     #[bytes(ignore)]
     pub properties: WillProperties,
     #[bytes(no_id)]
@@ -314,68 +313,76 @@ impl BufferIO for Will {
 #[cfg(test)]
 mod connect_packet {
     use std::io::Read;
-
     use bytes::BytesMut;
-
     use crate::commons::qos::QoS;
-
     use super::*;
 
-    fn packet () -> [u8; 42] {[
-            // 0x10, // Packet type + Reserved
-            // 0x3f, // Remaining length
-            0x4, 0x4d, 0x51, 0x54, 0x54, 0x5, 0xef, 0xbf, 0xbd, 0xa, 0x74, 
-            0x65, 0x73, 0x74, 0x2, 0x2f, 0x61, 0xb, 0x68, 0x65, 0x6c, 0x6c,
-            0x6f, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21, 0x4, 0x75, 0x73, 0x65,
-            0x72, 0x4, 0x70, 0x61, 0x73, 0x73, 0x31, 0x32, 0x33
-    ]}
 
-    #[test]
-    fn create_connect_packet() -> Result<(), MQTTError> {
-        let mut buf = BytesMut::new();
+    #[cfg(test)]
+    mod write {
+        use super::*;
+        #[test]
+        fn create_connect_packet() -> Result<(), MQTTError> {
+            let mut buf = BytesMut::new();
+    
+            Connect::default().write(&mut buf)?;
+            let expected = b"\x10\x15\0\x04MQTT\x05\x02\0\0\0\0\x08HiveMQTT".as_ref().to_vec();
+            let received = buf.bytes().flatten().collect::<Vec<u8>>();
+            assert_eq!(expected, received);
+    
+    
+            let mut connect = Connect::default();
+            connect.username = Some("username".into());
+            connect.password = Some("password".into());
+            connect.keep_alive = 170;
+            connect.will = Some(Will::default());
+            let will = connect.will.as_mut().unwrap();
+            will.topic = String::from("auto_warmup");
+            will.qos = QoS::Two;
+            will.properties = WillProperties::default();
+            will.payload = b"will payload".to_vec().into();
+    
+            let mut buf = BytesMut::new();
+            connect.write(&mut buf)?;
 
-        Connect::default().write(&mut buf)?;
-        let expected = b"\x10\x15\0\x04MQTT\x05\x02\0\0\0\0\x08HiveMQTT".as_ref().to_vec();
-        let received = buf.bytes().flatten().collect::<Vec<u8>>();
-        assert_eq!(expected, received);
-
-
-        let mut connect = Connect::default();
-        connect.username = Some("username".into());
-        connect.password = Some("password".into());
-        connect.keep_alive = 170;
-        connect.will = Some(Will::default());
-        let will = connect.will.as_mut().unwrap();
-        will.topic = String::from("auto_warmup");
-        will.qos = QoS::Two;
-        will.properties = WillProperties::default();
-        will.payload = b"will payload".to_vec().into();
-
-        let mut buf = BytesMut::new();
-        connect.write(&mut buf)?;
-        let expected = b"\x10E\0\x04MQTT\x05\xe6\0\xaa\0\0\x08HiveMQTT\0\0\x0bauto_warmup\0\x0cwill payload\0\x08username\0\x08password".as_ref().to_vec();
-        let received = buf.bytes().flatten().collect::<Vec<u8>>();
-
-        assert_eq!(expected, received);
-        Ok(())
+            let expected = b"\x10E\0\x04MQTT\x05\xd6\0\xaa\0\0\x08HiveMQTT\0\0\x0bauto_warmup\0\x0cwill payload\0\x08username\0\x08password".as_ref().to_vec();
+            let received = buf.bytes().flatten().collect::<Vec<u8>>();
+    
+            assert_eq!(expected, received);
+            Ok(())
+        }
     }
 
 
-    #[test]
-    fn read_connect_packet() {
-        // let connect = Connect::read(&mut Bytes::from_iter(packet()));
-        // println!("STATUS ***** {:#?}", connect);
-        // assert!(connect.is_ok());
-        let connect = Connect::default();
-        let mut buf = BytesMut::new();
-        connect.write(&mut buf).unwrap();
-        println!("value .>>>>>>> {:?}", buf);
-        // assert!(false);
+    #[cfg(test)]
+    mod read {
+        use super::*;
+
+        #[test]
+        fn read_connect_packet() {
+            let mut input = b"\0\x04MQTT\x05\xd6\0\xaa\0\0\x08HiveMQTT\0\0\x0bauto_warmup\0\x0cwill payload\0\x08username\0\x08password".as_ref().into();
+            let packet = Connect::read(&mut input).unwrap();
+
+            assert_eq!(packet.username.unwrap(), "username".to_string());
+            assert_eq!(packet.password.unwrap(), "password".to_string());
+            let will = packet.will.unwrap();
+            assert_eq!(will.qos, QoS::Two);
+            assert_eq!(will.retain, false);
+
+            assert_eq!(will.topic, "auto_warmup");
+            assert_eq!(packet.keep_alive, 170);
+            assert_eq!(will.payload, b"will payload".to_vec());
+            assert_eq!(will.retain, false);
+
+            assert_eq!(packet.version, Version::V5);
+            assert_eq!(packet.client_id, "HiveMQTT");
+            assert_eq!(packet.clean_start, false);
+            assert_eq!(packet.properties.authentication_data, None);
+            assert_eq!(packet.properties.authentication_method, None);
+            assert_eq!(packet.properties.receive_maximum, None);
+        }
+
     }
 
-    #[test]
-    fn write_connection_properties() {}
 
-    // #[cfg(test)]
-    // mod packet_length {}
 }

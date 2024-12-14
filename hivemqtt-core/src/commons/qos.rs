@@ -24,8 +24,6 @@ impl TryFrom<u8> for QoS {
     type Error = MQTTError;
     
     fn try_from(value: u8) -> Result<Self, Self::Error> {
-        type Error = MQTTError;
-
         match value {
             0 => Ok(QoS::Zero),
             1 => Ok(QoS::One),

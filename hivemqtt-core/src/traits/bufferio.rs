@@ -47,7 +47,7 @@ pub(crate) trait BufferIO: Sized {
 
     /// Decodes a Variable byte Inetger
     fn decode(buf: &mut Bytes) -> Result<usize, MQTTError> {
-        let mut result = 1;
+        let mut result = 0;
 
         for i in 0..4 {
             if buf.is_empty() {
