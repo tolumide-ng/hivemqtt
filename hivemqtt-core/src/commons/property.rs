@@ -162,7 +162,8 @@ impl<'a> BufferIO for Property<'a> {
             Self::WildCardSubscription(Some(i)) => self.with_id(buf, |b| b.put_u8(*i)),
             Self::SubscriptionIdentifierAvailable(Some(i)) => self.with_id(buf, |b| b.put_u8(*i)),
             Self::SharedSubscriptionAvailable(Some(i)) => self.with_id(buf, |b| b.put_u8(*i)),
-            _ => {unreachable!("Unrecognized enum variant or argument!")}
+            // _ => {unreachable!("Unrecognized enum variant or argument!")}
+            _ => {}
         }
     }
 
