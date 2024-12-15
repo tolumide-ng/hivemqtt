@@ -143,4 +143,8 @@ pub(crate) trait BufferIO: Sized {
     fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
         Err(MQTTError::MalformedPacket)
     }
+
+    fn read_with_flag(buf: &mut Bytes, flag: u8) -> Result<Self, MQTTError> {
+        Err(MQTTError::MalformedPacket)
+    }
 }

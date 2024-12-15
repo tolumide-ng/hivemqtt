@@ -24,4 +24,6 @@ pub enum MQTTError {
     VersionNotSupported(u8),
     #[error("{0}")]
     UnknownData(String),
+    #[error("Packet Identifier is only expected when QoS level is 1 or 2")]
+    PublishPacketId,
 }
