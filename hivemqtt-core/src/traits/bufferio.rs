@@ -1,4 +1,5 @@
 use bytes::{BufMut, Bytes, BytesMut};
+use crate::commons::fixed_header::FixedHeader;
 use crate::commons::property::Property;
 use crate::traits::{write::Write, read::Read};
 
@@ -144,7 +145,7 @@ pub(crate) trait BufferIO: Sized {
         Err(MQTTError::MalformedPacket)
     }
 
-    fn read_with_flag(buf: &mut Bytes, flag: u8) -> Result<Self, MQTTError> {
+    fn read_with_fixedheader(buf: &mut Bytes, header: FixedHeader) -> Result<Self, MQTTError> {
         Err(MQTTError::MalformedPacket)
     }
 }

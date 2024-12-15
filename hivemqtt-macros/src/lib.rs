@@ -80,12 +80,12 @@ pub fn derive_u8(input: TokenStream) -> TokenStream {
     
     let try_from_u8 = quote! {
         impl TryFrom<u8> for #struct_name {
-            type Error = &'static str;
+            type Error = String;
             
             fn try_from(value: u8) -> Result<Self, Self::Error> {
                 match value {
                     #( #discriminant => Ok(#struct_name::#variant), )*
-                    _ => Err("No match found for {}")
+                    v => Err((format!("{}", v)))
                 }
             }
         }

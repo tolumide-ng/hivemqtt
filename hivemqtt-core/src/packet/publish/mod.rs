@@ -39,8 +39,9 @@ impl BufferIO for Publish {
     }
 
     /// Publish does not implement `read` only read_with_flag
-    fn read_with_flag(buf: &mut Bytes, flag: u8) -> Result<Self, MQTTError> {
+    fn read_with_fixedheader(buf: &mut Bytes, header: FixedHeader) -> Result<Self, MQTTError> {
         let mut packet = Self::default();
+        let flag = header.flags;
 
         packet.topic = String::read(buf)?;
         packet.dup = (flag & 0b1000) != 0;
@@ -87,7 +88,7 @@ mod tests {
         assert_eq!(buf.to_vec(), expected);
 
         let mut expected = Bytes::from_iter(b";)\0\x10packagin_plant/#\"\xe2\x05\x01\r#\0\x02\0\x11veryLarge payloadveryLarge payload".to_vec()[2..].to_vec());
-        let created_packed = Publish::read_with_flag(&mut expected, 0b1011).unwrap();
+        let created_packed = Publish::read_with_fixedheader(&mut expected, FixedHeader { packet_type: Packet::Publish, flags: 0b1011, remaining_length: 99 }).unwrap();
         assert_eq!(created_packed, packet);
     }
 }
