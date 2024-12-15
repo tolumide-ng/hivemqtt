@@ -1,7 +1,7 @@
-use bytes::{Bytes, BytesMut};
+use bytes::{Buf, Bytes, BytesMut};
 
-use super::{encode_vbi, error::MQTTError, packets::Packet};
-use crate::traits::write::Write;
+use super::{decode, encode_vbi, error::MQTTError, packets::Packet};
+use crate::traits::{write::Write, read::Read};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct FixedHeader {
@@ -22,6 +22,18 @@ impl FixedHeader {
         encode_vbi(buf, self.remaining_length)?;
 
         Ok(())
+    }
+
+    pub(crate) fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+        let byte0 = u8::read(buf)?;
+        let packet = byte0 & 0b11110000;
+        let packet_type = Packet::try_from(packet).map_err(|_| MQTTError::UnknownData(format!("Unexpected packet type: {}", packet)))?;
+
+        Ok(Self {
+            packet_type,
+            flags: byte0 & 0b00001111,
+            remaining_length: decode(buf)?,
+        })
     }
 
 

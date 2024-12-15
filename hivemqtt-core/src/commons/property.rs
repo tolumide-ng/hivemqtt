@@ -8,6 +8,7 @@ use crate::traits::bufferio::BufferIO;
 use crate::commons::error::MQTTError;
 
 use super::variable_byte_integer::variable_integer;
+use super::Write;
 
 /// Must be encoded using the VBI
 #[derive(Debug, Clone)]
@@ -135,10 +136,7 @@ impl<'a> BufferIO for Property<'a> {
             Self::RequestResponseInformation(Some(p)) => self.with_id(buf, |b| b.put_u8(*p)),
             Self::RequestProblemInformation(Some(p)) => self.with_id(buf, |b| b.put_u8(*p)),
             Self::UserProperty(Cow::Borrowed((ref k, ref v))) => {
-                self.with_id(buf, |b| {
-                        self.ws(b, k.as_bytes());
-                        self.ws(b, v.as_bytes()) 
-                    });
+                self.with_id(buf, |b| { k.write(b); v.write(b); });
             }
             Self::AuthenticationMethod(Some(data)) => self.with_id(buf, |b| self.ws(b, data.as_bytes())),
             Self::AuthenticationData(Some(data)) => self.with_id(buf, |b| self.ws(b, &data)),
@@ -182,7 +180,7 @@ impl<'a> BufferIO for Property<'a> {
             18 =>  Ok(Property::AssignedClientIdentifier(Some(Cow::Owned(String::read(buf)?)))),
             19 =>  Ok(Property::ServerKeepAlive(Some(u16::read(buf)?))),
             21 =>  Ok(Property::AuthenticationMethod(Some(Cow::Owned(String::read(buf)?)))),
-            22 =>  Ok(Property::AuthenticationData(Some(Cow::Owned(Bytes::read(buf)?.to_vec())))),
+            22 =>  Ok(Property::AuthenticationData(Some(Cow::Owned((Bytes::read(buf)?).to_vec())))),
             23 =>  Ok(Property::RequestProblemInformation(Some(u8::read(buf)?))),
             24 =>  Ok(Property::WillDelayInterval(Some(u32::read(buf)?))),
             25 =>  Ok(Property::RequestResponseInformation(Some(u8::read(buf)?))),

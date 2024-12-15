@@ -1,5 +1,7 @@
+use hivemqtt_macros::FromU8;
+
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromU8)]
 pub(crate) enum Packet {
     Connect = 0x10, // 0b0001_0000
     ConnAck = 0x20, // 0b0010_0000
@@ -16,13 +18,6 @@ pub(crate) enum Packet {
     PingResp = 0xD0, // 0b1101_0000
     Disconnect = 0xE0, // 0b1110_0000
     Auth = 0xF0, // 0b1111_0000
-}
-
-impl From<Packet> for u8 {
-    fn from(value: Packet) -> Self {
-        // *(<*const _>::from(&value)).cast::<u8>()
-        value as u8
-    }
 }
 
 

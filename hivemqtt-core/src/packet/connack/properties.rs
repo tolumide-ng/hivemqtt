@@ -5,7 +5,7 @@ use crate::{commons::error::MQTTError, traits::bufferio::BufferIO};
 use crate::commons::property::Property;
 use std::borrow::{Borrow, Cow};
 
-#[derive(Length, Default)]
+#[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct ConnAckProperties {
     pub session_expiry_interval: Option<u32>,
     pub receive_maximum: Option<u16>,
@@ -41,9 +41,9 @@ impl BufferIO for ConnAckProperties {
         Property::AssignedClientIdentifier(self.assigned_client_id.as_deref().map(Cow::Borrowed)).w(buf);
         Property::TopicAliasMaximum(self.topic_alias_maximum).w(buf);
         Property::ReasonString(self.reason_string.borrow().as_deref().map(Cow::Borrowed)).w(buf);
-        self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
+        self.user_property.iter().for_each(|kv: &(String, String)| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
         Property::WildCardSubscription(self.wildcard_subscription_available.map(|x| x as u8)).w(buf);
-        Property::SubscriptionIdentifierAvailable(self.session_expiry_interval.map(|x| x as u8)).w(buf);
+        Property::SubscriptionIdentifierAvailable(self.subscription_identifiers_available.map(|x| x as u8)).w(buf);
         Property::SharedSubscriptionAvailable(self.shared_subscription_available.map(|x| x as u8)).w(buf);
         Property::ServerKeepAlive(self.server_keep_alive).w(buf);
         Property::ResponseInformation(self.response_information.as_deref().map(Cow::Borrowed)).w(buf);
@@ -87,6 +87,7 @@ impl BufferIO for ConnAckProperties {
 
             if data.is_empty() { break; }
         }
+
 
         Ok(properties)
     }

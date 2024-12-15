@@ -190,10 +190,9 @@ mod connect_packet {
             let mut buf = BytesMut::new();
             connect.write(&mut buf)?;
 
-            let expected = b"\x10E\0\x04MQTT\x05\xd6\0\xaa\0\0\x08HiveMQTT\0\0\x0bauto_warmup\0\x0cwill payload\0\x08username\0\x08password".as_ref().to_vec();
-            let received = buf.bytes().flatten().collect::<Vec<u8>>();
+            let expected = b"\x10E\0\x04MQTT\x05\xd6\0\xaa\0\0\x08HiveMQTT\0\0\x0bauto_warmup\0\x0cwill payload\0\x08username\0\x08password".to_vec();
     
-            assert_eq!(expected, received);
+            assert_eq!(expected, buf.to_vec());
             Ok(())
         }
     }
