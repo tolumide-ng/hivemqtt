@@ -8,7 +8,7 @@ use crate::{commons::{packets::Packet, variable_byte_integer::{variable_integer,
 use crate::commons::property::Property;
 
 #[derive(Debug, Length)]
-pub(crate) struct Properties {
+pub struct ConnAckProperties {
     session_expiry_interval: Option<u32>,
     receive_maximum: Option<u16>,
     maximum_qos: Option<bool>,
@@ -28,7 +28,7 @@ pub(crate) struct Properties {
     authentication_data: Option<Bytes>
 }
 
-impl BufferIO for Properties {
+impl BufferIO for ConnAckProperties {
     /// Length of the properties in the CONNACK packet Variable Header encoded as Variable Byte Integer
     fn length(&self) -> usize {
         self.len()
@@ -90,7 +90,7 @@ pub(crate) struct ConnAck {
     /// 3.2.2.1.1 Connect Acknowledge flag
     session_present: bool, // bit 0 of the COnnect Acknowledge flag
     reason: ConnAckReasonCode,
-    properties: Properties,
+    properties: ConnAckProperties,
 
 
 }
