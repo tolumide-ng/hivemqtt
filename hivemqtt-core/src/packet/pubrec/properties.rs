@@ -24,8 +24,8 @@ pub enum PubRecReasonCode {
 
 #[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct PubRecProperties {
-    reason_string: Option<String>,
-    user_property: Vec<(String, String)>,
+    pub reason_string: Option<String>,
+    pub user_property: Vec<(String, String)>,
 }
 
 impl BufferIO for PubRecProperties {
