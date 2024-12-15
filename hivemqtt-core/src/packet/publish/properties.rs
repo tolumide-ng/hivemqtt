@@ -7,17 +7,17 @@ use crate::commons::error::MQTTError;
 
 use super::{BufferIO, Property};
 
-#[derive(Debug, Length, Default)]
+#[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct PublishProperties {
-    payload_format_indicator: Option<u8>,
-    message_expiry_internal: Option<u32>,
-    topic_alias: Option<u16>,
+    pub payload_format_indicator: Option<u8>,
+    pub message_expiry_internal: Option<u32>,
+    pub topic_alias: Option<u16>,
     /// the presence of a Response Topic identifies the Message as a Request
-    response_topic: Option<String>,
-    correlation_data: Option<Bytes>,
-    user_property: Vec<(String, String)>,
-    subscription_identifier: Vec<usize>,
-    content_type: Option<String>,
+    pub response_topic: Option<String>,
+    pub correlation_data: Option<Bytes>,
+    pub user_property: Vec<(String, String)>,
+    pub subscription_identifier: Vec<usize>,
+    pub content_type: Option<String>,
 }
 
 impl BufferIO for PublishProperties {
@@ -25,7 +25,7 @@ impl BufferIO for PublishProperties {
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), crate::commons::error::MQTTError> {
         self.encode(buf)?;
-
+        
         Property::PayloadFormatIndicator(self.payload_format_indicator).w(buf);
         Property::MessageExpiryInterval(self.message_expiry_internal).w(buf);
         Property::TopicAlias(self.topic_alias).w(buf);

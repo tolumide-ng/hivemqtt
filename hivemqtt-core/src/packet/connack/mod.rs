@@ -50,7 +50,7 @@ impl BufferIO for ConnAck {
 
 
 #[cfg(test)]
-mod connack {
+mod tests {
     use bytes::{Bytes, BytesMut};
 
     use super::*;
@@ -82,7 +82,7 @@ mod connack {
         };
 
 
-        let mut buf = BytesMut::new();
+        let mut buf = BytesMut::with_capacity(200);
         packet.write(&mut buf).unwrap();
         let expected = b" c\x01\0`\x11\0\0\x0b\xb8!6\xb0$\0%\x01'\0\x01\0\0\x12\0\x08HiveMQTT\"\x0c\xd7&\0\x03key\0\x05value&\0\x05abcde\0\x05fghij(\x01*\x01\x13\x0e\x10\x15\0\x1bbasic access authentication".to_vec();
 

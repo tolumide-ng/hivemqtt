@@ -1,6 +1,6 @@
 use crate::commons::error::MQTTError;
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum QoS {
     #[default]
     Zero = 0,
