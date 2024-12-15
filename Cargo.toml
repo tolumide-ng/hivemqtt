@@ -14,7 +14,3 @@ version = "0.1.0"
 authors = [
     "Tolumide Shopein <tolumideshopein@gmail.com>"
 ]
-
-# [package]
-# name = "hivemqtt"
-# readmme = "README.md"

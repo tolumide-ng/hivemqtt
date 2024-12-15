@@ -23,10 +23,10 @@ pub enum PubAckReasonCode {
 
 
 
-#[derive(Debug, Length, Default)]
+#[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct PubAckProperties {
-    reason_string: Option<String>,
-    user_property: Vec<(String, String)>,
+    pub reason_string: Option<String>,
+    pub user_property: Vec<(String, String)>,
 }
 
 impl BufferIO for PubAckProperties {
