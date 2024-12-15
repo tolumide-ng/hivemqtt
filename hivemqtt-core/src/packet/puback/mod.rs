@@ -36,23 +36,6 @@ impl BufferIO for PubAck {
         Ok(())
     }
 
-    fn read(buf: &mut bytes::Bytes) -> Result<Self, crate::commons::error::MQTTError> {
-        let header = FixedHeader::read(buf)?;
-
-        let mut packet = Self::default();
-        packet.packet_identifier = u16::read(buf)?;
-
-        if header.remaining_length == 2 { 
-            packet.reason_code = PubAckReasonCode::Success;
-            return Ok(packet)
-        }
-
-        packet.reason_code = PubAckReasonCode::try_from(u8::read(buf)?).map_err(|e| MQTTError::UnknownData(format!("Uknown reason code: {e}")))?;
-        packet.properties = PubAckProperties::read(buf)?;
-
-        Ok(packet)
-    }
-
     fn read_with_fixedheader(buf: &mut bytes::Bytes, header: FixedHeader) -> Result<Self, crate::commons::error::MQTTError> {
         let mut packet = Self::default();
         packet.packet_identifier = u16::read(buf)?;
@@ -130,7 +113,6 @@ mod tests {
 
         let mut read_buf = Bytes::from_iter(expected);
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
-        assert!(false);
 
         assert_eq!(fixed_header.packet_type, Packet::PubAck);
 
