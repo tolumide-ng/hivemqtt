@@ -6,7 +6,7 @@ use bytes::BufMut;
 use properties::ConnAckProperties;
 use reason_code::ConnAckReasonCode;
 
-use crate::{commons::{packets::Packet, variable_byte_integer::{variable_integer, variable_length}}, traits::bufferio::BufferIO};
+use crate::{commons::{fixed_header::FixedHeader, packets::Packet, variable_byte_integer::{variable_integer, variable_length}}, traits::{bufferio::BufferIO, write::Write}};
 
 
 
@@ -19,11 +19,9 @@ pub struct ConnAck {
 
 
 impl BufferIO for ConnAck {
-    /// In this case:
     /// This is the length of the Variable Header
     fn length(&self) -> usize {
         let mut len = 1 + 1; // session present + reason code
-
         len += self.properties.length();
         len += variable_length(self.properties.length());
         len
@@ -35,5 +33,17 @@ impl BufferIO for ConnAck {
         buf.put_u8(self.session_present as u8);
         buf.put_u8(self.reason as u8);
         self.properties.w(buf);
+    }
+
+
+    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), crate::commons::error::MQTTError> {
+        FixedHeader::new(Packet::ConnAck, 0, self.length()).write(buf)?;
+
+        // Connect Ack flags, connect reason code, and properties
+        u8::from(self.session_present).write(buf);
+        (self.reason as u8).write(buf);
+        self.properties.write(buf)?;
+
+        Ok(())
     }
 }

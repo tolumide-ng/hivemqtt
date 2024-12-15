@@ -1,5 +1,6 @@
 #[allow(dead_code)]
 #[derive(Debug, Default, Clone, Copy)]
+#[repr(u8)]
 pub(crate) enum ConnAckReasonCode {
     #[default]
     Success = 0,
