@@ -1,7 +1,7 @@
-use std::borrow::Cow;
+mod properties;
+pub use properties::{PubRelProperties, PubRelReasonCode};
 
 use bytes::BufMut;
-use hivemqtt_macros::Length;
 
 use crate::{commons::{packets::Packet, property::Property}, traits::bufferio::BufferIO};
 
@@ -33,26 +33,4 @@ impl BufferIO for PubRel {
             let _ = Self::write_variable_integer(buf, 0);
         }
     }
-}
-
-
-#[derive(Debug, Length)]
-pub struct PubRelProperties {
-    reason_string: Option<String>,
-    user_property: Vec<(String, String)>
-}
-
-impl BufferIO for PubRelProperties {
-    fn w(&self, buf: &mut bytes::BytesMut) {
-        let _ = Self::write_variable_integer(buf, self.len());
-
-        Property::ReasonString(self.reason_string.as_deref().map(Cow::Borrowed)).w(buf);
-        self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum PubRelReasonCode {
-    Success = 0,
-    PacketIdentifierNotFound = 146,
 }
