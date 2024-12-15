@@ -78,7 +78,7 @@ mod tests {
     }
 
     #[test]
-    fn read_write_neither_properties_nor_reasoncode() {
+    fn read_write_with_properties_and_reasoncode() {
         let mut packet = PubRec::default();
         packet.properties.reason_string = Some(String::from("thisIsAReasonStriing--andMoreAndMore"));
         packet.properties.user_property = vec![(String::from("notAuthorized"), String::from("value"))];
