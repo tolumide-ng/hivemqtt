@@ -5,7 +5,7 @@ mod reason_code;
 use properties::ConnAckProperties;
 use reason_code::ConnAckReasonCode;
 
-use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, variable_byte_integer::variable_length}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -22,7 +22,7 @@ impl BufferIO for ConnAck {
     fn length(&self) -> usize {
         let mut len = 1 + 1; // session present + reason code
         len += self.properties.length();
-        len += variable_length(self.properties.length());
+        len += self.properties.variable_length();
         len
     }
 
