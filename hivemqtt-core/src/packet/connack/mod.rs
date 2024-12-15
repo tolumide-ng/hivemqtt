@@ -6,10 +6,10 @@ use bytes::BufMut;
 use properties::ConnAckProperties;
 use reason_code::ConnAckReasonCode;
 
-use crate::{commons::{fixed_header::FixedHeader, packets::Packet, variable_byte_integer::{variable_integer, variable_length}}, traits::{bufferio::BufferIO, write::Write}};
+use crate::{commons::{fixed_header::FixedHeader, packets::Packet, variable_byte_integer::{variable_integer, variable_length}}, traits::{bufferio::BufferIO, write::Write, read::Read}};
 
 
-
+#[derive(Default)]
 pub struct ConnAck {
     /// 3.2.2.1.1 Connect Acknowledge flag
     pub session_present: bool, // bit 0 of the COnnect Acknowledge flag
@@ -39,11 +39,19 @@ impl BufferIO for ConnAck {
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), crate::commons::error::MQTTError> {
         FixedHeader::new(Packet::ConnAck, 0, self.length()).write(buf)?;
 
-        // Connect Ack flags, connect reason code, and properties
         u8::from(self.session_present).write(buf);
         (self.reason as u8).write(buf);
         self.properties.write(buf)?;
 
         Ok(())
+    }
+
+    fn read(buf: &mut bytes::Bytes) -> Result<Self, crate::commons::error::MQTTError> {
+        // Assumption is that the fixed header as been read already
+        let mut packet = Self::default();
+        packet.session_present = u8::read(buf)? != 0;
+        // let reason_code = ConnAckReasonCode::try_from(u8::read(buf)?)?;
+
+        Ok(packet)
     }
 }
