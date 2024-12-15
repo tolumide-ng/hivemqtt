@@ -1,11 +1,12 @@
 use hivemqtt_macros::Length;
+use hivemqtt_macros::FromU8;
 
 fn main() {
     
 }
 
 #[cfg(test)]
-mod tests {
+mod length_macro {
     use super::*;        
         
     #[derive(Length)]
@@ -74,5 +75,29 @@ mod tests {
     fn should_ignore_fields_with_the_ignore_attribute() {
         let subject = IgnoreField { title: "A".to_string(),  port: 440, properties: vec![(String::from("abc"), String::from("cde"))], topics: vec![String::from("topic_A")], active: true, client_id: None };
         assert_eq!(subject.len(), 16)
+    }
+}
+
+
+
+#[cfg(test)]
+mod fromu8_macro {
+    use super::*;
+
+    #[derive(Debug, PartialEq, Eq, FromU8)]
+    enum Protocol {
+        TCP = 8,
+        TLS = 3,
+        UDP = 1,
+    }
+
+    #[test]
+    fn should_impl_fromu8_for_enum_by_default() {
+        assert_eq!(u8::from(Protocol::TCP), 8);
+        assert_eq!(Protocol::try_from(8).unwrap(), Protocol::TCP);
+        assert_eq!(u8::from(Protocol::TLS), 3);
+        assert_eq!(Protocol::try_from(3).unwrap(), Protocol::TLS);
+        assert_eq!(u8::from(Protocol::UDP), 1);
+        assert_eq!(Protocol::try_from(1).unwrap(), Protocol::UDP);
     }
 }

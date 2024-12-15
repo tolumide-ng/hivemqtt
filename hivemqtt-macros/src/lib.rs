@@ -1,20 +1,19 @@
 pub(crate) mod length;
+pub(crate) mod impl_u8;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{parse_macro_input, DataEnum, DeriveInput};
 
 
 
 #[proc_macro_derive(Length, attributes(bytes))]
 pub fn derive_length(input: TokenStream) -> TokenStream {
-    let data = input.clone();
-    let dd = data.clone();
-    let _input = parse_macro_input!(dd as DeriveInput);
+    let _input = parse_macro_input!(input as DeriveInput);
     let struct_name = _input.ident;
 
-    let syn::Data::Struct(data_struct) = &_input.data else { return data.into() };
-    let syn::Fields::Named(fields) = &data_struct.fields else { return data.into() };
+    let syn::Data::Struct(data_struct) = &_input.data else { return TokenStream::new() };
+    let syn::Fields::Named(fields) = &data_struct.fields else { return TokenStream::new() };
 
     let mut field_lens: Vec<proc_macro2::TokenStream> = vec![];
 
@@ -51,6 +50,57 @@ pub fn derive_length(input: TokenStream) -> TokenStream {
         }
     };
 
+
+    TokenStream::from(output)
+}
+
+
+
+#[proc_macro_derive(FromU8)]
+pub fn derive_u8(input: TokenStream) -> TokenStream {
+    let _input = parse_macro_input!(input as DeriveInput);
+    let struct_name = _input.ident;
+
+    let syn::Data::Enum(DataEnum { variants, .. }) = _input.data else { 
+        return syn::Error::new(struct_name.span(), "FromU8 can only be derived for enums").to_compile_error().into()
+        // return TokenStream::new()
+     };
+    
+    let variant_pair = variants.iter().map(|v| {
+        match &v.discriminant {
+            Some((_, discriminant)) => {
+                let discriminant_value = quote! { #discriminant };
+                Ok((&v.ident, discriminant_value))
+            }
+            _ => Err(syn::Error::new(v.ident.span(), "Please provide a valid discriminant for this variant")),
+        }
+    }).collect::<Vec<Result<(&syn::Ident, proc_macro2::TokenStream), syn::Error>>>();
+
+    let (variant, discriminant): (Vec<_>, Vec<_>) = variant_pair.into_iter().filter_map(|d| d.ok()).unzip();
+    
+    let try_from_u8 = quote! {
+        impl TryFrom<u8> for #struct_name {
+            type Error = &'static str;
+            
+            fn try_from(value: u8) -> Result<Self, Self::Error> {
+                match value {
+                    #( #discriminant => Ok(#struct_name::#variant), )*
+                    _ => Err("No match found for {}")
+                }
+            }
+        }
+    };
+
+    
+    let output = quote! {
+        impl From<#struct_name> for u8 {
+            fn from(n: #struct_name) -> Self {
+                n as u8
+            }
+        }
+
+        #try_from_u8
+    };
 
     TokenStream::from(output)
 }
