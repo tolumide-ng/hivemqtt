@@ -21,5 +21,7 @@ pub enum MQTTError {
     #[error("{0} is not allowed on: {1}")]
     UnexpectedProperty(String, String),
     #[error("Version {0} not supported")]
-    VersionNotSupported(u8)
+    VersionNotSupported(u8),
+    #[error("{0}")]
+    UnknownData(String),
 }

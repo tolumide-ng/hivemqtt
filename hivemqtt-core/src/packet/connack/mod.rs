@@ -6,7 +6,7 @@ use bytes::BufMut;
 use properties::ConnAckProperties;
 use reason_code::ConnAckReasonCode;
 
-use crate::{commons::{fixed_header::FixedHeader, packets::Packet, variable_byte_integer::{variable_integer, variable_length}}, traits::{bufferio::BufferIO, write::Write, read::Read}};
+use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, variable_byte_integer::{variable_integer, variable_length}}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 
 #[derive(Default)]
@@ -50,7 +50,9 @@ impl BufferIO for ConnAck {
         // Assumption is that the fixed header as been read already
         let mut packet = Self::default();
         packet.session_present = u8::read(buf)? != 0;
-        // let reason_code = ConnAckReasonCode::try_from(u8::read(buf)?)?;
+        let reason = u8::read(buf)?;
+        packet.reason = ConnAckReasonCode::try_from(reason).map_err(|_| MQTTError::UnknownData(format!("Unrecognized reason code: {reason}")))?;
+        packet.properties = ConnAckProperties::read(buf)?;
 
         Ok(packet)
     }

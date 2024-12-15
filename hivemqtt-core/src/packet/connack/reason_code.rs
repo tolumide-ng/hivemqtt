@@ -1,5 +1,7 @@
+use hivemqtt_macros::FromU8;
+
 #[allow(dead_code)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, FromU8)]
 #[repr(u8)]
 pub(crate) enum ConnAckReasonCode {
     #[default]
