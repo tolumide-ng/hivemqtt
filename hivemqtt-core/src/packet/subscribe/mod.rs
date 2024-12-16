@@ -4,11 +4,12 @@ mod options;
 pub use options::SubscriptionOptions;
 pub use properties::SubcribeProperties;
 
-use bytes::{BufMut, Bytes};
+use bytes::Bytes;
 
-use crate::{commons::{error::MQTTError, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read}};
+use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 
+#[derive(Debug, Default)]
 pub struct  Subscribe {
     packet_identifier: u16,
     properties: SubcribeProperties,
@@ -25,35 +26,32 @@ impl BufferIO for Subscribe {
         len
     }
 
-    fn w(&self, buf: &mut bytes::BytesMut) {
-        buf.put_u8(Packet::Subscribe as u8 | 1 << 1);
-        //  Encoded as Variable Byte Integer
-        let _ = Self::write_variable_integer(buf, self.length());
-        
-        buf.put_u16(self.packet_identifier);
-        self.properties.w(buf);
+    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
+        FixedHeader::new(Packet::Subscribe, 0b10, self.length()).write(buf)?;
+
+        self.packet_identifier.write(buf);
+        self.properties.write(buf)?;
 
         for (topic, options) in &self.payload {
-            self.ws(buf, topic.as_bytes());
-            options.w(buf);
+            topic.write(buf); options.write(buf)?;
         }
+
+        Ok(())
     }
 
     fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-        // the assumption here is that the provided buffer has already been advanced by the Fixed Header length
-        let packet_identifier = u16::read(buf)?;
-        let properties = SubcribeProperties::read(buf)?;
-        let mut payload = Vec::new();
+        let mut packet = Self::default();
+        packet.packet_identifier = u16::read(buf)?;
+        packet.properties = SubcribeProperties::read(buf)?;
 
         loop {
             let topic = String::read(buf)?;
             let options = SubscriptionOptions::read(buf)?;
 
-            payload.push((topic, options));
-
-            if buf.is_empty() { break }
+            packet.payload.push((topic, options));
+            if buf.is_empty() { break; }
         }
 
-        Ok(Self { packet_identifier, properties, payload })
+        Ok(packet)
     }
 }

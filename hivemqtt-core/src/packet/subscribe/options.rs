@@ -3,7 +3,7 @@ use bytes::{Buf, BufMut};
 use crate::commons::error::MQTTError;
 use crate::commons::qos::QoS;
 
-use crate::traits::{read::Read, write::Write, bufferio::BufferIO};
+use crate::traits::bufferio::BufferIO;
 
 
 
@@ -25,8 +25,9 @@ impl From<SubscriptionOptions> for u8 {
 impl BufferIO for SubscriptionOptions {
     fn length(&self) -> usize { 1 }
 
-    fn w(&self, buf: &mut bytes::BytesMut) {
+    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         buf.put_u8(u8::from(*self));
+        Ok(())
     }
 
     fn read(buf: &mut bytes::Bytes) -> Result<Self, crate::commons::error::MQTTError> {
