@@ -1,4 +1,4 @@
-use std::string::FromUtf8Error;
+use std::{str::FromStr, string::FromUtf8Error};
 
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum MQTTError {
@@ -26,4 +26,6 @@ pub enum MQTTError {
     UnknownData(String),
     #[error("Packet Identifier is only expected when QoS level is 1 or 2")]
     PublishPacketId,
+    #[error("Protocol Error: {0}")]
+    ProtocolError(&'static str),
 }

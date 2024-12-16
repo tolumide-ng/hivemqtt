@@ -8,7 +8,7 @@ use crate::traits::bufferio::BufferIO;
 
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct SubscriptionOptions {
     qos: QoS,
     no_local: bool,
@@ -45,9 +45,10 @@ impl BufferIO for SubscriptionOptions {
 
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RetainHandling {
     /// Send the retained messages at the time of the subscribe
+    #[default]
     Zero = 0,
     /// Send retained messages at subscribe only if subscription does not currently exist
     One = 1,

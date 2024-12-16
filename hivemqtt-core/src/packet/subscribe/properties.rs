@@ -10,8 +10,8 @@ use super::{BufferIO, Property};
 
 #[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct SubcribeProperties {
-    subscription_id: Option<usize>,
-    user_property: Vec<(String, String)>,
+    pub subscription_id: Option<usize>,
+    pub user_property: Vec<(String, String)>,
 }
 
 impl BufferIO for SubcribeProperties {
@@ -27,12 +27,12 @@ impl BufferIO for SubcribeProperties {
     fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
         let len = Self::decode(buf)?;
         let mut props = Self::default();
-
+        
         if len == 0 { return Ok(props) }
         else if len > buf.len() { return Err(MQTTError::IncompleteData("SubscribeProperties", len, buf.len()))};
-
+        
         let mut data = buf.split_to(len);
-
+        
         loop {
             let property = Property::read(&mut data)?;
 
