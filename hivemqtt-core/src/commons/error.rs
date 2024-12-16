@@ -1,6 +1,6 @@
-use std::{str::FromStr, string::FromUtf8Error};
+use std::string::FromUtf8Error;
 
-#[derive(Clone, Debug, thiserror::Error)]
+#[derive(Clone, Debug, thiserror::Error, PartialEq, Eq)]
 pub enum MQTTError {
     #[error("Malformed mqtt packet")]
     MalformedPacket,

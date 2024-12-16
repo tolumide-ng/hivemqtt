@@ -45,7 +45,7 @@ impl BufferIO for PubCompProperties {
 
             match property {
                 Property::ReasonString(ref v) => Self::try_update(&mut props.reason_string, v.as_deref().map(String::from))(property)?,
-                Property::UserProperty(value) => props.user_property.push(value.into_owned()),
+                Property::UserProperty(v) => props.user_property.push(v.into_owned()),
                 p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string()))
             };
 

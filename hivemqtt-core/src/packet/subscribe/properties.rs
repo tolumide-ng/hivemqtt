@@ -9,29 +9,32 @@ use super::{BufferIO, Property};
 
 
 #[derive(Debug, Length, Default, PartialEq, Eq)]
-pub struct SubcribeProperties {
+pub struct SubscribeProperties {
     pub subscription_id: Option<usize>,
     pub user_property: Vec<(String, String)>,
 }
 
-impl BufferIO for SubcribeProperties {
+impl BufferIO for SubscribeProperties {
     fn length(&self) -> usize { self.len() }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         self.encode(buf)?;
+
         if let Some(id) = &self.subscription_id { Property::SubscriptionIdentifier(Cow::Borrowed(id)).w(buf); }
-        self.user_property.iter().for_each(|up| Property::UserProperty(Cow::Borrowed(up)).w(buf));
+        self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
+
         Ok(())
     }
 
     fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
         let len = Self::decode(buf)?;
         let mut props = Self::default();
-        
+
         if len == 0 { return Ok(props) }
         else if len > buf.len() { return Err(MQTTError::IncompleteData("SubscribeProperties", len, buf.len()))};
         
         let mut data = buf.split_to(len);
+
         
         loop {
             let property = Property::read(&mut data)?;
@@ -44,7 +47,6 @@ impl BufferIO for SubcribeProperties {
 
             if data.is_empty() { break; }
         }
-
         Ok(props)
     }
 

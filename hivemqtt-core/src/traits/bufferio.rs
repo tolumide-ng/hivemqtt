@@ -1,4 +1,4 @@
-use bytes::{BufMut, Bytes, BytesMut};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 use crate::commons::fixed_header::FixedHeader;
 use crate::commons::property::Property;
 use crate::traits::{write::Write, read::Read};
@@ -107,19 +107,25 @@ pub(crate) trait BufferIO: Sized {
         let mut result = 0;
         let mut shift = 0;
 
-        for (len, &byte) in buf.iter().enumerate() {
-            // The least significant seven bits of each byte encode the data
+        // for i in 0..4 {
+        //     if buf.is_empty() { return Err(MQTTError::MalformedPacket) }
+        //     let byte = buf.get_u8();
+
+        //     result += (byte as usize & 0x7F) << (7 * 1);
+        //     if (byte & 0x80) == 0 {
+        //         return Ok((result, i))
+        //     }
+        // }
+
+        for len in 0..4 {
+            if buf.is_empty() { return Err(MQTTError::MalformedPacket) }
+            let byte = buf.get_u8();
+
             result |= (byte as usize & 0x7F) << shift;
             shift += 7;
 
-            // Continuation bit: The most significant bit is used to indicate whether there are still more bytes the representation
             if (byte & 0x80) == 0 {
                 return Ok((result, len))
-            }
-            
-            // 0, 1, 2, 3 (the maximum possible value that we expect is 268_435_455)
-            if len >= 3 {
-                break;
             }
         }
 

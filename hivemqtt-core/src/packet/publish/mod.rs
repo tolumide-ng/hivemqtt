@@ -82,8 +82,6 @@ mod tests {
         let mut buf = BytesMut::new();
         packet.write(&mut buf).unwrap();
 
-        println!("**** {buf:?}");
-
         let expected = b";)\0\x10packagin_plant/#\"\xe2\x05\x01\r#\0\x02\0\x11veryLarge payloadveryLarge payload".to_vec();
         assert_eq!(buf.to_vec(), expected);
 
