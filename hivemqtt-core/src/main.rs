@@ -21,4 +21,4 @@
 // use hivemqtt_macros::Length;
 // use traits::read::Read;
 
-// fn main() {}
+fn main() {}
