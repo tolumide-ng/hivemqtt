@@ -43,6 +43,12 @@ pub(crate) enum Property<'a> {
     SharedSubscriptionAvailable(Option<u8>) = 42,
 }
 
+// impl<'a> Default for Property<'a> {
+//     fn default() -> Self {
+//         Self::PayloadFormatIndicator(None)
+//     }
+// }
+
 impl<'a> From<&Property<'a>> for u8 {
     fn from(value: &Property) -> Self {
         match value {

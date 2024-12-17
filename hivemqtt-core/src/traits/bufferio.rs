@@ -107,16 +107,6 @@ pub(crate) trait BufferIO: Sized {
         let mut result = 0;
         let mut shift = 0;
 
-        // for i in 0..4 {
-        //     if buf.is_empty() { return Err(MQTTError::MalformedPacket) }
-        //     let byte = buf.get_u8();
-
-        //     result += (byte as usize & 0x7F) << (7 * 1);
-        //     if (byte & 0x80) == 0 {
-        //         return Ok((result, i))
-        //     }
-        // }
-
         for len in 0..4 {
             if buf.is_empty() { return Err(MQTTError::MalformedPacket) }
             let byte = buf.get_u8();
@@ -154,4 +144,17 @@ pub(crate) trait BufferIO: Sized {
     fn read_with_fixedheader(buf: &mut Bytes, header: FixedHeader) -> Result<Self, MQTTError> {
         Err(MQTTError::MalformedPacket)
     }
+
+
+    // fn parse_len(&self, buf: &mut Bytes) -> Result<usize, MQTTError> {
+    //     let len = Self::decode(buf)?;
+    //     let mut props = Self::default();
+
+    //     let self_str = "";
+
+    //     if len == 0 { return Ok(props) }
+    //     else if len > buf.len() { return Err(MQTTError::IncompleteData(self_str, len, buf.len()))};
+
+    //     Ok(len)
+    // }
 }

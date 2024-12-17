@@ -1,7 +1,7 @@
 use hivemqtt_macros::FromU8;
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, FromU8)]
+#[derive(Debug, Clone, Copy, FromU8, PartialEq, Eq)]
 pub enum SubAckReasonCode {
     /// The subscription is accepted and the maximum Qos sent will be QoS1 (This might be lower than requested)
     GrantedQos0 = 0,
