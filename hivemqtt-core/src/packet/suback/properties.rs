@@ -26,7 +26,6 @@ impl BufferIO for SubAckProperties {
     fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
         let len = Self::decode(buf)?;
         let mut props = Self::default();
-
         if len == 0 { return Ok(props) }
         else if len > buf.len() { return Err(MQTTError::IncompleteData("SubscribeProperties", len, buf.len()))};
 

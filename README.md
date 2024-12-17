@@ -13,3 +13,4 @@
 - [ ] Integrate WASM for easy compiling to Javascript/Typescript/Node.js environments
 - [ ] Easy internal utility for converting -> to string and vice versal (from terminal tool?) - for debugging
 - [ ] Samples for easy learning
+- [ ] Move bytes length validation/parsing into the trait, and update the trait's secondary properties
