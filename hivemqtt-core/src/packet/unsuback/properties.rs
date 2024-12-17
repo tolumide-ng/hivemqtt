@@ -6,7 +6,7 @@ use crate::commons::error::MQTTError;
 
 use super::{BufferIO, Property};
 
-#[derive(Debug, Default, Length)]
+#[derive(Debug, Default, Length, PartialEq, Eq)]
 pub struct UnSubAckProperties {
     pub reason_string: Option<String>,
     pub user_property: Vec<(String, String)>,
@@ -42,4 +42,3 @@ impl BufferIO for UnSubAckProperties {
         Ok(props)
     }
 }
-

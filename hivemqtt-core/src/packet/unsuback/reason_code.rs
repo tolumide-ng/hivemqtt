@@ -1,6 +1,6 @@
 use hivemqtt_macros::FromU8;
 
-#[derive(Debug, Clone, Copy, FromU8)]
+#[derive(Debug, Clone, Copy, FromU8, PartialEq, Eq)]
 #[repr(u8)]
 pub enum UnSubAckReasonCode {
     Success = 0,
