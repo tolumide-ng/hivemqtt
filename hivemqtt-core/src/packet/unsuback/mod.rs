@@ -18,7 +18,7 @@ pub struct UnSubAck {
 impl BufferIO for UnSubAck {
     // Length of the Variable Header plus the length of the Payload 
     fn length(&self) -> usize {
-        2 + self.properties.length() + Self::get_variable_length(self.properties.length()) + self.payload.len()
+        2 + self.properties.length() + self.properties.variable_length() + self.payload.len()
     }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {

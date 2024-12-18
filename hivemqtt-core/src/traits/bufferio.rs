@@ -13,13 +13,6 @@ pub(crate) trait BufferIO: Sized {
         Ok(())
     }
 
-    fn get_variable_length(len: usize) -> usize {
-        if len >= 2_097_152 { 4 }
-        else if len >= 16_384 { 3 }
-        else if len >= 128 { 2 }
-        else { 1 }
-    }
-
     fn variable_length(&self) -> usize {
         if self.length() >= 2_097_152 { 4 }
         else if self.length() >= 16_384 { 3 }
