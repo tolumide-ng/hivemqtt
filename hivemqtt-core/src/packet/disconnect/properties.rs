@@ -9,10 +9,10 @@ use super::{BufferIO, Property};
 
 #[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct DisconnectProperties {
-    session_expiry_interval: Option<u32>,
-    reason_string: Option<String>,
-    user_property: Vec<(String, String)>,
-    server_reference: Option<String>,
+    pub session_expiry_interval: Option<u32>,
+    pub reason_string: Option<String>,
+    pub user_property: Vec<(String, String)>,
+    pub server_reference: Option<String>,
 }
 
 impl BufferIO for DisconnectProperties {
