@@ -115,13 +115,6 @@ pub(crate) trait BufferIO: Sized {
         return Err(MQTTError::MalformedPacket); 
     }
 
-    /// /// To be phased out
-    /// Writes the length of the bytes and itself into the buffer
-    fn ws(&self, buf: &mut BytesMut, value: &[u8]) {
-        buf.put_u16(value.len() as u16);
-        buf.extend_from_slice(value);
-    }
-
     /// Allows a struct specify what it's length is to it's external users
     /// Normally this is obtainable using the .len() method (internally on structs implementing Length(formerly DataSize)),
     /// However, this method allows the struct customize what its actual length is.
