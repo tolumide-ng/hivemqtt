@@ -39,8 +39,6 @@ impl BufferIO for Disconnect {
 
     fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
         let mut packet = Self::default();
-
-        
         packet.reason_code = DisconnectReasonCode::try_from(u8::read(buf)?).map_err(MQTTError::UnknownData)?;
         
         if buf.has_remaining() {
