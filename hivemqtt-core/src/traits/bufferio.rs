@@ -146,12 +146,14 @@ pub(crate) trait BufferIO: Sized {
     }
 
 
-    fn parse_len(&self, buf: &mut Bytes) -> Result<usize, MQTTError> 
+    fn parse_len(buf: &mut Bytes) -> Result<Option<usize>, MQTTError> 
         where Self: Default {
         let len = Self::decode(buf)?;
         let self_str = "";
 
+        if len == 0 { return Ok(None) }
         if len > buf.len() { return Err(MQTTError::IncompleteData(self_str, len, buf.len()))};
-        Ok(len)
+
+        Ok(Some(len))
     }
 }

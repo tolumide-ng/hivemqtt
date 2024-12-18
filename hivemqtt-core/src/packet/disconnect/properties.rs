@@ -29,11 +29,8 @@ impl BufferIO for DisconnectProperties {
 
 
     fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
-        let len = Self::decode(buf)?;
+        let Some(len) = Self::parse_len(buf)? else { return Ok(Self::default()) };
         let mut props = Self::default();
-        if len == 0 { return Ok(props) }
-        else if len > buf.len() { return Err(MQTTError::IncompleteData("DisconnectProperties", len, buf.len()))};
-
         let mut data = buf.split_to(len);
 
         loop {
