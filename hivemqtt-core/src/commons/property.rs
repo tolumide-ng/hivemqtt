@@ -3,15 +3,14 @@ use std::fmt::Display;
 
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
-use crate::traits::read::Read;
+use crate::traits::{read::Read, write::Write};
 use crate::traits::bufferio::BufferIO;
 use crate::commons::error::MQTTError;
 
 use super::variable_byte_integer::variable_integer;
-use super::Write;
 
 /// Must be encoded using the VBI
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(u8)]
 pub(crate) enum Property<'a> {
     PayloadFormatIndicator(Option<u8>) = 1,
@@ -144,7 +143,7 @@ impl<'a> BufferIO for Property<'a> {
             Self::UserProperty(Cow::Borrowed((ref k, ref v))) => {
                 self.with_id(buf, |b| { k.write(b); v.write(b); });
             }
-            Self::AuthenticationMethod(Some(data)) => self.with_id(buf, |b| self.ws(b, data.as_bytes())),
+            Self::AuthenticationMethod(Some(data)) => self.with_id(buf, |b| Bytes::from_iter(data.as_bytes().to_vec()).write(b)),
             Self::AuthenticationData(Some(data)) => self.with_id(buf, |b| self.ws(b, &data)),
             Self::WillDelayInterval(Some(p)) => self.with_id(buf, |b| b.put_u32(*p)),
             Self::PayloadFormatIndicator(Some(p)) => self.with_id(buf, |b| b.put_u8(*p)),

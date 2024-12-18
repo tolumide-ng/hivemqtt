@@ -9,10 +9,10 @@ use super::{BufferIO, Property};
 
 #[derive(Debug, Default, Length, PartialEq, Eq)]
 pub struct AuthProperties {
-    auth_method: Option<String>,
-    auth_data: Option<Bytes>,
-    reason_string: Option<String>,
-    user_property: Vec<(String, String)>,
+    pub auth_method: Option<String>,
+    pub auth_data: Option<Bytes>,
+    pub reason_string: Option<String>,
+    pub user_property: Vec<(String, String)>,
 }
 
 use hivemqtt_macros::FromU8;
