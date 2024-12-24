@@ -7,8 +7,6 @@ use crate::traits::{read::Read, write::Write};
 use crate::traits::bufferio::BufferIO;
 use crate::commons::error::MQTTError;
 
-use super::variable_byte_integer::variable_integer;
-
 /// Must be encoded using the VBI
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(u8)]
@@ -125,6 +123,12 @@ impl<'a> Property<'a> {
 }
 
 impl<'a> BufferIO for Property<'a> {
+    fn length(&self) -> usize {
+        match self {
+            Self::SubscriptionIdentifier(length) => **length,
+            _ => 0
+        }
+    }
     fn w(&self, buf: &mut BytesMut) {
         match self {
             Self::SessionExpiryInterval(Some(p)) => self.with_id(buf, |b| p.write(b)),
@@ -144,9 +148,7 @@ impl<'a> BufferIO for Property<'a> {
             Self::ResponseTopic(Some(p)) => self.with_id(buf, |b| Bytes::from_iter(p.as_bytes().to_vec()).write(b)),
             Self::CorrelationData(Some(p)) => self.with_id(buf, |b| Bytes::from_iter(p.to_vec()).write(b)),
             // NOTE: this needs to be tested for if this method of writing is correct or not!
-            Self::SubscriptionIdentifier(id) => {
-                self.with_id(buf, |b| { let _ = variable_integer(b, **id).unwrap(); });
-            },
+            Self::SubscriptionIdentifier(_) => self.with_id(buf, |b| { self.encode(b).unwrap() }),
             Self::AssignedClientIdentifier(Some(data)) => self.with_id(buf, |b| Bytes::from_iter(data.as_bytes().to_vec()).write(b)),
             Self::ServerKeepAlive(Some(p)) => self.with_id(buf, |b| p.write(b)),
             Self::ResponseInformation(Some(data)) => self.with_id(buf, |b| Bytes::from_iter(data.as_bytes().to_vec()).write(b)),
@@ -172,7 +174,7 @@ impl<'a> BufferIO for Property<'a> {
             3  =>  Ok(Property::ContentType(Some(Cow::Owned(String::read(buf)?)))),
             8  =>  Ok(Property::ResponseTopic(Some(Cow::Owned(String::read(buf)?)))),
             9  =>  Ok(Property::CorrelationData(Some(Cow::Owned(Bytes::read(buf)?.to_vec())))),
-            11 =>  Ok(Property::SubscriptionIdentifier(Cow::Owned(Self::read_variable_integer(buf)?.0))),
+            11 =>  Ok(Property::SubscriptionIdentifier(Cow::Owned(Self::decode(buf)?))),
             17 =>  Ok(Property::SessionExpiryInterval(Some(u32::read(buf)?))),
             18 =>  Ok(Property::AssignedClientIdentifier(Some(Cow::Owned(String::read(buf)?)))),
             19 =>  Ok(Property::ServerKeepAlive(Some(u16::read(buf)?))),

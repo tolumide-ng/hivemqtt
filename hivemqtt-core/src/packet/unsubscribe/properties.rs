@@ -14,12 +14,6 @@ pub struct UnSubscribeProperties {
 impl BufferIO for UnSubscribeProperties {
     fn length(&self) -> usize { self.len() }
 
-    fn w(&self, buf: &mut bytes::BytesMut) {
-        let _ = Self::write_variable_integer(buf, self.len());
-
-        self.user_property.iter().for_each(|up| Property::UserProperty(Cow::Borrowed(up)).w(buf));
-    }
-
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         self.encode(buf)?;
         self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));

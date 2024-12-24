@@ -1,4 +1,4 @@
-use bytes::{Buf, BufMut, Bytes, BytesMut};
+use bytes::{Bytes, BytesMut};
 use crate::commons::fixed_header::FixedHeader;
 use crate::commons::property::Property;
 use crate::traits::{write::Write, read::Read};
@@ -71,50 +71,6 @@ pub(crate) trait BufferIO: Sized {
         }
     }
 
-    /// To be phased out
-    fn write_variable_integer(buf: &mut BytesMut, len: usize) -> Result<usize, MQTTError> {
-         // 268_435_455
-        if len > 0xFFFFFFF {
-            return Err(MQTTError::PayloadTooLong)
-        }
-        let mut x: usize = len;
-        let mut count = 0;
-
-        while x != 0 {
-            // Get the last 7bits of x;
-            let mut bytes = (x & 0x7F) as u8; // (x%128)
-            x >>= 7; // shift to right by 7bits(i.e. 2^7 = 128) (i.e x = x/128)
-
-            if x > 0 {
-                bytes |= 0x80
-            }
-            buf.put_u8(bytes);
-            count += 1;
-        }
-
-        Ok(count)
-    }
-
-    /// To be phased out
-    fn read_variable_integer(buf: &mut Bytes) -> Result<(usize, usize), MQTTError> {
-        let mut result = 0;
-        let mut shift = 0;
-
-        for len in 0..4 {
-            if buf.is_empty() { return Err(MQTTError::MalformedPacket) }
-            let byte = buf.get_u8();
-
-            result |= (byte as usize & 0x7F) << shift;
-            shift += 7;
-
-            if (byte & 0x80) == 0 {
-                return Ok((result, len))
-            }
-        }
-
-        return Err(MQTTError::MalformedPacket); 
-    }
-
     /// Allows a struct specify what it's length is to it's external users
     /// Normally this is obtainable using the .len() method (internally on structs implementing Length(formerly DataSize)),
     /// However, this method allows the struct customize what its actual length is.
@@ -123,11 +79,11 @@ pub(crate) trait BufferIO: Sized {
     ///     must also implement `DataSize` proc. So that there is a default accurate length property
     fn length(&self) -> usize { 0 }
 
-    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+    fn read(_buf: &mut Bytes) -> Result<Self, MQTTError> {
         Err(MQTTError::MalformedPacket)
     }
 
-    fn read_with_fixedheader(buf: &mut Bytes, header: FixedHeader) -> Result<Self, MQTTError> {
+    fn read_with_fixedheader(_buf: &mut Bytes, _header: FixedHeader) -> Result<Self, MQTTError> {
         Err(MQTTError::MalformedPacket)
     }
 

@@ -57,15 +57,6 @@ impl BufferIO for AuthProperties {
 
         Ok(props)
     }
-
-    fn w(&self, buf: &mut bytes::BytesMut) {
-        let _ = Self::write_variable_integer(buf, self.len()).unwrap();
-
-        Property::AuthenticationMethod(self.auth_method.as_deref().map(Cow::Borrowed)).w(buf);
-        Property::AuthenticationData(self.auth_data.as_deref().map(Cow::Borrowed)).w(buf);
-        Property::ReasonString(self.reason_string.as_deref().map(Cow::Borrowed)).w(buf);
-        self.user_property.iter().for_each(|up| Property::UserProperty(Cow::Borrowed(&up)).w(buf));
-    }
 }
 
 

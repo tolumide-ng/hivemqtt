@@ -8,6 +8,7 @@
     - [ ] TLS/TCP
     - [ ] IPV6
 - [ ] All MQTT Packet Support (In Progress)
+- [ ] Implement `Display` for `Property`
 - [ ] Tests
 - [ ] no_std support
 - [ ] Integrate WASM for easy compiling to Javascript/Typescript/Node.js environments
