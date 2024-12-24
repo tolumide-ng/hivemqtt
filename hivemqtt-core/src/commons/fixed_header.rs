@@ -1,7 +1,7 @@
-use bytes::{Buf, Bytes, BytesMut};
+use bytes::{Bytes, BytesMut};
 
-use super::{decode, encode_vbi, error::MQTTError, packets::Packet};
-use crate::traits::{write::Write, read::Read};
+use super::{error::MQTTError, packets::Packet};
+use crate::traits::{bufferio::BufferIO, read::Read, write::Write};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct FixedHeader {
@@ -16,15 +16,21 @@ impl FixedHeader {
     pub(crate) fn new(packet_type: Packet, flags: u8, remaining_length: usize) -> Self {
         Self { packet_type, flags, remaining_length }
     }
+}
 
-    pub(crate) fn write(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
+
+
+impl BufferIO for FixedHeader {
+    fn length(&self) -> usize { self.remaining_length }
+
+    fn write(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
         ((self.packet_type as u8) | self.flags).write(buf);
-        encode_vbi(buf, self.remaining_length)?;
+        self.encode(buf)?;
 
         Ok(())
     }
 
-    pub(crate) fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
         let byte0 = u8::read(buf)?;
         let packet = byte0 & 0b11110000;
         let packet_type = Packet::try_from(packet).map_err(|_| MQTTError::UnknownData(format!("Unexpected packet type: {}", packet)))?;
@@ -32,10 +38,7 @@ impl FixedHeader {
         Ok(Self {
             packet_type,
             flags: byte0 & 0b00001111,
-            remaining_length: decode(buf)?,
+            remaining_length: Self::decode(buf)?,
         })
     }
-
-
-    // pub(crate) fn read(buf: &mut Bytes) {}
 }

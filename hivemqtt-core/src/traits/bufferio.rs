@@ -7,9 +7,9 @@ use crate::commons::error::MQTTError;
 
 pub(crate) trait BufferIO: Sized {
 
-    fn w(&self, buf: &mut BytesMut) {}
+    fn w(&self, _buf: &mut BytesMut) {}
 
-    fn write(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
+    fn write(&self, _buf: &mut BytesMut) -> Result<(), MQTTError> {
         Ok(())
     }
 
