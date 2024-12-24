@@ -1,7 +1,7 @@
 use bytes::{Bytes, BytesMut};
 
 use super::{error::MQTTError, packets::Packet};
-use crate::traits::{bufferio::BufferIO, read::Read, write::Write};
+use crate::v5::traits::{bufferio::BufferIO, read::Read, write::Write};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct FixedHeader {

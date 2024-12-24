@@ -3,8 +3,8 @@ use std::borrow::Cow;
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::commons::{error::MQTTError, qos::QoS};
-use crate::traits::{write::Write, read::Read, bufferio::BufferIO};
+use crate::v5::commons::{error::MQTTError, qos::QoS};
+use crate::v5::traits::{write::Write, read::Read, bufferio::BufferIO};
 
 use super::Property;
 

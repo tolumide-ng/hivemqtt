@@ -4,7 +4,7 @@ mod reason_code;
 use properties::UnSubAckProperties;
 pub use reason_code::UnSubAckReasonCode;
 
-use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 /// Sent by the Server to the Client to confirm receipt of an UNSUBSCRIBE packet
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -53,7 +53,7 @@ impl BufferIO for UnSubAck {
 mod tests {
     use bytes::{Bytes, BytesMut};
 
-    use crate::packet::unsuback::UnSubAck;
+    use crate::v5::packet::unsuback::UnSubAck;
 
     use super::*;
 

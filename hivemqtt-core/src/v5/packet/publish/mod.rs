@@ -3,7 +3,7 @@ pub use properties::PublishProperties;
 
 use bytes::Bytes;
 
-use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property, qos::QoS}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property, qos::QoS}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(crate) struct Publish {
@@ -24,7 +24,7 @@ impl BufferIO for Publish {
         len
     }
 
-    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), crate::commons::error::MQTTError> {
+    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         FixedHeader::new(Packet::Publish, (self.dup as u8) << 3 | (self.qos as u8) << 1 | (self.retain as u8), self.length()).write(buf)?;
 
         self.topic.write(buf);

@@ -1,9 +1,9 @@
 use bytes::{Bytes, BytesMut};
-use crate::commons::fixed_header::FixedHeader;
-use crate::commons::property::Property;
-use crate::traits::{write::Write, read::Read};
+use crate::v5::commons::fixed_header::FixedHeader;
+use crate::v5::commons::property::Property;
+use crate::v5::traits::{write::Write, read::Read};
 
-use crate::commons::error::MQTTError;
+use crate::v5::commons::error::MQTTError;
 
 pub(crate) trait BufferIO: Sized {
 

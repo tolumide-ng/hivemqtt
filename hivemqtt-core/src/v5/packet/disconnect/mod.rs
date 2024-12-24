@@ -6,7 +6,7 @@ pub use properties::DisconnectProperties;
 pub use reason_code::DisconnectReasonCode;
 
 
-use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Disconnect {

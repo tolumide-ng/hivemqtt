@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use hivemqtt_macros::Length;
 
-use crate::commons::error::MQTTError;
+use crate::v5::commons::error::MQTTError;
 
 use super::{BufferIO, Property};
 

@@ -5,7 +5,7 @@ mod reason_code;
 use properties::ConnAckProperties;
 use reason_code::ConnAckReasonCode;
 
-use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -26,7 +26,7 @@ impl BufferIO for ConnAck {
         len
     }
 
-    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), crate::commons::error::MQTTError> {
+    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         FixedHeader::new(Packet::ConnAck, 0, self.length()).write(buf)?;
 
         u8::from(self.session_present).write(buf);
@@ -36,7 +36,7 @@ impl BufferIO for ConnAck {
         Ok(())
     }
 
-    fn read(buf: &mut bytes::Bytes) -> Result<Self, crate::commons::error::MQTTError> {
+    fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
         // Assumption is that the fixed header as been read already
         let mut packet = Self::default();
         packet.session_present = u8::read(buf)? != 0;

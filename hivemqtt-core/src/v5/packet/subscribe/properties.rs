@@ -3,7 +3,7 @@ use std::{borrow::Cow, ops::Deref};
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::commons::error::MQTTError;
+use crate::v5::commons::error::MQTTError;
 
 use super::{BufferIO, Property};
 

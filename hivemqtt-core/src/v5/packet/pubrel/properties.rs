@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use hivemqtt_macros::{FromU8, Length};
 
-use crate::commons::error::MQTTError;
+use crate::v5::commons::error::MQTTError;
 
 use super::{BufferIO, Property};
 
@@ -22,7 +22,7 @@ pub struct PubRelProperties {
 impl BufferIO for PubRelProperties {
     fn length(&self) -> usize {self.len()}
 
-    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), crate::commons::error::MQTTError> {
+    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         self.encode(buf)?;
 
         Property::ReasonString(self.reason_string.as_deref().map(Cow::Borrowed)).w(buf);
@@ -30,7 +30,7 @@ impl BufferIO for PubRelProperties {
         Ok(())
     }
 
-    fn read(buf: &mut bytes::Bytes) -> Result<Self, crate::commons::error::MQTTError> {
+    fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
         let Some(len) = Self::parse_len(buf)? else { return Ok(Self::default()) };
         let mut props = Self::default();
         let mut data = buf.split_to(len);

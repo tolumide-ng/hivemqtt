@@ -3,9 +3,9 @@ use std::fmt::Display;
 
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
-use crate::traits::{read::Read, write::Write};
-use crate::traits::bufferio::BufferIO;
-use crate::commons::error::MQTTError;
+use crate::v5::traits::{read::Read, write::Write};
+use crate::v5::traits::bufferio::BufferIO;
+use crate::v5::commons::error::MQTTError;
 
 /// Must be encoded using the VBI
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::commons::error::MQTTError;
+use crate::v5::commons::error::MQTTError;
 
 use super::{BufferIO, Property};
 
@@ -23,7 +23,7 @@ pub struct PublishProperties {
 impl BufferIO for PublishProperties {
     fn length(&self) -> usize { self.len() }
 
-    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), crate::commons::error::MQTTError> {
+    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         self.encode(buf)?;
         
         Property::PayloadFormatIndicator(self.payload_format_indicator).w(buf);
@@ -37,7 +37,7 @@ impl BufferIO for PublishProperties {
         Ok(())
     }
 
-    fn read(buf: &mut Bytes) -> Result<Self, crate::commons::error::MQTTError> {
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
         let Some(len) = Self::parse_len(buf)? else { return Ok(Self::default()) };
         let mut props = Self::default();
         let mut data = buf.split_to(len);

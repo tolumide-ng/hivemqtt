@@ -4,7 +4,7 @@ use properties::SubAckProperties;
 pub use reason_code::SubAckReasonCode;
 
 
-use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 /// 3.9: Sent by the Server to the Client to confirm receipt and processing of a SUBSCRIBE packet.
 #[derive(Debug, Default, PartialEq, Eq)]

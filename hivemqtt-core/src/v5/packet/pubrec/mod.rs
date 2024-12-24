@@ -1,7 +1,7 @@
 mod properties;
 use properties::{PubRecProperties, PubRecReasonCode};
 
-use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct PubRec {
@@ -21,7 +21,7 @@ impl BufferIO for PubRec {
         len
     }
 
-    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), crate::commons::error::MQTTError> {
+    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         FixedHeader::new(Packet::PubRec, 0, self.length()).write(buf)?;
 
         self.packet_identifier.write(buf);
@@ -53,7 +53,7 @@ impl BufferIO for PubRec {
 mod tests {
     use bytes::{Bytes, BytesMut};
 
-    use crate::packet::pubrec::{FixedHeader, Packet};
+    use crate::v5::packet::pubrec::{FixedHeader, Packet};
 
     use super::{properties::PubRecReasonCode, BufferIO, PubRec};
 

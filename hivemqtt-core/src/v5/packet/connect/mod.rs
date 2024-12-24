@@ -7,8 +7,8 @@ use hivemqtt_macros::Length;
 pub use properties::ConnectProperties;
 use will::Will;
 
-use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property, qos::QoS, version::Version}, constants::PROTOCOL_NAME, traits::bufferio::BufferIO};
-use crate::traits::{write::Write, read::Read};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property, qos::QoS, version::Version}, constants::PROTOCOL_NAME, traits::bufferio::BufferIO};
+use crate::v5::traits::{write::Write, read::Read};
 
 #[derive(Debug, Length)]
 pub struct Connect {
@@ -158,7 +158,7 @@ impl TryFrom<u8> for ConnectFlags {
 mod connect_packet {
     use std::io::Read;
     use bytes::BytesMut;
-    use crate::commons::qos::QoS;
+    use crate::v5::commons::qos::QoS;
     use super::*;
 
 

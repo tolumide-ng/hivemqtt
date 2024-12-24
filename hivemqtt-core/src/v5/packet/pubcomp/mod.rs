@@ -2,7 +2,7 @@ mod properties;
 
 use properties::{PubCompProperties, PubCompReasonCode};
 
-use crate::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub  struct PubComp {
@@ -19,7 +19,7 @@ impl BufferIO for PubComp {
         len
     }
 
-    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), crate::commons::error::MQTTError> {
+    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         FixedHeader::new(Packet::PubComp, 0, self.length()).write(buf)?;
 
         self.packet_identifier.write(buf);
@@ -31,7 +31,7 @@ impl BufferIO for PubComp {
     }
     
 
-    fn read_with_fixedheader(buf: &mut bytes::Bytes, header: FixedHeader) -> Result<Self, crate::commons::error::MQTTError> {
+    fn read_with_fixedheader(buf: &mut bytes::Bytes, header: FixedHeader) -> Result<Self, MQTTError> {
         let mut packet = Self::default();
         packet.packet_identifier = u16::read(buf)?;
 

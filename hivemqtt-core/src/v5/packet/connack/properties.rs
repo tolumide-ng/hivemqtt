@@ -1,8 +1,8 @@
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::{commons::error::MQTTError, traits::bufferio::BufferIO};
-use crate::commons::property::Property;
+use crate::v5::{commons::error::MQTTError, traits::bufferio::BufferIO};
+use crate::v5::commons::property::Property;
 use std::borrow::{Borrow, Cow};
 
 #[derive(Debug, Length, Default, PartialEq, Eq)]
@@ -30,7 +30,7 @@ impl BufferIO for ConnAckProperties {
     /// Length of the properties in the CONNACK packet Variable Header
     fn length(&self) -> usize { self.len() }
 
-    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), crate::commons::error::MQTTError> {
+    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         self.encode(buf)?;
 
         Property::SessionExpiryInterval(self.session_expiry_interval).w(buf);
@@ -53,7 +53,7 @@ impl BufferIO for ConnAckProperties {
         Ok(())
     }
 
-    fn read(buf: &mut Bytes) -> Result<Self, crate::commons::error::MQTTError> {
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
         let Some(len) = Self::parse_len(buf)? else { return Ok(Self::default()) };
         let mut properties = Self::default();
         let mut data = buf.split_to(len);

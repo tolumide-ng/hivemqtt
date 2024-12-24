@@ -1,9 +1,9 @@
 use bytes::{Buf, BufMut};
 
-use crate::commons::error::MQTTError;
-use crate::commons::qos::QoS;
+use crate::v5::commons::error::MQTTError;
+use crate::v5::commons::qos::QoS;
 
-use crate::traits::bufferio::BufferIO;
+use crate::v5::traits::bufferio::BufferIO;
 
 
 
@@ -30,7 +30,7 @@ impl BufferIO for SubscriptionOptions {
         Ok(())
     }
 
-    fn read(buf: &mut bytes::Bytes) -> Result<Self, crate::commons::error::MQTTError> {
+    fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
         let byte = buf.get_u8();
 
         let qos = byte & 0b0000_0011;
