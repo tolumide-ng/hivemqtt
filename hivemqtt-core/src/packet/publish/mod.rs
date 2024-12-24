@@ -45,7 +45,8 @@ impl BufferIO for Publish {
 
         packet.topic = String::read(buf)?;
         packet.dup = (flag & 0b1000) != 0;
-        packet.qos = QoS::try_from((flag & 0b0110) >> 1)?;
+        let qos = (flag & 0b0110) >> 1;
+        packet.qos = QoS::try_from(qos).map_err(|_| MQTTError::UnsupportedQoS(qos))?;
         packet.retain = (flag & 0b1) != 0;
 
         if packet.qos != QoS::Zero {

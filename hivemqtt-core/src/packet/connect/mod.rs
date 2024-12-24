@@ -145,7 +145,8 @@ impl TryFrom<u8> for ConnectFlags {
         let username = (value & (1 << 7)) != 0;
         let password = (value & (1 << 6)) != 0;
         let will_retain = (value & (1 << 5)) != 0;
-        let will_qos = QoS::try_from((value & (0b11 << 3)) >> 3)?;
+        let qos = (value & (0b11 << 3)) >> 3;
+        let will_qos = QoS::try_from(qos).map_err(|_| MQTTError::UnsupportedQoS(qos))?;
         let will_flag = (value & (1 << 2)) != 0;
         let clean_start = (value & (1 << 1)) != 0;
 

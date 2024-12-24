@@ -33,7 +33,8 @@ impl BufferIO for SubscriptionOptions {
     fn read(buf: &mut bytes::Bytes) -> Result<Self, crate::commons::error::MQTTError> {
         let byte = buf.get_u8();
 
-        let qos = QoS::try_from(byte & 0b0000_0011)?;
+        let qos = byte & 0b0000_0011;
+        let qos = QoS::try_from(qos).map_err(|_| MQTTError::UnsupportedQoS(qos))?;
         let no_local = (byte & 0b0000_0100) != 0;
         let retain_as_published = (byte & 0b0000_1000) != 0;
         let retain_handling = RetainHandling::try_from(byte & 0b0011_0000)?;
