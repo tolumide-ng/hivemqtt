@@ -28,4 +28,6 @@ pub enum MQTTError {
     PublishPacketId,
     #[error("Protocol Error: {0}")]
     ProtocolError(&'static str),
+    #[error("Insufficient bytes on the stream")]
+    InsufficientBytes,
 }

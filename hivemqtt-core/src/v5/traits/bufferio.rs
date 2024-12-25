@@ -40,7 +40,7 @@ pub(crate) trait BufferIO: Sized {
     }
 
     /// Decodes a Variable byte Inetger
-    fn decode(buf: &mut Bytes) -> Result<usize, MQTTError> {
+    fn decode(buf: &mut Bytes) -> Result<(usize, usize), MQTTError> {
         let mut result = 0;
 
         for i in 0..4 {
@@ -52,7 +52,7 @@ pub(crate) trait BufferIO: Sized {
             result += ((byte as usize) & 0x7F) << (7 * i);
 
             if (byte & 0x80) == 0 {
-                return Ok(result)
+                return Ok((result, i + 1))
             }
         }
 
@@ -90,7 +90,7 @@ pub(crate) trait BufferIO: Sized {
 
     fn parse_len(buf: &mut Bytes) -> Result<Option<usize>, MQTTError> 
         where Self: Default {
-        let len = Self::decode(buf)?;
+        let (len, _) = Self::decode(buf)?;
         let self_str = "";
 
         if len == 0 { return Ok(None) }

@@ -38,7 +38,7 @@ impl BufferIO for WillProperties {
     }
 
     fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-        let length = Self::decode(buf)?;
+        let (length, _) = Self::decode(buf)?;
         let mut properties = Self::default();
 
         if length == 0 { return Ok(properties) }

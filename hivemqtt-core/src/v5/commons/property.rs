@@ -174,7 +174,7 @@ impl<'a> BufferIO for Property<'a> {
             3  =>  Ok(Property::ContentType(Some(Cow::Owned(String::read(buf)?)))),
             8  =>  Ok(Property::ResponseTopic(Some(Cow::Owned(String::read(buf)?)))),
             9  =>  Ok(Property::CorrelationData(Some(Cow::Owned(Bytes::read(buf)?.to_vec())))),
-            11 =>  Ok(Property::SubscriptionIdentifier(Cow::Owned(Self::decode(buf)?))),
+            11 =>  Ok(Property::SubscriptionIdentifier(Cow::Owned(Self::decode(buf)?.0))),
             17 =>  Ok(Property::SessionExpiryInterval(Some(u32::read(buf)?))),
             18 =>  Ok(Property::AssignedClientIdentifier(Some(Cow::Owned(String::read(buf)?)))),
             19 =>  Ok(Property::ServerKeepAlive(Some(u16::read(buf)?))),
