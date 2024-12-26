@@ -6,7 +6,7 @@ pub use properties::DisconnectProperties;
 pub use reason_code::DisconnectReasonCode;
 
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Disconnect {
@@ -25,7 +25,7 @@ impl BufferIO for Disconnect {
     }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        FixedHeader::new(Packet::Disconnect, 0, self.length()).write(buf)?;
+        FixedHeader::new(PacketType::Disconnect, 0, self.length()).write(buf)?;
 
         u8::from(self.reason_code).write(buf);
 
@@ -70,7 +70,7 @@ mod tests {
 
         assert_eq!(fixed_header.flags, 0);
         assert_eq!(fixed_header.remaining_length, 0);
-        assert_eq!(fixed_header.packet_type, Packet::Disconnect);
+        assert_eq!(fixed_header.packet_type, PacketType::Disconnect);
 
         let read_packet = Disconnect::read(&mut read_buf).unwrap();
         assert_eq!(read_packet.reason_code, DisconnectReasonCode::NormalDisconnection);
@@ -91,7 +91,7 @@ mod tests {
 
         assert_eq!(fixed_header.flags, 0);
         assert_eq!(fixed_header.remaining_length, 2);
-        assert_eq!(fixed_header.packet_type, Packet::Disconnect);
+        assert_eq!(fixed_header.packet_type, PacketType::Disconnect);
         
         let read_packet = Disconnect::read(&mut read_buf).unwrap();
         assert_eq!(read_packet.reason_code, DisconnectReasonCode::MaximumConnectTime);
@@ -117,7 +117,7 @@ mod tests {
 
         assert_eq!(fixed_header.flags, 0);
         assert_eq!(fixed_header.remaining_length, 49);
-        assert_eq!(fixed_header.packet_type, Packet::Disconnect);
+        assert_eq!(fixed_header.packet_type, PacketType::Disconnect);
         
         let read_packet = Disconnect::read(&mut read_buf).unwrap();
         assert_eq!(read_packet.reason_code, DisconnectReasonCode::MaximumConnectTime);

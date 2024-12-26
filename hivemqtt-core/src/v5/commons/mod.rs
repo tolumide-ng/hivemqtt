@@ -1,4 +1,5 @@
-pub mod packets;
+pub mod packet_type;
+pub mod packet;
 pub mod property;
 pub mod reason_code;
 pub mod qos;

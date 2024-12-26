@@ -4,7 +4,7 @@ mod reason_code;
 use properties::UnSubAckProperties;
 pub use reason_code::UnSubAckReasonCode;
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 /// Sent by the Server to the Client to confirm receipt of an UNSUBSCRIBE packet
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -22,7 +22,7 @@ impl BufferIO for UnSubAck {
     }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        FixedHeader::new(Packet::UnSubAck, 0, self.length()).write(buf)?;
+        FixedHeader::new(PacketType::UnSubAck, 0, self.length()).write(buf)?;
 
         // packet identifier, properties
         self.packet_identifier.write(buf);
@@ -74,7 +74,7 @@ mod tests {
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
         assert_eq!(fixed_header.flags, 0);
-        assert_eq!(fixed_header.packet_type, Packet::UnSubAck);
+        assert_eq!(fixed_header.packet_type, PacketType::UnSubAck);
         assert_eq!(fixed_header.remaining_length, 49);
 
         let read_packet = UnSubAck::read(&mut read_buf).unwrap();

@@ -1,8 +1,14 @@
+use bytes::BytesMut;
 use hivemqtt_macros::FromU8;
+
+use crate::v5::{packet::connect::Connect, traits::bufferio::BufferIO};
+
+use super::error::MQTTError;
+
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, FromU8)]
-pub(crate) enum Packet {
+pub(crate) enum PacketType {
     Connect = 0x10, // 0b0001_0000
     ConnAck = 0x20, // 0b0010_0000
     Publish = 0x30, // 0b0011_0000
@@ -20,19 +26,27 @@ pub(crate) enum Packet {
     Auth = 0xF0, // 0b1111_0000
 }
 
+impl PacketType {
+    fn write<B>(packet: B, buf: &mut BytesMut) -> Result<(), MQTTError>
+        where B: BufferIO {
+        packet.write(buf)?;
+        Ok(())
+    }
 
-#[cfg(test)]
-mod packet_type {
-    use super::Packet;
+    fn read(buf: &mut BytesMut) {
 
-
-    #[test]
-    fn should_return_the_right_enum_discriminant() {
-        assert_eq!(u8::from(Packet::PubAck), 64);
-        assert_eq!(u8::from(Packet::Connect), 16);
-        assert_eq!(u8::from(Packet::Publish), 48);
-        assert_eq!(u8::from(Packet::Auth), 240);
     }
 }
 
+#[cfg(test)]
+mod packet_type {
+    use super::PacketType;
 
+    #[test]
+    fn should_return_the_right_enum_discriminant() {
+        assert_eq!(u8::from(PacketType::PubAck), 64);
+        assert_eq!(u8::from(PacketType::Connect), 16);
+        assert_eq!(u8::from(PacketType::Publish), 48);
+        assert_eq!(u8::from(PacketType::Auth), 240);
+    }
+}

@@ -2,7 +2,7 @@ use std::io::{self, Error, ErrorKind};
 
 use bytes::{Bytes, BytesMut};
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet}, traits::bufferio::BufferIO};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType}, traits::bufferio::BufferIO};
 
 // pub trait AsyncStream: Send {}
 // impl AsyncStream for ::smol::net::TcpStream {}
@@ -22,7 +22,7 @@ impl Stream {
     // }
 
     fn write(&self, packet: &Packet) -> Result<(), MQTTError> {
-        packet
+        // packet
         Ok(())
     }
 }

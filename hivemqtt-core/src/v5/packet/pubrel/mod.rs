@@ -1,7 +1,7 @@
 mod properties;
 pub use properties::{PubRelProperties, PubRelReasonCode};
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -20,7 +20,7 @@ impl BufferIO for PubRel {
     }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        FixedHeader::new(Packet::PubRel, 0b10, self.length()).write(buf)?;
+        FixedHeader::new(PacketType::PubRel, 0b10, self.length()).write(buf)?;
 
         self.packet_identifier.write(buf);
         if self.properties.length() == 0 && self.reason_code == PubRelReasonCode::Success { return Ok(()) }
@@ -67,7 +67,7 @@ mod tests {
         let header = FixedHeader::read(&mut read_buf).unwrap();
 
         assert_eq!(header.remaining_length, 2);
-        assert_eq!(header.packet_type, Packet::PubRel);
+        assert_eq!(header.packet_type, PacketType::PubRel);
 
         let received_packet = PubRel::read_with_fixedheader(&mut read_buf, header).unwrap();
         assert_eq!(packet, received_packet);
@@ -86,7 +86,7 @@ mod tests {
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
         assert_eq!(fixed_header.remaining_length, 2);
-        assert_eq!(fixed_header.packet_type, Packet::PubRel);
+        assert_eq!(fixed_header.packet_type, PacketType::PubRel);
 
         let received_packet = PubRel::read_with_fixedheader(&mut read_buf, fixed_header).unwrap();
         assert_eq!(packet, received_packet);
@@ -110,7 +110,7 @@ mod tests {
         let mut read_buf = Bytes::from_iter(expected);
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
-        assert_eq!(fixed_header.packet_type, Packet::PubRel);
+        assert_eq!(fixed_header.packet_type, PacketType::PubRel);
 
         let received_packet = PubRel::read_with_fixedheader(&mut read_buf, fixed_header).unwrap();
         assert_eq!(packet, received_packet);

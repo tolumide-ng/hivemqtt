@@ -5,7 +5,7 @@ mod reason_code;
 use properties::ConnAckProperties;
 use reason_code::ConnAckReasonCode;
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -27,7 +27,7 @@ impl BufferIO for ConnAck {
     }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        FixedHeader::new(Packet::ConnAck, 0, self.length()).write(buf)?;
+        FixedHeader::new(PacketType::ConnAck, 0, self.length()).write(buf)?;
 
         u8::from(self.session_present).write(buf);
         (self.reason as u8).write(buf);
@@ -92,7 +92,7 @@ mod tests {
         let mut read_buf = Bytes::from_iter(buf.to_vec());
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
         assert_eq!(fixed_header.flags, 0);
-        assert_eq!(fixed_header.packet_type, Packet::ConnAck);
+        assert_eq!(fixed_header.packet_type, PacketType::ConnAck);
         assert_eq!(fixed_header.remaining_length, packet.length());
 
         let read_packet = ConnAck::read(&mut read_buf).unwrap();

@@ -1,7 +1,7 @@
 mod properties;
 pub use properties::UnSubscribeProperties;
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct UnSubscribe {
@@ -19,7 +19,7 @@ impl BufferIO for UnSubscribe {
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         if self.payload.is_empty() {return Err(MQTTError::ProtocolError("The Payload of an UNSUBSCRIBE packet MUST contain at least one Topic Filter"))};
-        FixedHeader::new(Packet::UnSubscribe, 0b10, self.length()).write(buf)?;
+        FixedHeader::new(PacketType::UnSubscribe, 0b10, self.length()).write(buf)?;
         
         self.packet_identifier.write(buf);
         self.properties.write(buf)?;
@@ -58,7 +58,7 @@ mod tests {
         let fixed_header = FixedHeader::read(&mut bytes).unwrap();
 
         assert_eq!(fixed_header.flags, 0b10);
-        assert_eq!(fixed_header.packet_type, Packet::UnSubscribe);
+        assert_eq!(fixed_header.packet_type, PacketType::UnSubscribe);
 
         let packet = UnSubscribe::read(&mut bytes);
         assert_eq!(packet.unwrap_err(), MQTTError::ProtocolError("The Payload of an UNSUBSCRIBE packet MUST contain at least one Topic Filter"));
@@ -88,7 +88,7 @@ mod tests {
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
         assert_eq!(fixed_header.flags, 0b10);
-        assert_eq!(fixed_header.packet_type, Packet::UnSubscribe);
+        assert_eq!(fixed_header.packet_type, PacketType::UnSubscribe);
         assert_eq!(fixed_header.remaining_length, 32);
 
         let read_packet = UnSubscribe::read(&mut read_buf).unwrap();

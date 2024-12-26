@@ -3,7 +3,7 @@ pub use properties::PublishProperties;
 
 use bytes::Bytes;
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property, qos::QoS}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(crate) struct Publish {
@@ -25,7 +25,7 @@ impl BufferIO for Publish {
     }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        FixedHeader::new(Packet::Publish, (self.dup as u8) << 3 | (self.qos as u8) << 1 | (self.retain as u8), self.length()).write(buf)?;
+        FixedHeader::new(PacketType::Publish, (self.dup as u8) << 3 | (self.qos as u8) << 1 | (self.retain as u8), self.length()).write(buf)?;
 
         self.topic.write(buf);
         if self.qos != QoS::Zero {
@@ -87,7 +87,7 @@ mod tests {
         assert_eq!(buf.to_vec(), expected);
 
         let mut expected = Bytes::from_iter(b";)\0\x10packagin_plant/#\"\xe2\x05\x01\r#\0\x02\0\x11veryLarge payloadveryLarge payload".to_vec()[2..].to_vec());
-        let created_packed = Publish::read_with_fixedheader(&mut expected, FixedHeader { packet_type: Packet::Publish, flags: 0b1011, remaining_length: 99 }).unwrap();
+        let created_packed = Publish::read_with_fixedheader(&mut expected, FixedHeader::new(PacketType::Publish, 0b1011, 9)).unwrap();
         assert_eq!(created_packed, packet);
     }
 }

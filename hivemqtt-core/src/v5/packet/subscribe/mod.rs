@@ -6,7 +6,7 @@ pub use properties::SubscribeProperties;
 
 use bytes::Bytes;
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -30,7 +30,7 @@ impl BufferIO for Subscribe {
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         if self.payload.len() == 0 { return Err(MQTTError::ProtocolError("Must contain at least one topic/subscription option pair"))}
 
-        FixedHeader::new(Packet::Subscribe, 0b10, self.length()).write(buf)?;
+        FixedHeader::new(PacketType::Subscribe, 0b10, self.length()).write(buf)?;
         self.packet_identifier.write(buf);
         self.properties.write(buf)?;
         for (topic, options) in &self.payload {
@@ -100,7 +100,7 @@ mod tests {
 
         assert_eq!(buf.to_vec(), b"\x82\x0b\tJ\0\0\x05autos\0".to_vec());
         assert_eq!(fixed_header.flags, 0b10);
-        assert_eq!(fixed_header.packet_type, Packet::Subscribe);
+        assert_eq!(fixed_header.packet_type, PacketType::Subscribe);
         let read_packet = Subscribe::read(&mut read_buf).unwrap();
         assert_eq!(packet, read_packet);
     }

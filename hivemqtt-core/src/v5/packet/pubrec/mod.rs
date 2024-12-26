@@ -1,7 +1,7 @@
 mod properties;
 use properties::{PubRecProperties, PubRecReasonCode};
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct PubRec {
@@ -22,7 +22,7 @@ impl BufferIO for PubRec {
     }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        FixedHeader::new(Packet::PubRec, 0, self.length()).write(buf)?;
+        FixedHeader::new(PacketType::PubRec, 0, self.length()).write(buf)?;
 
         self.packet_identifier.write(buf);
         if self.properties.length() == 0 && self.reason_code == PubRecReasonCode::Success { return Ok(()) }
@@ -71,7 +71,7 @@ mod tests {
         let header = FixedHeader::read(&mut read_buf).unwrap();
 
         assert_eq!(header.remaining_length, 2);
-        assert_eq!(header.packet_type, Packet::PubRec);
+        assert_eq!(header.packet_type, PacketType::PubRec);
 
         let received_packet = PubRec::read_with_fixedheader(&mut read_buf, header).unwrap();
         assert_eq!(packet, received_packet);
@@ -94,7 +94,7 @@ mod tests {
         let mut read_buf = Bytes::from_iter(expected);
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
-        assert_eq!(fixed_header.packet_type, Packet::PubRec);
+        assert_eq!(fixed_header.packet_type, PacketType::PubRec);
 
         let received_packet = PubRec::read_with_fixedheader(&mut read_buf, fixed_header).unwrap();
         assert_eq!(packet, received_packet);

@@ -4,7 +4,7 @@ use properties::SubAckProperties;
 pub use reason_code::SubAckReasonCode;
 
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 /// 3.9: Sent by the Server to the Client to confirm receipt and processing of a SUBSCRIBE packet.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -21,7 +21,7 @@ impl BufferIO for SubAck {
     }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        FixedHeader::new(Packet::SubAck, 0, self.length()).write(buf)?;
+        FixedHeader::new(PacketType::SubAck, 0, self.length()).write(buf)?;
         
         self.packet_identifier.write(buf);
         self.properties.write(buf)?;
@@ -65,7 +65,7 @@ mod tests {
         let mut read_buf = Bytes::from_iter(buf.to_vec());
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
         assert_eq!(fixed_header.flags, 0);
-        assert_eq!(fixed_header.packet_type, Packet::SubAck);
+        assert_eq!(fixed_header.packet_type, PacketType::SubAck);
         assert_eq!(fixed_header.remaining_length, 3);
     }
 
@@ -86,7 +86,7 @@ mod tests {
         println!("xddddddd {:?}", buf);
         assert_eq!(buf.to_vec(), b"\x90*\0?#\x1f\0\rgoogoogReason&\0\x06keyAbc\0\x08valueAbc\x02\x97\x80\x87".to_vec());
         assert_eq!(fixed_header.flags, 0);
-        assert_eq!(fixed_header.packet_type, Packet::SubAck);
+        assert_eq!(fixed_header.packet_type, PacketType::SubAck);
         assert_eq!(fixed_header.remaining_length, 42);
         assert_eq!(packet, read_packet);
     }

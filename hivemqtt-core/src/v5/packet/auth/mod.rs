@@ -5,7 +5,7 @@ pub use properties::{AuthProperties, AuthReasonCode};
 
 use bytes::Bytes;
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -20,7 +20,7 @@ impl BufferIO for Auth {
     }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        FixedHeader::new(Packet::Auth, 0, self.length()).write(buf)?;
+        FixedHeader::new(PacketType::Auth, 0, self.length()).write(buf)?;
 
         u8::from(self.reason_code).write(buf);
         self.properties.write(buf)?;
@@ -64,7 +64,7 @@ mod tests {
 
         assert_eq!(fixed_header.flags, 0);
         assert_eq!(fixed_header.remaining_length, 2);
-        assert_eq!(fixed_header.packet_type, Packet::Auth);
+        assert_eq!(fixed_header.packet_type, PacketType::Auth);
 
         let read_packet = Auth::read(&mut read_buf).unwrap();
         assert_eq!(read_packet.reason_code, AuthReasonCode::Success);
@@ -78,7 +78,7 @@ mod tests {
 
         assert_eq!(fixed_header.flags, 0);
         assert_eq!(fixed_header.remaining_length, 0);
-        assert_eq!(fixed_header.packet_type, Packet::Auth);
+        assert_eq!(fixed_header.packet_type, PacketType::Auth);
 
         let packet = Auth::read(&mut buf).unwrap();
 
@@ -104,7 +104,7 @@ mod tests {
 
         assert_eq!(fixed_header.flags, 0);
         assert_eq!(fixed_header.remaining_length, 57);
-        assert_eq!(fixed_header.packet_type, Packet::Auth);
+        assert_eq!(fixed_header.packet_type, PacketType::Auth);
 
         let read_packet = Auth::read(&mut read_buf).unwrap();
         assert_eq!(read_packet.reason_code, AuthReasonCode::ReAuthenticate);

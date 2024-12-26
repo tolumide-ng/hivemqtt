@@ -7,7 +7,7 @@ use hivemqtt_macros::Length;
 pub use properties::ConnectProperties;
 use will::Will;
 
-use crate::{constants::PROTOCOL_NAME, v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet, property::Property, qos::QoS, version::Version}, traits::bufferio::BufferIO}};
+use crate::{constants::PROTOCOL_NAME, v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS, version::Version}, traits::bufferio::BufferIO}};
 use crate::v5::traits::{write::Write, read::Read};
 
 #[derive(Debug, Length)]
@@ -60,7 +60,7 @@ impl BufferIO for Connect {
     }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        FixedHeader::new(Packet::Connect, 0, self.length()).write(buf)?;
+        FixedHeader::new(PacketType::Connect, 0, self.length()).write(buf)?;
         
         (PROTOCOL_NAME.to_string()).write(buf);
         (self.version as u8).write(buf);
