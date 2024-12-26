@@ -2,7 +2,7 @@ use std::io::{self, Error, ErrorKind};
 
 use bytes::{Bytes, BytesMut};
 
-use crate::v5::{commons::fixed_header::FixedHeader, traits::bufferio::BufferIO};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packets::Packet}, traits::bufferio::BufferIO};
 
 // pub trait AsyncStream: Send {}
 // impl AsyncStream for ::smol::net::TcpStream {}
@@ -16,10 +16,13 @@ pub struct Stream {
 }
 
 impl Stream {
-    fn  read(&mut self) -> io::Result<()> {
-        
-        let FixedHeader { packet_type, flags, remaining_length, header_len } = FixedHeader::read(&mut self.read_buffer).map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
+    // fn  read(&mut self) -> io::Result<()> {
+    //     let FixedHeader { packet_type, flags, remaining_length, header_len } = FixedHeader::read(&mut self.read_buffer).map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
+    //     Ok(())
+    // }
 
+    fn write(&self, packet: &Packet) -> Result<(), MQTTError> {
+        packet
         Ok(())
     }
 }
