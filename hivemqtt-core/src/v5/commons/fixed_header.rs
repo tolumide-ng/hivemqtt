@@ -6,7 +6,7 @@ use crate::v5::traits::{bufferio::BufferIO, read::Read, write::Write};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct FixedHeader {
     pub(crate) packet_type: PacketType,
-    pub(crate) flags: u8,
+    pub(crate) flags: Option<u8>,
     /// Variable Byte Integer representing the number of bytes in the Variable Header and the Payload.
     pub(crate) remaining_length: usize,
     pub(crate) header_len: usize,
@@ -15,7 +15,9 @@ pub(crate) struct FixedHeader {
 
 impl FixedHeader {
     pub(crate) fn new(packet_type: PacketType, flags: u8, remaining_length: usize) -> Self {
-        Self { packet_type, flags, remaining_length, header_len: 0 }
+        Self { packet_type, 
+            flags: Some(flags).filter(|f| *f != 0),
+            remaining_length, header_len: 0 }
     }
 
     pub(crate) fn with_len(&mut self, header_len: usize) -> Self {
@@ -29,7 +31,8 @@ impl BufferIO for FixedHeader {
     fn length(&self) -> usize { self.remaining_length }
 
     fn write(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
-        ((self.packet_type as u8) | self.flags).write(buf);
+        // let f = self.flags.unwrap_or(0);
+        ((self.packet_type as u8) | &self.flags.unwrap_or(0)).write(buf);
         self.encode(buf)?;
 
         Ok(())
@@ -46,7 +49,7 @@ impl BufferIO for FixedHeader {
 
         Ok(Self {
             packet_type,
-            flags: byte0 & 0b00001111,
+            flags: Some(byte0 & 0b00001111).filter(|n| *n != 0),
             remaining_length,
             header_len,
         })

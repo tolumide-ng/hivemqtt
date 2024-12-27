@@ -21,8 +21,8 @@ impl Stream {
     //     Ok(())
     // }
 
-    fn write(&self, packet: &Packet) -> Result<(), MQTTError> {
-        // packet
-        Ok(())
-    }
+    // fn write(&self, packet: &Packet) -> Result<(), MQTTError> {
+    //     // packet
+    //     Ok(())
+    // }
 }

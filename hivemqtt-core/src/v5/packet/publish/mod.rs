@@ -41,7 +41,7 @@ impl BufferIO for Publish {
     /// Publish does not implement `read` only read_with_flag
     fn read_with_fixedheader(buf: &mut Bytes, header: FixedHeader) -> Result<Self, MQTTError> {
         let mut packet = Self::default();
-        let flag = header.flags;
+        let flag = header.flags.unwrap_or(0);
 
         packet.topic = String::read(buf)?;
         packet.dup = (flag & 0b1000) != 0;

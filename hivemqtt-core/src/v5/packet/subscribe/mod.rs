@@ -99,7 +99,7 @@ mod tests {
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
         assert_eq!(buf.to_vec(), b"\x82\x0b\tJ\0\0\x05autos\0".to_vec());
-        assert_eq!(fixed_header.flags, 0b10);
+        assert_eq!(fixed_header.flags, Some(0b10));
         assert_eq!(fixed_header.packet_type, PacketType::Subscribe);
         let read_packet = Subscribe::read(&mut read_buf).unwrap();
         assert_eq!(packet, read_packet);

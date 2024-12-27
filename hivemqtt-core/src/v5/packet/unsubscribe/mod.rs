@@ -57,7 +57,7 @@ mod tests {
         let mut bytes = Bytes::from_iter(b"\xa2\x10\0.\r&\0\x03key\0\x05value".to_vec());
         let fixed_header = FixedHeader::read(&mut bytes).unwrap();
 
-        assert_eq!(fixed_header.flags, 0b10);
+        assert_eq!(fixed_header.flags, Some(0b10));
         assert_eq!(fixed_header.packet_type, PacketType::UnSubscribe);
 
         let packet = UnSubscribe::read(&mut bytes);
@@ -87,7 +87,7 @@ mod tests {
         let mut read_buf = Bytes::from_iter(buf.to_vec());
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
-        assert_eq!(fixed_header.flags, 0b10);
+        assert_eq!(fixed_header.flags, Some(0b10));
         assert_eq!(fixed_header.packet_type, PacketType::UnSubscribe);
         assert_eq!(fixed_header.remaining_length, 32);
 

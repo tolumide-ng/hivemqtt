@@ -62,7 +62,7 @@ mod tests {
         let mut read_buf = Bytes::from_iter(buf.to_vec());
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
-        assert_eq!(fixed_header.flags, 0);
+        assert_eq!(fixed_header.flags, None);
         assert_eq!(fixed_header.remaining_length, 2);
         assert_eq!(fixed_header.packet_type, PacketType::Auth);
 
@@ -76,7 +76,7 @@ mod tests {
         let mut buf = Bytes::from_iter(b"\xf0\0".to_vec());
         let fixed_header = FixedHeader::read(&mut buf).unwrap();
 
-        assert_eq!(fixed_header.flags, 0);
+        assert_eq!(fixed_header.flags, None);
         assert_eq!(fixed_header.remaining_length, 0);
         assert_eq!(fixed_header.packet_type, PacketType::Auth);
 
@@ -102,7 +102,7 @@ mod tests {
         let mut read_buf = Bytes::from_iter(expected.to_vec());
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
-        assert_eq!(fixed_header.flags, 0);
+        assert_eq!(fixed_header.flags, None);
         assert_eq!(fixed_header.remaining_length, 57);
         assert_eq!(fixed_header.packet_type, PacketType::Auth);
 

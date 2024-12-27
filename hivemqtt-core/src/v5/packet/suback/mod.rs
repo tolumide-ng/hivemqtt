@@ -64,7 +64,7 @@ mod tests {
 
         let mut read_buf = Bytes::from_iter(buf.to_vec());
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
-        assert_eq!(fixed_header.flags, 0);
+        assert_eq!(fixed_header.flags, None);
         assert_eq!(fixed_header.packet_type, PacketType::SubAck);
         assert_eq!(fixed_header.remaining_length, 3);
     }
@@ -85,7 +85,7 @@ mod tests {
 
         println!("xddddddd {:?}", buf);
         assert_eq!(buf.to_vec(), b"\x90*\0?#\x1f\0\rgoogoogReason&\0\x06keyAbc\0\x08valueAbc\x02\x97\x80\x87".to_vec());
-        assert_eq!(fixed_header.flags, 0);
+        assert_eq!(fixed_header.flags, None);
         assert_eq!(fixed_header.packet_type, PacketType::SubAck);
         assert_eq!(fixed_header.remaining_length, 42);
         assert_eq!(packet, read_packet);

@@ -53,7 +53,7 @@ impl BufferIO for PubRec {
 mod tests {
     use bytes::{Bytes, BytesMut};
 
-    use crate::v5::packet::pubrec::{FixedHeader, Packet};
+    use crate::v5::packet::pubrec::{FixedHeader, PacketType};
 
     use super::{properties::PubRecReasonCode, BufferIO, PubRec};
 

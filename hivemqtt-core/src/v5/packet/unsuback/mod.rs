@@ -73,7 +73,7 @@ mod tests {
         let mut read_buf = Bytes::from_iter(expected);
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
-        assert_eq!(fixed_header.flags, 0);
+        assert_eq!(fixed_header.flags, None);
         assert_eq!(fixed_header.packet_type, PacketType::UnSubAck);
         assert_eq!(fixed_header.remaining_length, 49);
 
