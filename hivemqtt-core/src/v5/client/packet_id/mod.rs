@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::atomic::{AtomicU16, Ordering};
 
 #[cfg(feature = "tokio")]
 use tokio::sync::Semaphore;
@@ -11,7 +11,9 @@ use shard::PacketIdShard;
 
 pub(crate) struct PacketIdManager {
     shards: Vec<PacketIdShard>,
-    semaphore: Arc<Semaphore>
+    // semaphore: Arc<Semaphore>
+    allocated: AtomicU16,
+    max_packets: u16,
 }
 
 impl PacketIdManager {
@@ -19,15 +21,17 @@ impl PacketIdManager {
 
     pub(crate) fn new(max_packets: u16) -> Self {
         let num_shards = (max_packets as usize + Self::BITS - 1) / Self::BITS;
-        Self { 
-            shards: Vec::with_capacity(num_shards),
-            semaphore: Arc::new(Semaphore::new(max_packets.into()))
-        }
+        let shards = (0..num_shards).map(|_| PacketIdShard::default()).collect::<Vec<_>>();
+        Self { shards, allocated: AtomicU16::new(0), max_packets, }
     }
 
-    #[cfg(not(feature = "sync"))]
+    // #[cfg(not(feature = "sync"))]
     pub(crate) async fn allocate(&self) -> Option<u16> {
-        let _permit = self.semaphore.acquire().await.ok();
+        let allocated = self.allocated.fetch_add(1, Ordering::AcqRel);
+        if allocated >= self.max_packets { // rollback
+            self.allocated.fetch_sub(1, Ordering::Release);
+            return None;
+        }
 
         for (shard_index, shard) in self.shards.iter().enumerate() {
             if let Some(id) = shard.allocate() {
@@ -36,30 +40,18 @@ impl PacketIdManager {
             }
         }
 
-        None
-    }
-
-    #[cfg(feature = "sync")]
-    pub(crate) fn allocate_sync (&self) -> Option<u16> {
-        let _permit = self.semaphore.try_acquire().ok()?;
-        for (shard_index, shard) in self.shards.iter().enumerate() {
-            if let Some(id) = shard.allocate() {
-                let packet_id = shard_index * (Self::BITS) + id as usize;
-                return Some(packet_id as u16);
-            }
-        }
+        // It should be almost impossible for this to occur, but its better taken care of than not!
+        self.allocated.fetch_sub(1, Ordering::Release); 
         None
     }
 
     pub(crate) fn release(&self, id: u16) {
         let shard_index = (id as usize) / Self::BITS;
         let actual_index_in_shard = ((id as usize) % Self::BITS) as u8;
-        self.shards.get(shard_index).and_then(|shard| Some(shard.release(actual_index_in_shard)));
-        // if shard_index >= self.shards.len() {}
-        // self.shards[shard_index].release(actual_index_in_shard);
-        
-        // Releases the semaphore slot
-        self.semaphore.add_permits(1);
+        let result = self.shards.get(shard_index).and_then(|shard| Some(shard.release(actual_index_in_shard)));
+        if result.is_some_and(|r| r) {
+            let _ = self.allocated.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_sub(1));
+        }
     }
 }
 
@@ -67,17 +59,57 @@ impl PacketIdManager {
 
 #[cfg(test)]
 mod test {
+    use std::sync::atomic::Ordering;
+
     use super::*;
 
     #[test]
-    fn creates_a_packetid_manager() {}
+    fn creates_a_packetid_manager() {
+        let mgr = PacketIdManager::new(2);
+        assert_eq!(mgr.shards.len(), 1);
+        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
+
+
+        let mgr = PacketIdManager::new(123);
+        assert_eq!(mgr.shards.len(), 2);
+        assert_eq!(mgr.max_packets, 123);
+        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
+    }
+
+    #[tokio::test]
+    async fn can_allocate_and_release_packet_id() {
+        let mgr = PacketIdManager::new(2);
+        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
+        
+        let packet_id_0 = mgr.allocate().await;
+        assert_eq!(packet_id_0, Some(0));
+        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 1);
+        
+        let packet_id_1 = mgr.allocate().await;
+        assert_eq!(packet_id_1, Some(1));
+        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 2);
+        
+        assert_eq!(mgr.allocate().await, None);
+        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 2);
+
+
+        mgr.release(packet_id_0.unwrap());
+        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 1);
+
+        mgr.release(packet_id_1.unwrap());
+        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
+    }
 
     #[test]
-    fn can_allocate_a_packet_id() {}
+    // release
+    fn must_not_panick_if_packet_id_is_out_of_bounds_or_does_not_exist() {
+        let mgr = PacketIdManager::new(36);
+        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
 
-    #[test]
-    fn can_release_a_packet_id() {}
+        mgr.release(37);
+        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
 
-    #[test]
-    fn must_not_panick_if_packet_id_is_out_of_bounds() {}
+        mgr.release(67);
+        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
+    }
 }

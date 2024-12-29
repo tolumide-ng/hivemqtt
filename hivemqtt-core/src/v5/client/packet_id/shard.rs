@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// Depending on the target architecture, this can either be 64 bits or 32 bits
 #[derive(Debug, Default)]
-pub(crate) struct PacketIdShard(AtomicUsize); // Each bit manages 64 OR 32 packet id's (Usize::BITS = 64 OR 32)
+pub(crate) struct PacketIdShard(pub(super) AtomicUsize); // Each bit manages 64 OR 32 packet id's (Usize::BITS = 64 OR 32)
 
 impl PacketIdShard {
     // pub(crate) fn new() -> Self { Self(AtomicUsize::new(0)) }
@@ -28,9 +28,17 @@ impl PacketIdShard {
     }
 
     /// Release a packet ID
-    pub(crate) fn release(&self, id: u8) {
-        if id >= usize::BITS as u8 { return }
-        self.0.fetch_and(!(1 << id), Ordering::Release);
+    /// Returns `true` if the release was successful, otherwise, it returns false
+    pub(crate) fn release(&self, id: u8) -> bool {
+        if id >= usize::BITS as u8 { return false }
+        let result= self.0.fetch_and(!(1 << id), Ordering::Release);
+        let new = self.0.load(Ordering::Relaxed);
+        new != result
+    }
+
+    /// Returns the number of already allocated packet ids in this shard
+    pub(crate) fn count(&self) -> u8 {
+        self.0.load(Ordering::Relaxed).count_ones() as u8
     }
 }
 
