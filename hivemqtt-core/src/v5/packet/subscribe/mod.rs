@@ -11,10 +11,10 @@ use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_ty
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct  Subscribe {
-    packet_identifier: u16,
-    properties: SubscribeProperties,
+    pub(crate) packet_identifier: u16,
+    pub(crate) properties: SubscribeProperties,
     /// It is protocl error to have a subscribe packet that doesn't have atleast one payload (topic, subscriptionOptions)
-    payload: Vec<(String, SubscriptionOptions)>,
+    pub(crate) payload: Vec<(String, SubscriptionOptions)>,
 }
 
 
