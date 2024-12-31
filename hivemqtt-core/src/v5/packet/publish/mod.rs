@@ -3,12 +3,12 @@ pub use properties::PublishProperties;
 
 use bytes::Bytes;
 
-use crate::{constants::PID, v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS}, traits::{bufferio::BufferIO, read::Read, write::Write}}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Clone, Eq)]
 pub(crate) struct Publish {
-    dup: bool,
-    retain: bool,
+    pub(crate) dup: bool,
+    pub(crate) retain: bool,
     pub(crate) qos: QoS,
     pub(crate) topic: String,
     pub(crate) packet_identifier: Option<u16>,

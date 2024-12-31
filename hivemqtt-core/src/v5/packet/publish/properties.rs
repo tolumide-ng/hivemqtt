@@ -7,7 +7,7 @@ use crate::v5::commons::error::MQTTError;
 
 use super::{BufferIO, Property};
 
-#[derive(Debug, Length, Default, PartialEq, Eq)]
+#[derive(Debug, Length, Default, Clone, PartialEq, Eq)]
 pub struct PublishProperties {
     pub(crate) payload_format_indicator: Option<u8>,
     pub(crate) message_expiry_internal: Option<u32>,
