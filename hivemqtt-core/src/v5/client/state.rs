@@ -4,7 +4,7 @@ use bytes::Bytes;
 #[cfg(feature = "logs")]
 use tracing::error;
 
-use crate::v5::{commons::{error::MQTTError, qos::QoS}, packet::{connack::ConnAck, publish::Publish, subscribe::Subscribe, unsubscribe::UnSubscribe}};
+use crate::v5::{commons::{error::MQTTError, qos::QoS}, packet::{connack::ConnAck, puback::PubAck, publish::Publish, subscribe::Subscribe, unsubscribe::UnSubscribe}};
 
 use super::{packet_id::PacketIdManager, ConnectOptions};
 
@@ -15,6 +15,9 @@ struct TopicAlias {
     incoming: Arc<Mutex<HashMap<u16, String>>>,
 }
 
+
+struct PubData {}
+
 pub(crate) struct State {
     // pkid_mgr: PacketIdManager,
     /// HashMap(alias --> topic)
@@ -23,7 +26,7 @@ pub(crate) struct State {
     /// QoS 1 and 2 publish packets that haven't been acked yet
     outgoing_pub: Arc<Mutex<HashMap<u16, Publish>>>,
     /// received QoS 2 PacketIDs
-    incoming_pub: HashSet<u16>,
+    incoming_pub: Arc<Mutex<HashSet<u16>>>,
     /// PacketIDs of QoS2 send publish packets
     outgoing_rel: HashSet<u16>,
     /// Manually or Automatically acknolwedge pubs/subs
@@ -39,7 +42,7 @@ impl State {
             // pkid_mgr: PacketIdManager::new(options.send_max),
             topic_aliases: TopicAlias::default(),
             outgoing_pub: Arc::new(Mutex::new(HashMap::new())),
-            incoming_pub: HashSet::new(),
+            incoming_pub: Arc::new(Mutex::new(HashSet::new())),
             outgoing_rel: HashSet::new(),
             outgoing_sub: Arc::new(Mutex::new(HashSet::new())),
             outgoing_unsub: Arc::new(Mutex::new(HashSet::new())),
@@ -49,9 +52,7 @@ impl State {
         }
     }
 
-    fn handle_incoming_connack(&self, packet: &ConnAck) {}
-
-    fn handle_outgoing_subscribe(&self, packet: &Subscribe) {
+    fn handle_outgoing_subscribe(&self, packet: Subscribe) {
         let new_pkid = self.outgoing_sub.lock().unwrap().insert(packet.packet_identifier);
         #[cfg(feature = "logs")]
         if !new_pkid {
@@ -59,7 +60,7 @@ impl State {
         }
     }
 
-    fn handle_outgoing_unsubscribe(&self, packet: &UnSubscribe) {
+    fn handle_outgoing_unsubscribe(&self, packet: UnSubscribe) {
         let new_pkids = self.outgoing_unsub.lock().unwrap().insert(packet.packet_identifier);
         #[cfg(feature = "logs")]
         if !new_pkids {
@@ -67,7 +68,7 @@ impl State {
         }
     }
 
-    fn handle_outgoing_publish(&self, packet: &Publish) -> Result<(), MQTTError> {
+    fn handle_outgoing_publish(&self, packet: Publish) -> Result<(), MQTTError> {
         // Confirm that the packet identifier is not a duplicate before we proceed with anything
         if packet.qos != QoS::Zero {
             let pid = packet.packet_identifier.unwrap();
@@ -106,10 +107,22 @@ impl State {
 
         if packet.qos != QoS::Zero {
             if let Some(k) = self.outgoing_pub.lock().unwrap().get_mut(&packet.packet_identifier.unwrap()) {
-                *k = Publish {topic: topic.unwrap(), ..packet.clone()};
+                *k = Publish {topic: topic.unwrap(), ..packet};
             }
         }
 
         Ok(())
     }
+
+
+    pub(crate) fn handle_outgoing_puback(&self, p: PubAck) -> Result<(), MQTTError> {
+        let pkid = p.packet_identifier;
+        if self.incoming_pub.lock().unwrap().remove(&pkid) {
+            return Ok(())
+        }
+        Err(MQTTError::PublishPacketId) // returns Error if we have no knowledge of the packet_identifier we're trying to acknowledge
+    }
+
+
+    fn handle_incoming_connack(&self, packet: &ConnAck) {}
 }
