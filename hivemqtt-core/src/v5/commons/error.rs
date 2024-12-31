@@ -30,4 +30,8 @@ pub enum MQTTError {
     ProtocolError(&'static str),
     #[error("Insufficient bytes on the stream")]
     InsufficientBytes,
+    #[error("Packet Id Conflict: {0}")]
+    PacketIdConflict(u16),
+    #[error("Invalid Property: {0}")]
+    InvalidProperty(String)
 }

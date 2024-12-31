@@ -3,17 +3,17 @@ pub use properties::PublishProperties;
 
 use bytes::Bytes;
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::{constants::PID, v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS}, traits::{bufferio::BufferIO, read::Read, write::Write}}};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(crate) struct Publish {
     dup: bool,
     retain: bool,
-    qos: QoS,
-    topic: String,
-    packet_identifier: Option<u16>,
-    properties: PublishProperties,
-    payload: Bytes,
+    pub(crate) qos: QoS,
+    pub(crate) topic: String,
+    pub(crate) packet_identifier: Option<u16>,
+    pub(crate) properties: PublishProperties,
+    pub(crate) payload: Bytes,
 }
 
 impl BufferIO for Publish {
@@ -29,6 +29,7 @@ impl BufferIO for Publish {
 
         self.topic.write(buf);
         if self.qos != QoS::Zero {
+            // assignment of a packet id should be done from the client level after user provides us with the publish data
             self.packet_identifier.ok_or_else(|| MQTTError::PublishPacketId)?.write(buf);
         }
 
@@ -63,11 +64,13 @@ impl BufferIO for Publish {
 #[cfg(test)]
 mod tests {
     use bytes::BytesMut;
+    use crate::retest_utils::initialize_pid;
 
     use super::*;
 
     #[test]
     fn read_write_publish() {
+        initialize_pid();
         let packet = Publish {
             dup: true, retain: true, qos: QoS::One,
             topic: String::from("packagin_plant/#"),

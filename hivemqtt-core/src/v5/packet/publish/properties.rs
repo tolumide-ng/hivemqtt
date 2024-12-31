@@ -9,15 +9,15 @@ use super::{BufferIO, Property};
 
 #[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct PublishProperties {
-    pub payload_format_indicator: Option<u8>,
-    pub message_expiry_internal: Option<u32>,
-    pub topic_alias: Option<u16>,
+    pub(crate) payload_format_indicator: Option<u8>,
+    pub(crate) message_expiry_internal: Option<u32>,
+    pub(crate) topic_alias: Option<u16>,
     /// the presence of a Response Topic identifies the Message as a Request
-    pub response_topic: Option<String>,
-    pub correlation_data: Option<Bytes>,
-    pub user_property: Vec<(String, String)>,
-    pub subscription_identifier: Vec<usize>,
-    pub content_type: Option<String>,
+    pub(crate) response_topic: Option<String>,
+    pub(crate) correlation_data: Option<Bytes>,
+    pub(crate) user_property: Vec<(String, String)>,
+    pub(crate) subscription_identifier: Vec<usize>,
+    pub(crate) content_type: Option<String>,
 }
 
 impl BufferIO for PublishProperties {

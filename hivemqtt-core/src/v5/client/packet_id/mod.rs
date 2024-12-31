@@ -35,7 +35,8 @@ impl PacketIdManager {
 
         for (shard_index, shard) in self.shards.iter().enumerate() {
             if let Some(id) = shard.allocate() {
-                let packet_id = shard_index * (Self::BITS) + id as usize;
+                // packet must always be non-zero
+                let packet_id = (shard_index * (Self::BITS) + id as usize) + 1;
                 return Some(packet_id as u16);
             }
         }
@@ -46,8 +47,9 @@ impl PacketIdManager {
     }
 
     pub(crate) fn release(&self, id: u16) {
-        let shard_index = (id as usize) / Self::BITS;
-        let actual_index_in_shard = ((id as usize) % Self::BITS) as u8;
+        let id = (id - 1) as usize;
+        let shard_index = id / Self::BITS;
+        let actual_index_in_shard = (id % Self::BITS) as u8;
         let result = self.shards.get(shard_index).and_then(|shard| Some(shard.release(actual_index_in_shard)));
         if result.is_some_and(|r| r) {
             let _ = self.allocated.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_sub(1));
@@ -81,22 +83,23 @@ mod test {
         let mgr = PacketIdManager::new(2);
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
         
-        let packet_id_0 = mgr.allocate().await;
-        assert_eq!(packet_id_0, Some(0));
-        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 1);
-        
         let packet_id_1 = mgr.allocate().await;
         assert_eq!(packet_id_1, Some(1));
+        assert_eq!(mgr.allocated.load(Ordering::Relaxed), 1);
+
+        
+        let packet_id_2 = mgr.allocate().await;
+        assert_eq!(packet_id_2, Some(2));
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 2);
         
         assert_eq!(mgr.allocate().await, None);
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 2);
 
 
-        mgr.release(packet_id_0.unwrap());
+        mgr.release(packet_id_1.unwrap());
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 1);
 
-        mgr.release(packet_id_1.unwrap());
+        mgr.release(packet_id_2.unwrap());
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
     }
 

@@ -5,9 +5,9 @@ use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_ty
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct UnSubscribe {
-    packet_identifier: u16,
-    properties: UnSubscribeProperties,
-    payload: Vec<String>,
+    pub(crate) packet_identifier: u16,
+    pub(crate) properties: UnSubscribeProperties,
+    pub(crate) payload: Vec<String>,
 }
 
 impl BufferIO for UnSubscribe {
