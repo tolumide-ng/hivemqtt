@@ -5,9 +5,9 @@ use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_ty
 
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct PubRec {
-    packet_identifier: u16,
-    reason_code: PubRecReasonCode,
-    properties: PubRecProperties,
+    pub(crate) packet_identifier: u16,
+    pub(crate) reason_code: PubRecReasonCode,
+    pub(crate) properties: PubRecProperties,
 }
 
 impl BufferIO for PubRec {
