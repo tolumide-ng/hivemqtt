@@ -6,9 +6,9 @@ use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_ty
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub  struct PubComp {
-    packet_identifier: u16,
-    reason_code: PubCompReasonCode,
-    properties: PubCompProperties,
+    pub(crate) packet_identifier: u16,
+    pub(crate) reason_code: PubCompReasonCode,
+    pub(crate) properties: PubCompProperties,
 }
 
 impl BufferIO for PubComp {

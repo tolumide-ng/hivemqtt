@@ -33,5 +33,7 @@ pub enum MQTTError {
     #[error("Packet Id Conflict: {0}")]
     PacketIdConflict(u16),
     #[error("Invalid Property: {0}")]
-    InvalidProperty(String)
+    InvalidProperty(String),
+    #[error("Packet Id required")]
+    PacketIdRequired,
 }

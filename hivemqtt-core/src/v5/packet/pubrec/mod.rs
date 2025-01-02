@@ -1,4 +1,4 @@
-mod properties;
+pub mod properties;
 use properties::{PubRecProperties, PubRecReasonCode};
 
 use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
