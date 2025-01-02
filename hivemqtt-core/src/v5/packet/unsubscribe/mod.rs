@@ -5,7 +5,7 @@ use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_ty
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct UnSubscribe {
-    pub(crate) packet_identifier: u16,
+    pub(crate) pkid: u16,
     pub(crate) properties: UnSubscribeProperties,
     pub(crate) payload: Vec<String>,
 }
@@ -21,7 +21,7 @@ impl BufferIO for UnSubscribe {
         if self.payload.is_empty() {return Err(MQTTError::ProtocolError("The Payload of an UNSUBSCRIBE packet MUST contain at least one Topic Filter"))};
         FixedHeader::new(PacketType::UnSubscribe, 0b10, self.length()).write(buf)?;
         
-        self.packet_identifier.write(buf);
+        self.pkid.write(buf);
         self.properties.write(buf)?;
         self.payload.iter().for_each(|p| p.write(buf));
         Ok(())
@@ -31,7 +31,7 @@ impl BufferIO for UnSubscribe {
         // the assumption here is that the provided buffer has already been advanced by the Fixed Header length
         let mut packet = Self::default();
         
-        packet.packet_identifier = u16::read(buf)?;
+        packet.pkid = u16::read(buf)?;
         packet.properties = UnSubscribeProperties::read(buf)?;
         loop {
             if buf.is_empty() { break; }
@@ -77,7 +77,7 @@ mod tests {
     #[test]
     fn read_write_unsubscribe() {
         let mut packet = UnSubscribe::default();
-        packet.packet_identifier = 0x2E;
+        packet.pkid = 0x2E;
         packet.payload = vec!["topicA".into(), "topicB".into()];
         packet.properties = UnSubscribeProperties {user_property: vec![("key".into(), "value".into())]};
 

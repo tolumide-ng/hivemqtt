@@ -82,14 +82,14 @@ impl State {
 
     fn handle_outgoing_publish(&self, packet: Publish) -> Result<(), MQTTError> {
         // Confirm that the packet identifier is not a duplicate before we proceed with anything
-        if let Some(pid) = packet.packet_identifier {
+        if let Some(pid) = packet.pkid {
             if self.outgoing_pub.lock().unwrap()[pid as usize].is_some() { return Err(MQTTError::PacketIdConflict(pid)) }
         }
 
         let topic = self.parse_topic_and_try_update(&packet.topic, packet.properties.topic_alias, &self.topic_aliases.outgoing)?;
 
         if packet.qos != QoS::Zero {
-            self.outgoing_pub.lock().unwrap()[packet.packet_identifier.unwrap() as usize].replace(Publish {topic, ..packet});
+            self.outgoing_pub.lock().unwrap()[packet.pkid.unwrap() as usize].replace(Publish {topic, ..packet});
         }
 
         Ok(())
@@ -99,18 +99,18 @@ impl State {
         let topic = self.parse_topic_and_try_update(&packet.topic, packet.properties.topic_alias, &self.topic_aliases.incoming)?;
         packet.topic = topic;
 
-        if let Some(pid) = packet.packet_identifier {
+        if let Some(pid) = packet.pkid {
             if self.incoming_pub.lock().unwrap()[pid as usize] { return Err(MQTTError::PacketIdConflict(pid)) }
         }
 
-        if packet.qos == QoS::Two { self.incoming_pub.lock().unwrap()[packet.packet_identifier.unwrap() as usize] = true; }
+        if packet.qos == QoS::Two { self.incoming_pub.lock().unwrap()[packet.pkid.unwrap() as usize] = true; }
         
         if self.manual_ack || packet.qos == QoS::Zero { return Ok(None) }
 
-        let packet_identifier = packet.packet_identifier.unwrap();
+        let pkid = packet.pkid.unwrap();
         let result = match packet.qos {
-            QoS::One => Some(Packet::PubAck(PubAck {packet_identifier, ..Default::default()})),
-            QoS::Two => Some(Packet::PubRec(PubRec {packet_identifier, ..Default::default()})),
+            QoS::One => Some(Packet::PubAck(PubAck {pkid, ..Default::default()})),
+            QoS::Two => Some(Packet::PubRec(PubRec {pkid, ..Default::default()})),
             _ => None,
         };
         
@@ -118,35 +118,35 @@ impl State {
     }
 
     pub(crate) fn handle_outgoing_puback(&self, p: PubAck) -> Result<Packet, MQTTError> {
-        Ok(Packet::PubRec(PubRec { packet_identifier: p.packet_identifier, ..Default::default() }))
+        Ok(Packet::PubRec(PubRec { pkid: p.pkid, ..Default::default() }))
     }
 
     pub(crate) fn incoming_pubrec(&self, packet: &PubRec) -> Result<Packet, MQTTError> {
-        // if self.outgoing_pub.lock().unwrap()[packet.packet_identifier ]
+        // if self.outgoing_pub.lock().unwrap()[packet.pkid ]
         Err(MQTTError::PacketIdConflict(10))
     }
 
     // pub(crate) fn outgoing_pubrec(&mut self, p: PubRec) -> Result<(), MQTTError> {
-    //     let pkid = p.packet_identifier;
+    //     let pkid = p.pkid;
     //     if self.incoming_pub.lock().unwrap().remove(&pkid) {
     //         return Ok(())
     //     }
-    //     Err(MQTTError::PublishPacketId) // returns Error if we have no knowledge of the packet_identifier we're trying to acknowledge
+    //     Err(MQTTError::PublishPacketId) // returns Error if we have no knowledge of the pkid we're trying to acknowledge
     // }
 
     fn handle_outgoing_subscribe(&self, packet: &Subscribe) {
-        let new_pkid = self.outgoing_sub.lock().unwrap().insert(packet.packet_identifier);
+        let new_pkid = self.outgoing_sub.lock().unwrap().insert(packet.pkid);
         #[cfg(feature = "logs")]
         if !new_pkid {
-            error!("Duplicate Packet ID: {}", packet.packet_identifier);
+            error!("Duplicate Packet ID: {}", packet.pkid);
         }
     }
 
     fn handle_outgoing_unsubscribe(&self, packet: &UnSubscribe) {
-        let new_pkids = self.outgoing_unsub.lock().unwrap().insert(packet.packet_identifier);
+        let new_pkids = self.outgoing_unsub.lock().unwrap().insert(packet.pkid);
         #[cfg(feature = "logs")]
         if !new_pkids {
-            error!("Duplicate Packet ID: {}", packet.packet_identifier);
+            error!("Duplicate Packet ID: {}", packet.pkid);
         }
     }
 
@@ -157,33 +157,33 @@ impl State {
 
 
 
-    pub(crate) fn incoming_pubrec(&self, p: &PubRec) -> Result<Option<PubRel>, MQTTError> {
-        let pkid = p.packet_identifier as usize;
+    // pub(crate) fn incoming_pubrec(&self, p: &PubRec) -> Result<Option<PubRel>, MQTTError> {
+    //     let pkid = p.pkid as usize;
 
-        if self.outgoing_pub.lock().unwrap()[pkid].take().is_none() {
-            #[cfg(feature = "logs")]
-            error!("Unexpected pubrec: Have no record for publish with id {}", pkid);
-            return Err(MQTTError::UnknownData(format!("Unexpected pubrec: Have no record for publish with id {}", pkid)))
-        }
+    //     if self.outgoing_pub.lock().unwrap()[pkid].take().is_none() {
+    //         #[cfg(feature = "logs")]
+    //         error!("Unexpected pubrec: Have no record for publish with id {}", pkid);
+    //         return Err(MQTTError::UnknownData(format!("Unexpected pubrec: Have no record for publish with id {}", pkid)))
+    //     }
 
-        if p.reason_code == PubRecReasonCode::Success || p.reason_code == PubRecReasonCode::NoMatchingSubscribers {
-            self.outgoing_rel.lock().unwrap()[pkid] = true;
-            return Ok(Some(PubRel{packet_identifier: p.packet_identifier, ..Default::default()}))
-        }
+    //     if p.reason_code == PubRecReasonCode::Success || p.reason_code == PubRecReasonCode::NoMatchingSubscribers {
+    //         self.outgoing_rel.lock().unwrap()[pkid] = true;
+    //         return Ok(Some(PubRel{pkid: p.pkid, ..Default::default()}))
+    //     }
 
-        Ok(None)
-    }
+    //     Ok(None)
+    // }
 
     pub(crate) fn outgoing_pubrel(&self, p: PubRel) -> Result<(), MQTTError> {
-        let pkid = p.packet_identifier as usize;
+        let pkid = p.pkid as usize;
         if self.outgoing_rel.lock().unwrap()[pkid] {
             return Ok(())
         }
-        return Err(MQTTError::UnknownData(format!("{}", p.packet_identifier)))
+        return Err(MQTTError::UnknownData(format!("{}", p.pkid)))
     }
 
     pub(crate) fn incoming_pubcomp(&self, p: PubComp) -> Result<(), MQTTError> {
-        let pkid = p.packet_identifier as usize;
+        let pkid = p.pkid as usize;
         if self.outgoing_rel.lock().unwrap()[pkid] {
             self.outgoing_rel.lock().unwrap()[pkid] = false;
             return Ok(())

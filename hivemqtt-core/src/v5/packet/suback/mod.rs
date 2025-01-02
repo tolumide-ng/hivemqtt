@@ -9,7 +9,7 @@ use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_ty
 /// 3.9: Sent by the Server to the Client to confirm receipt and processing of a SUBSCRIBE packet.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct SubAck {
-    pub packet_identifier: u16,
+    pub pkid: u16,
     pub payload: Vec<SubAckReasonCode>,
     pub properties: SubAckProperties,
 }
@@ -23,7 +23,7 @@ impl BufferIO for SubAck {
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         FixedHeader::new(PacketType::SubAck, 0, self.length()).write(buf)?;
         
-        self.packet_identifier.write(buf);
+        self.pkid.write(buf);
         self.properties.write(buf)?;
         self.payload.iter().for_each(|x| u8::from(*x).write(buf));
         Ok(())
@@ -31,7 +31,7 @@ impl BufferIO for SubAck {
 
     fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
         let mut packet = Self::default();
-        packet.packet_identifier = u16::read(buf)?;
+        packet.pkid = u16::read(buf)?;
         packet.properties = SubAckProperties::read(buf)?;
 
         // there is no specific rule outright forbidding a suback with an empty reason code although MQTT-3.9.3-2
@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn read_write_suback_with_properties_and_payload() {
         let mut packet = SubAck::default();
-        packet.packet_identifier = 0x3F;
+        packet.pkid = 0x3F;
         packet.payload = vec![SubAckReasonCode::GrantedQoS2, SubAckReasonCode::QuotaExceeded, SubAckReasonCode::UnspecifiedError, SubAckReasonCode::NotAuhtorized];
         packet.properties = SubAckProperties {reason_string: Some("googoogReason".into()), user_property: vec![("keyAbc".into(),"valueAbc".into() )] };
 

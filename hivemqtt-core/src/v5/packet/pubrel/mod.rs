@@ -6,7 +6,7 @@ use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_ty
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct PubRel {
-    pub packet_identifier: u16,
+    pub pkid: u16,
     pub reason_code: PubRelReasonCode,
     pub properties: PubRelProperties,
 }
@@ -22,7 +22,7 @@ impl BufferIO for PubRel {
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         FixedHeader::new(PacketType::PubRel, 0b10, self.length()).write(buf)?;
 
-        self.packet_identifier.write(buf);
+        self.pkid.write(buf);
         if self.properties.length() == 0 && self.reason_code == PubRelReasonCode::Success { return Ok(()) }
         u8::from(self.reason_code).write(buf);
         self.properties.write(buf)?;
@@ -32,7 +32,7 @@ impl BufferIO for PubRel {
 
     fn read_with_fixedheader(buf: &mut bytes::Bytes, header: FixedHeader) -> Result<Self, MQTTError> {
         let mut packet = Self::default();
-        packet.packet_identifier = u16::read(buf)?;
+        packet.pkid = u16::read(buf)?;
 
         if header.remaining_length == 2 {
             packet.reason_code = PubRelReasonCode::Success;

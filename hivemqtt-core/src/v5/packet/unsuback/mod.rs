@@ -9,7 +9,7 @@ use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_ty
 /// Sent by the Server to the Client to confirm receipt of an UNSUBSCRIBE packet
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct UnSubAck {
-    pub packet_identifier: u16,
+    pub pkid: u16,
     pub properties: UnSubAckProperties,
     pub payload: Vec<UnSubAckReasonCode>,
 }
@@ -25,7 +25,7 @@ impl BufferIO for UnSubAck {
         FixedHeader::new(PacketType::UnSubAck, 0, self.length()).write(buf)?;
 
         // packet identifier, properties
-        self.packet_identifier.write(buf);
+        self.pkid.write(buf);
         self.properties.write(buf)?;
 
         self.payload.iter().for_each(|p| u8::from(*p).write(buf));
@@ -36,7 +36,7 @@ impl BufferIO for UnSubAck {
     fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
         // the assumption here is that the provided buffer has already been advanced by the Fixed Header length
         let mut packet = Self::default();
-        packet.packet_identifier = u16::read(buf)?;
+        packet.pkid = u16::read(buf)?;
         packet.properties = UnSubAckProperties::read(buf)?;
 
         loop {
@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn read_write_unsuback() {
         let mut packet = UnSubAck::default();
-        packet.packet_identifier = 0x2E;
+        packet.pkid = 0x2E;
         packet.payload = vec![UnSubAckReasonCode::Success, UnSubAckReasonCode::TopicFilterInvalid];
         packet.properties = UnSubAckProperties {reason_string: Some("reason_string here and there".into()), user_property: vec![("key".into(), "value".into())] };
 

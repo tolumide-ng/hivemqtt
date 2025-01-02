@@ -11,7 +11,7 @@ use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_ty
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct  Subscribe {
-    pub(crate) packet_identifier: u16,
+    pub(crate) pkid: u16,
     pub(crate) properties: SubscribeProperties,
     /// It is protocl error to have a subscribe packet that doesn't have atleast one payload (topic, subscriptionOptions)
     pub(crate) payload: Vec<(String, SubscriptionOptions)>,
@@ -31,7 +31,7 @@ impl BufferIO for Subscribe {
         if self.payload.len() == 0 { return Err(MQTTError::ProtocolError("Must contain at least one topic/subscription option pair"))}
 
         FixedHeader::new(PacketType::Subscribe, 0b10, self.length()).write(buf)?;
-        self.packet_identifier.write(buf);
+        self.pkid.write(buf);
         self.properties.write(buf)?;
         for (topic, options) in &self.payload {
             topic.write(buf); options.write(buf)?;
@@ -42,7 +42,7 @@ impl BufferIO for Subscribe {
 
     fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
         let mut packet = Self::default();
-        packet.packet_identifier = u16::read(buf)?;
+        packet.pkid = u16::read(buf)?;
 
         packet.properties = SubscribeProperties::read(buf)?;
 
@@ -70,7 +70,7 @@ mod tests {
     fn should_return_an_error_if_user_tries_to_write_subscribe_with_no_payload() {
         let mut packet = Subscribe::default();
         packet.properties = SubscribeProperties {subscription_id: Some(28293), user_property: vec![("key".into(), "value".into())]};
-        packet.packet_identifier = 0x3F;
+        packet.pkid = 0x3F;
 
         let mut buf = BytesMut::with_capacity(5);
         let result = packet.write(&mut buf);
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn default_read_write_subscribe_packet() {
         let mut packet = Subscribe::default();
-        packet.packet_identifier = 2378;
+        packet.pkid = 2378;
         packet.payload = vec![("autos".into(), SubscriptionOptions::default())];
 
         let mut buf = BytesMut::with_capacity(20);

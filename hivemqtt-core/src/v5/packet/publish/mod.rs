@@ -11,7 +11,7 @@ pub(crate) struct Publish {
     pub(crate) retain: bool,
     pub(crate) qos: QoS,
     pub(crate) topic: String,
-    pub(crate) packet_identifier: Option<u16>,
+    pub(crate) pkid: Option<u16>,
     pub(crate) properties: PublishProperties,
     pub(crate) payload: Bytes,
 }
@@ -30,7 +30,7 @@ impl BufferIO for Publish {
         self.topic.write(buf);
         if self.qos != QoS::Zero {
             // assignment of a packet id should be done from the client level after user provides us with the publish data
-            self.packet_identifier.ok_or_else(|| MQTTError::PacketIdRequired)?.write(buf);
+            self.pkid.ok_or_else(|| MQTTError::PacketIdRequired)?.write(buf);
         }
 
         self.properties.write(buf)?;
@@ -51,7 +51,7 @@ impl BufferIO for Publish {
         packet.retain = (flag & 0b1) != 0;
 
         if packet.qos != QoS::Zero {
-            packet.packet_identifier = Some(u16::read(buf).map_err(|_| MQTTError::PacketIdRequired)?);
+            packet.pkid = Some(u16::read(buf).map_err(|_| MQTTError::PacketIdRequired)?);
         }
         
         packet.properties = PublishProperties::read(buf)?;
@@ -74,7 +74,7 @@ mod tests {
         let packet = Publish {
             dup: true, retain: true, qos: QoS::One,
             topic: String::from("packagin_plant/#"),
-            packet_identifier: Some(8930),
+            pkid: Some(8930),
             payload: b"veryLarge payload".to_vec().into(),
             properties: PublishProperties {
                 payload_format_indicator: Some(13),
