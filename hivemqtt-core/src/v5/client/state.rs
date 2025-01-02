@@ -121,10 +121,36 @@ impl State {
         Ok(Packet::PubRec(PubRec { pkid: p.pkid, ..Default::default() }))
     }
 
-    pub(crate) fn incoming_pubrec(&self, packet: &PubRec) -> Result<Packet, MQTTError> {
-        // if self.outgoing_pub.lock().unwrap()[packet.pkid ]
-        Err(MQTTError::PacketIdConflict(10))
+    pub(crate) fn handle_incoming_puback(&self, packet: &PubRec) -> Result<Option<Packet>, MQTTError> {
+        if self.outgoing_pub.lock().unwrap()[packet.pkid as usize].take().is_some() {
+            return Ok(None)
+        }
+        Err(MQTTError::UnknownData(format!("Unknown Pakcet Id: {}", packet.pkid)))
     }
+
+    pub(crate) fn handle_outgoing_pubrec(&self, packet: PubRec) -> Result<(), MQTTError> {
+        Ok(())
+    }
+
+    pub(crate) fn incoming_pubrec(&self, p: &PubRec) -> Result<Option<Packet>, MQTTError> {
+        let pkid = p.pkid as usize;
+
+        if self.outgoing_pub.lock().unwrap()[pkid].take().is_none() {
+            #[cfg(feature = "logs")]
+            error!("Unexpected pubrec: Have no record for publish with id {}", pkid);
+            return Err(MQTTError::UnknownData(format!("Unexpected pubrec: Have no record for publish with id {}", pkid)))
+        }
+
+        if p.reason_code == PubRecReasonCode::Success || p.reason_code == PubRecReasonCode::NoMatchingSubscribers {
+            self.outgoing_rel.lock().unwrap()[pkid] = true;
+            return Ok(Some(Packet::PubRel(PubRel{pkid: p.pkid, ..Default::default()})))
+        }
+
+        Ok(None)
+    }
+
+
+
 
     // pub(crate) fn outgoing_pubrec(&mut self, p: PubRec) -> Result<(), MQTTError> {
     //     let pkid = p.pkid;
@@ -153,25 +179,6 @@ impl State {
     // fn valid_pid(&self, pid: u16) -> Result<(), MQTTError> {
     //     if self.outgoing_pub.lock().unwrap()[pid as usize].is_none() { return Ok(()) }
     //     // Err(MQTTError::PacketIdConflict(pid))
-    // }
-
-
-
-    // pub(crate) fn incoming_pubrec(&self, p: &PubRec) -> Result<Option<PubRel>, MQTTError> {
-    //     let pkid = p.pkid as usize;
-
-    //     if self.outgoing_pub.lock().unwrap()[pkid].take().is_none() {
-    //         #[cfg(feature = "logs")]
-    //         error!("Unexpected pubrec: Have no record for publish with id {}", pkid);
-    //         return Err(MQTTError::UnknownData(format!("Unexpected pubrec: Have no record for publish with id {}", pkid)))
-    //     }
-
-    //     if p.reason_code == PubRecReasonCode::Success || p.reason_code == PubRecReasonCode::NoMatchingSubscribers {
-    //         self.outgoing_rel.lock().unwrap()[pkid] = true;
-    //         return Ok(Some(PubRel{pkid: p.pkid, ..Default::default()}))
-    //     }
-
-    //     Ok(None)
     // }
 
     pub(crate) fn outgoing_pubrel(&self, p: PubRel) -> Result<(), MQTTError> {
