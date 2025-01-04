@@ -630,6 +630,7 @@ checksum = "fbf6a919d6cf397374f7dfeeea91d974c7c0a7221d0d0f4f20d859d329e53fcc"
 name = "hivemqtt-core"
 version = "0.1.0"
 dependencies = [
+ "async-channel 2.3.1",
  "async-std",
  "async-trait",
  "bytes 1.7.1",

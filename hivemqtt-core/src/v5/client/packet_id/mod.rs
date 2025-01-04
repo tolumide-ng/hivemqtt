@@ -46,6 +46,15 @@ impl PacketIdManager {
         None
     }
 
+    /// Returns whether the packetId is in use or free (Not yet tested)
+    pub(crate) fn is_occupied(&self, id: u16) -> bool {
+        let id = (id - 1) as usize;
+        let shard_index = id / Self::BITS;
+        let actual_index_in_shard = (id % Self::BITS) as u8;
+        let result = self.shards.get(shard_index).and_then(|shard| Some(shard.release(actual_index_in_shard)));
+        return result.is_some()
+    }
+
     pub(crate) fn release(&self, id: u16) {
         let id = (id - 1) as usize;
         let shard_index = id / Self::BITS;

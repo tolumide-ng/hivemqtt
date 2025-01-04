@@ -9,18 +9,17 @@ use super::{BufferIO, Property};
 
 /// CONNECT Properties (3.1.2.11)
 #[derive(Debug, Clone, Length, Default)]
-pub struct ConnectProperties {
-    pub session_expiry_interval: Option<u32>,
-    pub receive_maximum: Option<u16>,
-    pub maximum_packet_size: Option<u32>,
-    pub topic_alias_maximum: Option<u16>,
-    pub request_response_information: Option<u8>,
-    pub request_problem_information: Option<u8>,
-    pub user_property: Vec<(String, String)>,
-    pub authentication_method: Option<String>,
-    pub authentication_data: Option<Bytes>,
+pub(crate) struct ConnectProperties {
+    pub(crate) session_expiry_interval: Option<u32>,
+    pub(crate) receive_maximum: Option<u16>,
+    pub(crate) maximum_packet_size: Option<u32>,
+    pub(crate) topic_alias_maximum: Option<u16>,
+    pub(crate) request_response_information: Option<u8>,
+    pub(crate) request_problem_information: Option<u8>,
+    pub(crate) user_property: Vec<(String, String)>,
+    pub(crate) authentication_method: Option<String>,
+    pub(crate) authentication_data: Option<Bytes>,
 }
-
 
 impl BufferIO for ConnectProperties {
     /// The length of the Properties in the CONNECT packet Variable Header encoded as a Variable Byte Integer 3.1.2.11.1

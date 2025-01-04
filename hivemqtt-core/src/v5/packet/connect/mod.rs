@@ -1,39 +1,39 @@
 mod properties;
-mod will;
+pub mod will;
 
 
 use bytes::Bytes;
 use hivemqtt_macros::Length;
-pub use properties::ConnectProperties;
+use properties::ConnectProperties;
 use will::Will;
 
-use crate::{constants::PROTOCOL_NAME, v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS, version::Version}, traits::bufferio::BufferIO}};
+use crate::{constants::PROTOCOL_NAME, v5::{client::ConnectOptions, commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS, version::Version}, traits::bufferio::BufferIO}};
 use crate::v5::traits::{write::Write, read::Read};
 
 #[derive(Debug, Length)]
-pub struct Connect {
+pub(crate) struct Connect {
     #[bytes(no_id)]
-    pub client_id: String,
+    pub(crate) client_id: String,
     #[bytes(no_id)]
-    pub username: Option<String>,
+    pub(crate) username: Option<String>,
     #[bytes(no_id)]
-    pub password: Option<String>,
+    pub(crate) password: Option<String>,
     #[bytes(ignore)]
-    pub version: Version,
+    pub(crate) version: Version,
     #[bytes(ignore)]
-    pub will: Option<Will>,
+    pub(crate) will: Option<Will>,
     #[bytes(ignore)]
-    pub clean_start: bool,
+    pub(crate) clean_start: bool,
     #[bytes(ignore)]
-    pub keep_alive: u16,
+    pub(crate) keep_alive: u16,
     #[bytes(ignore)] // Connection properties
-    pub properties: ConnectProperties,
+    pub(crate) properties: ConnectProperties,
 }
 
 impl Default for Connect {
     fn default() -> Self {
         Self { 
-            client_id: "HiveMQTT".into(), 
+            client_id: "unqiueId".into(), 
             username: None, 
             password: None, 
             version: Version::V5, 
@@ -116,6 +116,31 @@ impl BufferIO for Connect {
 
 
         Ok(packet)
+    }
+}
+
+impl From<ConnectOptions> for Connect {
+    fn from(value: ConnectOptions) -> Self {
+        Self { 
+            client_id: value.client_id,
+            username: value.username,
+            password: value.password,
+            version: Version::V5,
+            will: value.will,
+            clean_start: value.clean_start,
+            keep_alive: value.keep_alive,
+            properties: ConnectProperties {
+                session_expiry_interval: value.session_expiry_interval,
+                receive_maximum: Some(value.client_receive_max.get()),
+                maximum_packet_size: Some(value.client_max_size.get()),
+                topic_alias_maximum: Some(value.topic_alias_max),
+                request_response_information: value.request_response_information,
+                request_problem_information: value.request_problem_information,
+                user_property: value.user_property,
+                authentication_method: value.authentication_method,
+                authentication_data: value.authentication_data,
+            }
+        }
     }
 }
 

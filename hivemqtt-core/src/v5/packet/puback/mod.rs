@@ -4,7 +4,7 @@ pub use properties::{PubAckProperties, PubAckReasonCode};
 use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
 
 #[derive(Debug, Default, PartialEq, Eq)]
-pub(crate) struct PubAck {
+pub struct PubAck {
     pub pkid: u16,
     pub reason_code: PubAckReasonCode,
     pub properties: PubAckProperties,

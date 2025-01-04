@@ -6,7 +6,7 @@ use tracing::error;
 
 use crate::v5::{commons::{error::MQTTError, packet::Packet, qos::QoS}, packet::{connack::ConnAck, puback::PubAck, pubcomp::PubComp, publish::Publish, pubrec::{properties::PubRecReasonCode, PubRec}, pubrel::PubRel, suback::SubAck, subscribe::Subscribe, unsubscribe::UnSubscribe}, utils::topic::parse_alias};
 
-use super::ConnectOptions;
+use super::{packet_id::PacketIdManager, ConnectOptions};
 
 
 #[derive(Debug, Default)]
@@ -45,11 +45,12 @@ pub(crate) struct State {
     outgoing_sub: AtomicU16,
     outgoing_unsub: Arc<Mutex<HashSet<u16>>>,
     clean_start: bool,
+    // xx: PacketIdManager
 }
 
 impl State {
     pub(crate) fn new(options: ConnectOptions) -> Self {
-        let receive_max = options.receive_max as usize + 1;
+        let receive_max = options.client_receive_max.get() as usize + 1;
         Self {
             // pkid_mgr: PacketIdManager::new(options.send_max),
             topic_aliases: TopicAlias::default(),
@@ -187,6 +188,7 @@ impl State {
         let pkid = packet.pkid - 1;
         let mask = 1u16 << pkid;
 
+        // this implementatioin is wrong
         if (self.outgoing_sub.load(Ordering::Relaxed) & mask) == 0 {
             return Ok(())
         }
@@ -197,11 +199,14 @@ impl State {
         let pkid = packet.pkid - 1;
         let mask = 1u16 << pkid;
 
+        // this implementatioin is wrong
         if (self.outgoing_sub.load(Ordering::Relaxed) & mask) != 0 {
             return Err(MQTTError::PacketIdConflict(packet.pkid))
         }
         return Ok(Some(Packet::SubAck(packet)))
     }
+
+    fn handle_outgoing_unsubscribe() {}
 
     // fn handle_outgoing_unsubscribe(&self, packet: &UnSubscribe) {
     //     let new_pkids = self.outgoing_unsub.lock().unwrap().insert(packet.pkid);
