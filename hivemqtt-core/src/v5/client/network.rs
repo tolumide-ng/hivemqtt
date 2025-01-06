@@ -2,16 +2,11 @@ use std::time::Duration;
 
 use async_channel::Receiver;
 
-use crate::v5::commons::packet::Packet;
+use crate::v5::commons::{error::MQTTError, packet::Packet};
 
-use super::state::State;
+use super::{handler, state::State};
 
-// #[cfg(feature = "smol")]
-// type Stream<T: smol::io::AsyncRead + smol::io::AsyncWrite + Unpin + Sized> = T;
-// #[cfg(feature = "tokio")]
-// type Stream<T: smol::io::AsyncRead + smol::io::AsyncWrite + Unpin + Sized> = T;
-
-pub(crate) struct Network<S, H> {
+pub struct Network<S, H> {
     state: State,
     stream: Option<S>,
     receiver: Receiver<Packet>,
@@ -19,4 +14,9 @@ pub(crate) struct Network<S, H> {
     handler: H,
 }
 
-impl<S, H> Network<S, H> {}
+// impl<S, H> Network<S, H> where H: handler::AsyncHandler, S: AsyncReadExt + AsyncWriteExt + Unpin + Send + Sized {
+//     pub async fn connect(&mut self, mut stream: S, handler: &mut H) -> Result<(), MQTTError> {
+//         // let connack = stream.conn
+//         Ok(())
+//     }
+// }

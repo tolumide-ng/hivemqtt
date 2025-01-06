@@ -1,17 +1,11 @@
 use std::sync::atomic::{AtomicU16, Ordering};
 
-#[cfg(feature = "tokio")]
-use tokio::sync::Semaphore;
-#[cfg(feature = "snmol")]
-use smol::lock::Semaphore;
-
 mod shard;
 use shard::PacketIdShard;
 
 
 pub(crate) struct PacketIdManager {
     shards: Vec<PacketIdShard>,
-    // semaphore: Arc<Semaphore>
     allocated: AtomicU16,
     max_packets: u16,
 }
@@ -67,10 +61,13 @@ impl PacketIdManager {
 }
 
 
+// use futures::execut
+
 
 #[cfg(test)]
 mod test {
     use std::sync::atomic::Ordering;
+    use futures::executor::block_on;
 
     use super::*;
 
@@ -87,21 +84,21 @@ mod test {
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
     }
 
-    #[tokio::test]
-    async fn can_allocate_and_release_packet_id() {
+    #[test]
+    fn can_allocate_and_release_packet_id() {
         let mgr = PacketIdManager::new(2);
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
         
-        let packet_id_1 = mgr.allocate().await;
+        let packet_id_1 = block_on(mgr.allocate());
         assert_eq!(packet_id_1, Some(1));
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 1);
 
         
-        let packet_id_2 = mgr.allocate().await;
+        let packet_id_2 = block_on(mgr.allocate());
         assert_eq!(packet_id_2, Some(2));
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 2);
         
-        assert_eq!(mgr.allocate().await, None);
+        assert_eq!(block_on(mgr.allocate()), None);
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 2);
 
 

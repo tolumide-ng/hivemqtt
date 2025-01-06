@@ -33,7 +33,7 @@ pub(crate) struct Connect {
 impl Default for Connect {
     fn default() -> Self {
         Self { 
-            client_id: "unqiueId".into(), 
+            client_id: "uniqueId".into(), 
             username: None, 
             password: None, 
             version: Version::V5, 
@@ -197,7 +197,7 @@ mod connect_packet {
             let mut buf = BytesMut::new();
     
             Connect::default().write(&mut buf)?;
-            let expected = b"\x10\x15\0\x04MQTT\x05\x02\0\0\0\0\x08HiveMQTT".as_ref().to_vec();
+            let expected = b"\x10\x15\0\x04MQTT\x05\x02\0\0\0\0\x08uniqueId".as_ref().to_vec();
             let received = buf.bytes().flatten().collect::<Vec<u8>>();
             assert_eq!(expected, received);
     
@@ -216,7 +216,7 @@ mod connect_packet {
             let mut buf = BytesMut::new();
             connect.write(&mut buf)?;
 
-            let expected = b"\x10E\0\x04MQTT\x05\xd6\0\xaa\0\0\x08HiveMQTT\0\0\x0bauto_warmup\0\x0cwill payload\0\x08username\0\x08password".to_vec();
+            let expected = b"\x10E\0\x04MQTT\x05\xd6\0\xaa\0\0\x08uniqueId\0\0\x0bauto_warmup\0\x0cwill payload\0\x08username\0\x08password".to_vec();
     
             assert_eq!(expected, buf.to_vec());
             Ok(())
@@ -230,7 +230,7 @@ mod connect_packet {
 
         #[test]
         fn read_connect_packet() {
-            let mut input = b"\0\x04MQTT\x05\xd6\0\xaa\0\0\x08HiveMQTT\0\0\x0bauto_warmup\0\x0cwill payload\0\x08username\0\x08password".as_ref().into();
+            let mut input = b"\0\x04MQTT\x05\xd6\0\xaa\0\0\x08uniqueId\0\0\x0bauto_warmup\0\x0cwill payload\0\x08username\0\x08password".as_ref().into();
             let packet = Connect::read(&mut input).unwrap();
 
             assert_eq!(packet.username.unwrap(), "username".to_string());
@@ -245,7 +245,7 @@ mod connect_packet {
             assert_eq!(will.retain, false);
 
             assert_eq!(packet.version, Version::V5);
-            assert_eq!(packet.client_id, "HiveMQTT");
+            assert_eq!(packet.client_id, "uniqueId");
             assert_eq!(packet.clean_start, false);
             assert_eq!(packet.properties.authentication_data, None);
             assert_eq!(packet.properties.authentication_method, None);
