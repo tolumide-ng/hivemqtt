@@ -1,16 +1,18 @@
-use std::io::Result;
+// use std::io::Result;
 
 use async_trait::async_trait;
 
+use crate::v5::{client::ConnectOptions, commons::{error::MQTTError, packet::Packet}, packet::connack::ConnAck};
+
 #[async_trait]
-pub trait AsyncStream {
-    async fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        self.read(buf).await
-    }
+pub(crate) trait AsyncStreamExt {
+    async fn read(&mut self) -> impl std::future::Future<Output = Result<Packet, MQTTError>> + Send + Sync;
 
-    async fn write(&mut self, buf: &[u8]) -> Result<usize> {
-        self.write(buf).await
-    }
+    fn write(&mut self, packet: Packet) -> impl std::future::Future<Output = Result<(), MQTTError>> + Send + Sync;
 
-    async fn flush(&mut self) -> Result<()>;
+    fn flush(&mut self) -> impl std::future::Future<Output = Result<(), MQTTError>> + Send + Sync;
+
+    fn write_many(&mut self, packet: &[Packet]) -> impl std::future::Future<Output = Result<(), MQTTError>> + Send + Sync;
+
+    fn connect(&mut self, options: &ConnectOptions) -> impl std::future::Future<Output = Result<ConnAck, MQTTError>> + Send + Sync;
 }

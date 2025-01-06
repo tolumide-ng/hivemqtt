@@ -22,9 +22,10 @@ bytes = "1.7.1"
 derive_more = { version = "1.0.0", features = ["display"]}
 thiserror = "=1.0.24"
 hivemqtt-macros = { path = "../hivemqtt-macros" }
-tokio-stream = { version = "0.1.17", optional = true }
 async-trait = { version = "0.1.83" }
 websocket = { version = "0.27.1", optional = true }
 tracing = { version = "0.1.41", optional = true }
 async-channel = "2.3.1"
 futures = "0.3.31"
+smol = { version = "2.0.2", features = [] }
+tokio = { version = "1.42.0", features = ["macros", "io-util", "net", "sync", "rt"] }
