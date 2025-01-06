@@ -44,7 +44,35 @@ impl BufferIO for Packet {
 
 
     fn read(buf: &mut bytes::Bytes) -> Result<Self, super::error::MQTTError> {
-        let x = Self::Connect(Connect::default());
+        // let x = Self::Connect(Connect::default());
+
+        let header = FixedHeader::read(buf)?;
+        match header.packet_type {
+            PacketType::Connect => Ok(Packet::Connect(Connect::read(buf)?)),
+            PacketType::ConnAck => Ok(Packet::ConnAck(ConnAck::read(buf)?)),
+            PacketType::Publish => Ok(Packet::Publish(Publish::read_with_fixedheader(buf, header)?)),
+            PacketType::PubAck => Ok(Packet::PubAck(PubAck::read_with_fixedheader(buf, header)?)),
+            PacketType::PubRec => Ok(Packet::PubRec(PubRec::read_with_fixedheader(buf, header)?)),
+            PacketType::PubRel => Ok(Packet::PubRel(PubRel::read_with_fixedheader(buf, header)?)),
+            PacketType::PubComp => Ok(Packet::PubComp(PubComp::read_with_fixedheader(buf, header)?)),
+            PacketType::Subscribe => Ok(Packet::Subscribe(Subscribe::read(buf)?)),
+            PacketType::SubAck => Ok(Packet::SubAck(SubAck::read(buf)?)),
+            PacketType::UnSubscribe => Ok(Packet::UnSubscribe(UnSubscribe::read(buf)?)),
+            PacketType::UnSubAck => Ok(Packet::UnSubAck(UnSubAck::read(buf)?)),
+            PacketType::PingReq => Ok(Packet::PingReq(PingReq::read(buf)?)),
+            PacketType::PingResp => Ok(Packet::PingResp(PingResp::read(buf)?)),
+            PacketType::Auth => Ok(Packet::Auth(Auth::read(buf)?)),
+            PacketType::Disconnect => Ok(Packet::Disconnect(Disconnect::read(buf)?)),
+            _ => Err(MQTTError::UnknownData(format!("Unexpected Packet type {:?}", header.packet_type))),
+        }
+
+    }
+}
+
+
+impl Packet {
+    fn read<S>(buf: &mut bytes::Bytes) -> Result<Self, super::error::MQTTError> {
+        // let x = Self::Connect(Connect::default());
 
         let header = FixedHeader::read(buf)?;
         match header.packet_type {
