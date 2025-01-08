@@ -36,4 +36,17 @@ pub enum MQTTError {
     InvalidProperty(String),
     #[error("Packet Id required")]
     PacketIdRequired,
+
+
+    #[error("Stream ended prematurely")]
+    StreamEndedPrematurely,
+
+    #[error("IO Error: {0}")]
+    IoError(String),
+}
+
+impl From<std::io::Error> for MQTTError {
+    fn from(value: std::io::Error) -> Self {
+        Self::IoError(value.to_string())
+    }
 }

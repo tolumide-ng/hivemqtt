@@ -5,7 +5,7 @@ mod reason_code;
 use properties::ConnAckProperties;
 use reason_code::ConnAckReasonCode;
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType}, traits::{bufferio::BufferIO, syncx::read::Read, syncx::write::Write}};
 
 
 #[derive(Debug, Default, PartialEq, Eq)]

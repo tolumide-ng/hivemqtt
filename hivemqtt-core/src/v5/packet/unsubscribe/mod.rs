@@ -1,7 +1,7 @@
 mod properties;
 pub use properties::UnSubscribeProperties;
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{bufferio::BufferIO, syncx::read::Read, syncx::write::Write}};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct UnSubscribe {

@@ -3,7 +3,7 @@ pub use properties::PublishProperties;
 
 use bytes::Bytes;
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS}, traits::{bufferio::BufferIO, read::Read, write::Write}};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS}, traits::{bufferio::BufferIO, syncx::read::Read, syncx::write::Write}};
 
 #[derive(Debug, Default, PartialEq, Clone, Eq)]
 pub(crate) struct Publish {

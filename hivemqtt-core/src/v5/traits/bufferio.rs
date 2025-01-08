@@ -1,7 +1,7 @@
 use bytes::{Bytes, BytesMut};
 use crate::v5::commons::fixed_header::FixedHeader;
 use crate::v5::commons::property::Property;
-use crate::v5::traits::{write::Write, read::Read};
+use crate::v5::traits::{syncx::write::Write, syncx::read::Read};
 
 use crate::v5::commons::error::MQTTError;
 

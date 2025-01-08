@@ -8,7 +8,7 @@ use properties::ConnectProperties;
 use will::Will;
 
 use crate::{constants::PROTOCOL_NAME, v5::{client::ConnectOptions, commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS, version::Version}, traits::bufferio::BufferIO}};
-use crate::v5::traits::{write::Write, read::Read};
+use crate::v5::traits::{syncx::write::Write, syncx::read::Read};
 
 #[derive(Debug, Length)]
 pub(crate) struct Connect {
