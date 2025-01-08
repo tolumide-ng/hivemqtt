@@ -1,5 +1,6 @@
 use std::future::Future;
 
+use bytes::Bytes;
 use futures::AsyncReadExt;
 
 use crate::v5::commons::error::MQTTError;
@@ -50,3 +51,14 @@ impl<S> AsyncRead<S> for String
             Ok(value)
         }
 }
+
+impl<S> AsyncRead<S> for Bytes
+    where S: AsyncReadExt + Unpin {
+        async fn async_read(stream: &mut S) -> Result<Self, MQTTError> {
+            let len = u8::async_read(stream).await?;
+            let mut buf = vec![0u8; len as usize];
+            stream.read_exact(&mut buf).await?;
+
+            Ok(buf.into())
+        }
+    }
