@@ -1,126 +1,21 @@
-// use std::borrow::Cow;
-// use std::fmt::Display;
+use std::borrow::Cow;
 
-// use bytes::{Buf, BufMut, Bytes, BytesMut};
+use futures::AsyncWriteExt;
 
-// use crate::v5::traits::{syncx::read::Read, syncx::write::Write};
-// use crate::v5::traits::syncx::bufferio::BufferIO;
-// use crate::v5::commons::error::MQTTError;
-
-// /// Must be encoded using the VBI
-// #[derive(Debug, Clone, PartialEq, Eq)]
-// #[repr(u8)]
-// pub(crate) enum Property<'a> {
-//     PayloadFormatIndicator(Option<u8>) = 1,
-//     MessageExpiryInterval(Option<u32>) = 2,
-//     ContentType(Option<Cow<'a, str>>) = 3,
-//     ResponseTopic(Option<Cow<'a, str>>) = 8,
-//     CorrelationData(Option<Cow<'a, [u8]>>) = 9,
-//     SubscriptionIdentifier(Cow<'a, usize>) = 11, 
-//     SessionExpiryInterval(Option<u32>) = 17,
-//     AssignedClientIdentifier(Option<Cow<'a, str>>) = 18,
-//     ServerKeepAlive(Option<u16>) = 19,
-//     AuthenticationMethod(Option<Cow<'a, str>>) = 21,
-//     AuthenticationData(Option<Cow<'a, [u8]>>) = 22,
-//     RequestProblemInformation(Option<u8>) = 23,
-//     WillDelayInterval(Option<u32>) = 24,
-//     RequestResponseInformation(Option<u8>) = 25,
-//     ResponseInformation(Option<Cow<'a, str>>) = 26,
-//     ServerReference(Option<Cow<'a, str>>) = 28,
-//     ReasonString(Option<Cow<'a, str>>) = 31,
-//     ReceiveMaximum(Option<u16>) = 33,
-//     TopicAliasMaximum(Option<u16>) = 34,
-//     TopicAlias(Option<u16>) = 35,
-//     MaximumQoS(Option<u8>) = 36,
-//     RetainAvailable(Option<u8>) = 37,
-//     UserProperty(Cow<'a, (String, String)>) = 38,
-//     MaximumPacketSize(Option<u32>) = 39,
-//     WildCardSubscription(Option<u8>) = 40,
-//     SubscriptionIdentifierAvailable(Option<u8>) = 41,
-//     SharedSubscriptionAvailable(Option<u8>) = 42,
-// }
-
-// impl<'a> From<&Property<'a>> for u8 {
-//     fn from(value: &Property) -> Self {
-//         match value {
-//             Property::PayloadFormatIndicator(_) => 1,
-//             Property::MessageExpiryInterval(_) => 2,
-//             Property::ContentType(_) => 3,
-//             Property::ResponseTopic(_) => 8,
-//             Property::CorrelationData(_) => 9,
-//             Property::SubscriptionIdentifier(_) => 11, 
-//             Property::SessionExpiryInterval(_) => 17,
-//             Property::AssignedClientIdentifier(_) => 18,
-//             Property::ServerKeepAlive(_) => 19,
-//             Property::AuthenticationMethod(_) => 21,
-//             Property::AuthenticationData(_) => 22,
-//             Property::RequestProblemInformation(_) => 23,
-//             Property::WillDelayInterval(_) => 24,
-//             Property::RequestResponseInformation(_) => 25,
-//             Property::ResponseInformation(_) => 26,
-//             Property::ServerReference(_) => 28,
-//             Property::ReasonString(_) => 31,
-//             Property::ReceiveMaximum(_) => 33,
-//             Property::TopicAliasMaximum(_) => 34,
-//             Property::TopicAlias(_) => 35,
-//             Property::MaximumQoS(_) => 36,
-//             Property::RetainAvailable(_) => 37,
-//             Property::UserProperty(_) => 38,
-//             Property::MaximumPacketSize(_) => 39,
-//             Property::WildCardSubscription(_) => 40,
-//             Property::SubscriptionIdentifierAvailable(_) => 41,
-//             Property::SharedSubscriptionAvailable(_) => 42,
-//         }
-//     }
-// }
+pub(crate) use crate::v5::commons::property::syncx::Property;
+use crate::v5::{commons::error::MQTTError, traits::asyncx::write::Write};
 
 
-// impl<'a> TryFrom<u8> for Property<'a> {
-//     type Error = MQTTError;
-//     fn try_from(value: u8) -> Result<Self, Self::Error> {
-        
-//         match value {
-//             1 => Ok(Property::PayloadFormatIndicator(None)),
-//             2 => Ok(Property::MessageExpiryInterval(None)),
-//             3 => Ok(Property::ContentType(None)),
-//             8 => Ok(Property::ResponseTopic(None)),
-//             9 => Ok(Property::CorrelationData(None)),
-//             11 => Ok(Property::SubscriptionIdentifier(Cow::Owned(0))),
-//             17 => Ok(Property::SessionExpiryInterval(None)),
-//             18 => Ok(Property::AssignedClientIdentifier(None)),
-//             19 => Ok(Property::ServerKeepAlive(None)),
-//             21 => Ok(Property::AuthenticationMethod(None)),
-//             22 => Ok(Property::AuthenticationData(None)),
-//             23 => Ok(Property::RequestProblemInformation(None)),
-//             24 => Ok(Property::WillDelayInterval(None)),
-//             25 => Ok(Property::RequestResponseInformation(None)),
-//             26 => Ok(Property::ResponseInformation(None)),
-//             28 => Ok(Property::ServerReference(None)),
-//             31 => Ok(Property::ReasonString(None)),
-//             33 => Ok(Property::ReceiveMaximum(None)),
-//             34 => Ok(Property::TopicAliasMaximum(None)),
-//             35 => Ok(Property::TopicAlias(None)),
-//             36 => Ok(Property::MaximumQoS(None)),
-//             37 => Ok(Property::RetainAvailable(None)),
-//             38 => Ok(Property::UserProperty(Cow::Owned((String::from(""), String::from(""))))),
-//             39 => Ok(Property::MaximumPacketSize(None)),
-//             40 => Ok(Property::WildCardSubscription(None)),
-//             41 => Ok(Property::SubscriptionIdentifierAvailable(None)),
-//             42 => Ok(Property::SharedSubscriptionAvailable(None)),
-//             v => Err(MQTTError::UnknownProperty(v))
-//         }
-//     }
-// }
-
-
-
-// impl<'a> Property<'a> {
-//     fn with_id<F>(&self, buf: &mut BytesMut, func: F)
-//         where F: Fn(&mut BytesMut) {
-//             buf.put_u8(u8::from(self));
-//             func(buf);
-//     }
-// }
+#[cfg(feature = "async")]
+impl<'a> Property<'a> {
+    async fn with_ida<S, F>(&self, stream: &mut S, func: F) -> Result<(), MQTTError>
+        where F: Fn(&mut S),
+            S: AsyncWriteExt + Unpin {
+                u8::from(self).write(stream).await?;
+                func(stream);
+                Ok(())
+    }
+}
 
 // impl<'a> BufferIO for Property<'a> {
 //     fn length(&self) -> usize {

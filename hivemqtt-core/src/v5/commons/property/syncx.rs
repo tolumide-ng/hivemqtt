@@ -117,11 +117,14 @@ impl<'a> TryFrom<u8> for Property<'a> {
 impl<'a> Property<'a> {
     fn with_id<F>(&self, buf: &mut BytesMut, func: F)
         where F: Fn(&mut BytesMut) {
-            buf.put_u8(u8::from(self));
+            u8::from(self).write(buf);
+            // buf.put_u8(u8::from(self));
             func(buf);
     }
 }
 
+
+// #[cfg(feature = "sync")]
 impl<'a> BufferIO for Property<'a> {
     fn length(&self) -> usize {
         match self {
