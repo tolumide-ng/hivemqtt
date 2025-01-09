@@ -5,11 +5,11 @@ use futures::AsyncWriteExt;
 
 use crate::v5::commons::error::MQTTError;
 
-pub(crate) trait AsyncWrite<S>: Sized {
+pub(crate) trait Write<S>: Sized {
     fn write(&self, stream: &mut S) -> impl Future<Output = Result<(), MQTTError>>;
 }
 
-impl<S> AsyncWrite<S> for u8
+impl<S> Write<S> for u8
     where S: AsyncWriteExt + Unpin {
         async fn write(&self, stream: &mut S) -> Result<(), MQTTError> {
             stream.write_all(&self.to_be_bytes()).await?;
@@ -17,7 +17,7 @@ impl<S> AsyncWrite<S> for u8
         }
 }
 
-impl<S> AsyncWrite<S> for u16
+impl<S> Write<S> for u16
     where S: AsyncWriteExt + Unpin {
         async fn write(&self, stream: &mut S) -> Result<(), MQTTError> {
             stream.write_all(&self.to_be_bytes()).await?;
@@ -25,7 +25,7 @@ impl<S> AsyncWrite<S> for u16
         }
 }
 
-impl<S> AsyncWrite<S> for u32
+impl<S> Write<S> for u32
     where S: AsyncWriteExt + Unpin {
         async fn write(&self, stream: &mut S) -> Result<(), MQTTError> {
             stream.write_all(&self.to_be_bytes()).await?;
@@ -33,7 +33,7 @@ impl<S> AsyncWrite<S> for u32
         }
 }
 
-impl<S> AsyncWrite<S> for Bytes
+impl<S> Write<S> for Bytes
     where S: AsyncWriteExt + Unpin {
         async fn write(&self, stream: &mut S) -> Result<(), MQTTError> {
             stream.write_all(&(self.len() as u16).to_be_bytes()).await?;
@@ -42,7 +42,7 @@ impl<S> AsyncWrite<S> for Bytes
         }
 }
 
-impl<S> AsyncWrite<S> for String
+impl<S> Write<S> for String
     where S: AsyncWriteExt + Unpin {
         async fn write(&self, stream: &mut S) -> Result<(), MQTTError> {
             stream.write_all(&(self.len() as u16).to_be_bytes()).await?;

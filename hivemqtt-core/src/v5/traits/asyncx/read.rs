@@ -5,13 +5,13 @@ use futures::AsyncReadExt;
 
 use crate::v5::commons::error::MQTTError;
 
-pub(crate) trait AsyncRead<S>: Sized {
-    fn async_read(stream: &mut S) -> impl Future<Output = Result<Self, MQTTError>>;
+pub(crate) trait Read<S>: Sized {
+    fn read(stream: &mut S) -> impl Future<Output = Result<Self, MQTTError>>;
 }
 
-impl<S> AsyncRead<S> for u8
+impl<S> Read<S> for u8
     where S: AsyncReadExt + Unpin {
-        async fn async_read(stream: &mut S) -> Result<u8, MQTTError> {
+        async fn read(stream: &mut S) -> Result<u8, MQTTError> {
             let mut buf = vec![0u8; std::mem::size_of::<u8>()];
             stream.read_exact(&mut buf).await?;
             
@@ -19,9 +19,9 @@ impl<S> AsyncRead<S> for u8
         }
 }
 
-impl<S> AsyncRead<S> for u16 
+impl<S> Read<S> for u16 
     where S: AsyncReadExt + Unpin {
-        async fn async_read(stream: &mut S) -> Result<Self, MQTTError> {
+        async fn read(stream: &mut S) -> Result<Self, MQTTError> {
             let mut buf = vec![0u8; std::mem::size_of::<u16>()];
             stream.read_exact(&mut buf).await?;
             
@@ -29,9 +29,9 @@ impl<S> AsyncRead<S> for u16
         }
 }
 
-impl<S> AsyncRead<S> for u32 
+impl<S> Read<S> for u32 
     where S: AsyncReadExt + Unpin {
-        async fn async_read(stream: &mut S) -> Result<Self, MQTTError> {
+        async fn read(stream: &mut S) -> Result<Self, MQTTError> {
             let mut buf = vec![0u8; std::mem::size_of::<u32>()];
             stream.read_exact(&mut buf).await?;
             
@@ -40,10 +40,10 @@ impl<S> AsyncRead<S> for u32
 }
 
 
-impl<S> AsyncRead<S> for String 
+impl<S> Read<S> for String 
     where S: AsyncReadExt + Unpin {
-        async fn async_read(stream: &mut S) -> Result<Self, MQTTError> {
-            let len = u8::async_read(stream).await?;
+        async fn read(stream: &mut S) -> Result<Self, MQTTError> {
+            let len = u8::read(stream).await?;
             let mut buf = vec![0u8; len as usize];
             stream.read_exact(&mut buf).await?;
 
@@ -52,10 +52,10 @@ impl<S> AsyncRead<S> for String
         }
 }
 
-impl<S> AsyncRead<S> for Bytes
+impl<S> Read<S> for Bytes
     where S: AsyncReadExt + Unpin {
-        async fn async_read(stream: &mut S) -> Result<Self, MQTTError> {
-            let len = u8::async_read(stream).await?;
+        async fn read(stream: &mut S) -> Result<Self, MQTTError> {
+            let len = u8::read(stream).await?;
             let mut buf = vec![0u8; len as usize];
             stream.read_exact(&mut buf).await?;
 

@@ -165,7 +165,7 @@ impl<'a> BufferIO for Property<'a> {
     }
 
 
-    fn read(buf: &mut Bytes) -> Result<Self, super::error::MQTTError> {
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
         if buf.is_empty() { return Err(MQTTError::IncompleteData("MQTT Property", 1, 0))}
 
         match buf.get_u8() {

@@ -1,21 +1,25 @@
-use bytes::{Bytes, BytesMut};
+use futures::{AsyncReadExt, AsyncWriteExt};
 use crate::v5::commons::fixed_header::FixedHeader;
 use crate::v5::commons::property::Property;
-use crate::v5::traits::{syncx::write::Write, syncx::read::Read};
+use crate::v5::traits::{asyncx::write::Write, asyncx::read::Read};
 
 use crate::v5::commons::error::MQTTError;
 
-pub(crate) trait BufferIO: Sized {
-    fn variable_length(&self) -> usize {
-        if self.length() >= 2_097_152 { 4 }
-        else if self.length() >= 16_384 { 3 }
-        else if self.length() >= 128 { 2 }
+pub(crate) trait BufferIO<W, R>: Sized 
+    where   W: AsyncWriteExt + Unpin, 
+            R: AsyncReadExt + Unpin 
+{
+    async fn variable_length(&self) -> usize {
+        let len = self.length().await;
+        if len >= 2_097_152 { 4 }
+        else if len >= 16_384 { 3 }
+        else if len >= 128 { 2 }
         else { 1 }
     }
 
     /// Encodes a non-negative Integer into the Variable Byte Integer encoding
-    fn encode(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
-        let mut len = self.length();
+    async fn encode(&self, stream: &mut W) -> Result<(), MQTTError> {
+        let mut len = self.length().await;
 
          // 268_435_455
         if len > 0xFFFFFFF { return Err(MQTTError::PayloadTooLong) }
@@ -26,21 +30,18 @@ pub(crate) trait BufferIO: Sized {
 
             if len > 0 { byte |= 128; }
             
-            (byte as u8).write(buf); // writes the encoded byte into the buffer
+            (byte as u8).write(stream).await?; // writes the encoded byte into the buffer
             if len == 0 { break; }
         }
         Ok(())
     }
 
-    /// Decodes a Variable byte Inetger
-    fn decode(buf: &mut Bytes) -> Result<(usize, usize), MQTTError> {
+    /// Decodes a Variable byte Integer
+    async fn decode(stream: &mut R) -> Result<(usize, usize), MQTTError> {
         let mut result = 0;
 
         for i in 0..4 {
-            if buf.is_empty() {
-                return Err(MQTTError::MalformedPacket);
-            }
-            let byte = u8::read(buf)?;
+            let byte = u8::read(stream).await?;
 
             result += ((byte as usize) & 0x7F) << (7 * i);
 
@@ -54,7 +55,7 @@ pub(crate) trait BufferIO: Sized {
     }
     
     /// Applies to fields that results in Protocol Error if their value appears more than once
-    fn try_update<T>(field: &mut Option<T>, value: Option<T>) -> impl Fn(Property) -> Result<(), MQTTError> {
+    async fn try_update<T>(field: &mut Option<T>, value: Option<T>) -> impl Fn(Property) -> Result<(), MQTTError> {
         let is_duplicate = field.is_some();
         *field = value;
 
@@ -70,30 +71,27 @@ pub(crate) trait BufferIO: Sized {
     /// NOTE: The eventual plan is to make this the only property accessible externally and 
     ///     make `.len()` internal while probably enforcing that all struct's implementing this method/trait
     ///     must also implement `DataSize` proc. So that there is a default accurate length property
-    fn length(&self) -> usize { 0 }
+    async fn length(&self) -> usize { 0 }
 
-    fn read(_buf: &mut Bytes) -> Result<Self, MQTTError> {
+    async fn read(_buf: &mut R) -> Result<Self, MQTTError> {
         Err(MQTTError::MalformedPacket)
     }
 
-    fn read_with_fixedheader(_buf: &mut Bytes, _header: FixedHeader) -> Result<Self, MQTTError> {
+    async fn read_with_fixedheader(_buf: &mut R, _header: FixedHeader) -> Result<Self, MQTTError> {
         Err(MQTTError::MalformedPacket)
     }
 
 
-    fn parse_len(buf: &mut Bytes) -> Result<Option<usize>, MQTTError> 
+    async fn parse_len(stream: &mut R) -> Result<Option<usize>, MQTTError> 
         where Self: Default {
-        let (len, _) = Self::decode(buf)?;
-        
+        let (len, _) = Self::decode(stream).await?;
         if len == 0 { return Ok(None) }
-        if len > buf.len() { return Err(MQTTError::IncompleteData("", len, buf.len()))};
-
         Ok(Some(len))
     }
 
-    fn w(&self, _buf: &mut BytesMut) {}
+    fn w(&self, _buf: &mut W) {}
 
-    fn write(&self, _buf: &mut BytesMut) -> Result<(), MQTTError> {
+    async fn write(&self, _buf: &mut W) -> Result<(), MQTTError> {
         Ok(())
     }
 }
