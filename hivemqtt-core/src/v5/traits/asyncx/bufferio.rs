@@ -9,32 +9,32 @@ pub(crate) trait BufferIO<W, R>: Sized
     where   W: AsyncWriteExt + Unpin, 
             R: AsyncReadExt + Unpin 
 {
-    async fn variable_length(&self) -> usize {
-        let len = self.length().await;
-        if len >= 2_097_152 { 4 }
-        else if len >= 16_384 { 3 }
-        else if len >= 128 { 2 }
-        else { 1 }
-    }
+    // async fn variable_length(&self) -> usize {
+    //     let len = self.length().await;
+    //     if len >= 2_097_152 { 4 }
+    //     else if len >= 16_384 { 3 }
+    //     else if len >= 128 { 2 }
+    //     else { 1 }
+    // }
 
-    /// Encodes a non-negative Integer into the Variable Byte Integer encoding
-    async fn encode(&self, stream: &mut W) -> Result<(), MQTTError> {
-        let mut len = self.length().await;
+    // /// Encodes a non-negative Integer into the Variable Byte Integer encoding
+    // async fn encode(&self, stream: &mut W) -> Result<(), MQTTError> {
+    //     let mut len = self.length().await;
 
-         // 268_435_455
-        if len > 0xFFFFFFF { return Err(MQTTError::PayloadTooLong) }
+    //      // 268_435_455
+    //     if len > 0xFFFFFFF { return Err(MQTTError::PayloadTooLong) }
 
-        for _ in 0..4 {
-            let mut byte= len % 128;
-            len /= 128;
+    //     for _ in 0..4 {
+    //         let mut byte= len % 128;
+    //         len /= 128;
 
-            if len > 0 { byte |= 128; }
+    //         if len > 0 { byte |= 128; }
             
-            (byte as u8).write(stream).await?; // writes the encoded byte into the buffer
-            if len == 0 { break; }
-        }
-        Ok(())
-    }
+    //         (byte as u8).write(stream).await?; // writes the encoded byte into the buffer
+    //         if len == 0 { break; }
+    //     }
+    //     Ok(())
+    // }
 
     /// Decodes a Variable byte Integer
     async fn decode(stream: &mut R) -> Result<(usize, usize), MQTTError> {
@@ -65,33 +65,25 @@ pub(crate) trait BufferIO<W, R>: Sized
         }
     }
 
-    /// Allows a struct specify what it's length is to it's external users
-    /// Normally this is obtainable using the .len() method (internally on structs implementing Length(formerly DataSize)),
-    /// However, this method allows the struct customize what its actual length is.
-    /// NOTE: The eventual plan is to make this the only property accessible externally and 
-    ///     make `.len()` internal while probably enforcing that all struct's implementing this method/trait
-    ///     must also implement `DataSize` proc. So that there is a default accurate length property
-    async fn length(&self) -> usize { 0 }
+    // /// Allows a struct specify what it's length is to it's external users
+    // /// Normally this is obtainable using the .len() method (internally on structs implementing Length(formerly DataSize)),
+    // /// However, this method allows the struct customize what its actual length is.
+    // /// NOTE: The eventual plan is to make this the only property accessible externally and 
+    // ///     make `.len()` internal while probably enforcing that all struct's implementing this method/trait
+    // ///     must also implement `DataSize` proc. So that there is a default accurate length property
+    // async fn length(&self) -> usize;
 
-    async fn read(_buf: &mut R) -> Result<Self, MQTTError> {
-        Err(MQTTError::MalformedPacket)
-    }
+    // async fn read(_buf: &mut R) -> Result<Self, MQTTError>;
 
-    async fn read_with_fixedheader(_buf: &mut R, _header: FixedHeader) -> Result<Self, MQTTError> {
-        Err(MQTTError::MalformedPacket)
-    }
+    // async fn read_with_fixedheader(_buf: &mut R, _header: FixedHeader) -> Result<Self, MQTTError>;
 
 
-    async fn parse_len(stream: &mut R) -> Result<Option<usize>, MQTTError> 
-        where Self: Default {
-        let (len, _) = Self::decode(stream).await?;
-        if len == 0 { return Ok(None) }
-        Ok(Some(len))
-    }
+    // async fn parse_len(stream: &mut R) -> Result<Option<usize>, MQTTError> 
+    //     where Self: Default {
+    //     let (len, _) = Self::decode(stream).await?;
+    //     if len == 0 { return Ok(None) }
+    //     Ok(Some(len))
+    // }
 
-    fn w(&self, _buf: &mut W) {}
-
-    async fn write(&self, _buf: &mut W) -> Result<(), MQTTError> {
-        Ok(())
-    }
+    // async fn write(&self, _buf: &mut W) -> Result<(), MQTTError>;
 }

@@ -1,9 +1,10 @@
 use std::borrow::Cow;
 
-use futures::AsyncWriteExt;
+// use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use futures::{AsyncReadExt, AsyncWriteExt};
 
 pub(crate) use crate::v5::commons::property::syncx::Property;
-use crate::v5::{commons::error::MQTTError, traits::asyncx::write::Write};
+use crate::v5::{commons::error::MQTTError, traits::asyncx::{bufferio::BufferIO, write::Write}};
 
 
 #[cfg(feature = "async")]
@@ -16,6 +17,10 @@ impl<'a> Property<'a> {
                 Ok(())
     }
 }
+
+impl<'a, R, W> BufferIO<R, W> for Property<'a>
+    where R: AsyncReadExt + Unpin,
+        W: AsyncWriteExt + Unpin {}
 
 // impl<'a> BufferIO for Property<'a> {
 //     fn length(&self) -> usize {
