@@ -3,7 +3,7 @@ use bytes::{Buf, BufMut};
 use crate::v5::commons::error::MQTTError;
 use crate::v5::commons::qos::QoS;
 
-use crate::v5::traits::bufferio::BufferIO;
+use crate::v5::traits::syncx::bufferio::BufferIO;
 
 
 

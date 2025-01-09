@@ -7,7 +7,7 @@ use hivemqtt_macros::Length;
 use properties::ConnectProperties;
 use will::Will;
 
-use crate::{constants::PROTOCOL_NAME, v5::{client::ConnectOptions, commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS, version::Version}, traits::bufferio::BufferIO}};
+use crate::{constants::PROTOCOL_NAME, v5::{client::ConnectOptions, commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property, qos::QoS, version::Version}, traits::syncx::bufferio::BufferIO}};
 use crate::v5::traits::{syncx::write::Write, syncx::read::Read};
 
 #[derive(Debug, Length)]

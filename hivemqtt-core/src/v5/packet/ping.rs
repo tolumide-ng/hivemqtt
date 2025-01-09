@@ -1,4 +1,4 @@
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType}, traits::bufferio::BufferIO};
+use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType}, traits::syncx::bufferio::BufferIO};
 
 #[derive(Debug, Default)]
 pub struct PingReq {}

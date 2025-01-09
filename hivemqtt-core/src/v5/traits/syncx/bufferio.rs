@@ -6,13 +6,6 @@ use crate::v5::traits::{syncx::write::Write, syncx::read::Read};
 use crate::v5::commons::error::MQTTError;
 
 pub(crate) trait BufferIO: Sized {
-
-    fn w(&self, _buf: &mut BytesMut) {}
-
-    fn write(&self, _buf: &mut BytesMut) -> Result<(), MQTTError> {
-        Ok(())
-    }
-
     fn variable_length(&self) -> usize {
         if self.length() >= 2_097_152 { 4 }
         else if self.length() >= 16_384 { 3 }
@@ -97,5 +90,11 @@ pub(crate) trait BufferIO: Sized {
         if len > buf.len() { return Err(MQTTError::IncompleteData(self_str, len, buf.len()))};
 
         Ok(Some(len))
+    }
+
+    fn w(&self, _buf: &mut BytesMut) {}
+
+    fn write(&self, _buf: &mut BytesMut) -> Result<(), MQTTError> {
+        Ok(())
     }
 }

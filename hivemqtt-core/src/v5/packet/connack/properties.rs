@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::v5::{commons::error::MQTTError, traits::bufferio::BufferIO};
+use crate::v5::{commons::error::MQTTError, traits::syncx::bufferio::BufferIO};
 use crate::v5::commons::property::Property;
 use std::borrow::{Borrow, Cow};
 

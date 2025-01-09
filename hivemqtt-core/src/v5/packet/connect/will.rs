@@ -4,7 +4,7 @@ use bytes::Bytes;
 use hivemqtt_macros::Length;
 
 use crate::v5::commons::{error::MQTTError, qos::QoS};
-use crate::v5::traits::{syncx::write::Write, syncx::read::Read, bufferio::BufferIO};
+use crate::v5::traits::{syncx::write::Write, syncx::read::Read, syncx::bufferio::BufferIO};
 
 use super::Property;
 

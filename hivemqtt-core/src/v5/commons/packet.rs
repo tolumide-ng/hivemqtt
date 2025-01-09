@@ -1,4 +1,4 @@
-use crate::v5::{packet::{auth::Auth, connack::ConnAck, connect::Connect, disconnect::Disconnect, ping::{PingReq, PingResp}, puback::PubAck, pubcomp::PubComp, publish::Publish, pubrec::PubRec, pubrel::PubRel, suback::SubAck, subscribe::Subscribe, unsuback::UnSubAck, unsubscribe::UnSubscribe}, traits::bufferio::BufferIO};
+use crate::v5::{packet::{auth::Auth, connack::ConnAck, connect::Connect, disconnect::Disconnect, ping::{PingReq, PingResp}, puback::PubAck, pubcomp::PubComp, publish::Publish, pubrec::PubRec, pubrel::PubRel, suback::SubAck, subscribe::Subscribe, unsuback::UnSubAck, unsubscribe::UnSubscribe}, traits::syncx::bufferio::BufferIO};
 
 use super::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType};
 
