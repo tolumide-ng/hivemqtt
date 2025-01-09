@@ -15,7 +15,7 @@ impl<S> AsyncRead<S> for u8
             let mut buf = vec![0u8; std::mem::size_of::<u8>()];
             stream.read_exact(&mut buf).await?;
             
-            Ok(u8::from_le_bytes(buf.try_into().unwrap()))
+            Ok(u8::from_be_bytes(buf.try_into().unwrap()))
         }
 }
 
@@ -25,7 +25,7 @@ impl<S> AsyncRead<S> for u16
             let mut buf = vec![0u8; std::mem::size_of::<u16>()];
             stream.read_exact(&mut buf).await?;
             
-            Ok(u16::from_le_bytes(buf.try_into().unwrap()))
+            Ok(u16::from_be_bytes(buf.try_into().unwrap()))
         }
 }
 
@@ -35,7 +35,7 @@ impl<S> AsyncRead<S> for u32
             let mut buf = vec![0u8; std::mem::size_of::<u32>()];
             stream.read_exact(&mut buf).await?;
             
-            Ok(u32::from_le_bytes(buf.try_into().unwrap()))
+            Ok(u32::from_be_bytes(buf.try_into().unwrap()))
         }
 }
 

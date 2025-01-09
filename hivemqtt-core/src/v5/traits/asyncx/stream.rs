@@ -2,7 +2,7 @@
 
 // use futures::AsyncReadExt;
 
-// use crate::v5::traits::asyncx::le_bytes::FromLeBytes;
+// use crate::v5::traits::asyncx::be_bytes::FromLeBytes;
 
 // pub(crate) trait ReadStreamExt: AsyncReadExt + Unpin {
 //     /// Reads a fixed-size value from the stream (e.g., u8, u16, u32).
@@ -10,7 +10,7 @@
 //         where T: FromLeBytes {
 //             let mut buf = vec![0u8; std::mem::size_of::<T>()];
 //             self.read_exact(&mut buf).await?;
-//             Ok(T::from_le_bytes(&buf))
+//             Ok(T::from_be_bytes(&buf))
 //     }
 
 //     async fn read_str(&mut self) -> std::io::Result<Result<String, FromUtf8Error>> {
@@ -29,7 +29,7 @@
 //         let mut buf = vec![0u8; len as usize];
 //         self.read_exact(&mut buf).await?;
         
-//         let result = buf.chunks(2).map(|chunk| u16::from_le_bytes(chunk.try_into().unwrap())).collect::<Vec<u16>>();
+//         let result = buf.chunks(2).map(|chunk| u16::from_be_bytes(chunk.try_into().unwrap())).collect::<Vec<u16>>();
 //         Ok(Some(result))
 //     }
 // }
