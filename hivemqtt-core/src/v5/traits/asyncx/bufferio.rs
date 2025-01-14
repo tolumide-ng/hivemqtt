@@ -90,9 +90,11 @@ where
     /// NOTE: The eventual plan is to make this the only property accessible externally and
     ///     make `.len()` internal while probably enforcing that all struct's implementing this method/trait
     ///     must also implement `DataSize` proc. So that there is a default accurate length property
-    fn length(&self) -> usize;
+    fn length(&self) -> usize {
+        0
+    }
 
-    async fn read(_buf: &mut R) -> Result<Self, MQTTError>;
+    async fn read(stream: &mut R) -> Result<Self, MQTTError>;
 
     // async fn read_with_fixedheader(_buf: &mut R, _header: FixedHeader) -> Result<Self, MQTTError>;
 

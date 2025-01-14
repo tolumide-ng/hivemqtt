@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::fmt::Display;
 
-use bytes::{Buf, BufMut, Bytes, BytesMut};
+use bytes::{Buf, Bytes, BytesMut};
 
 use crate::v5::commons::error::MQTTError;
 use crate::v5::traits::syncx::bufferio::BufferIO;
