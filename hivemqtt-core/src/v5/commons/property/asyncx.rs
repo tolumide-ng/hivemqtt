@@ -1,26 +1,85 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, future::Future};
 
+use bytes::Bytes;
 // use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
-use futures::{AsyncReadExt, AsyncWriteExt};
+use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 pub(crate) use crate::v5::commons::property::syncx::Property;
-use crate::v5::{commons::error::MQTTError, traits::asyncx::{bufferio::BufferIO, write::Write}};
-
+use crate::v5::{
+    commons::error::MQTTError,
+    traits::asyncx::{bufferio::BufferIO, write::Write},
+};
 
 #[cfg(feature = "async")]
 impl<'a> Property<'a> {
-    async fn with_ida<S, F>(&self, stream: &mut S, func: F) -> Result<(), MQTTError>
-        where F: Fn(&mut S),
-            S: AsyncWriteExt + Unpin {
-                u8::from(self).write(stream).await?;
-                func(stream);
-                Ok(())
+    async fn write_to_stream<S, T>(&self, stream: &mut S, value: &T) -> Result<(), MQTTError>
+    where
+        S: AsyncWriteExt + Unpin,
+        T: Write<S>,
+    {
+        u8::from(self).write(stream).await?;
+        value.write(stream).await
     }
 }
 
 impl<'a, R, W> BufferIO<R, W> for Property<'a>
-    where R: AsyncReadExt + Unpin,
-        W: AsyncWriteExt + Unpin {}
+where
+    R: AsyncReadExt + Unpin,
+    W: AsyncWriteExt + Unpin,
+{
+    fn length(&self) -> usize {
+        match self {
+            Self::SubscriptionIdentifier(length) => **length,
+            _ => 0,
+        }
+    }
+
+    async fn write(&self, stream: &mut W) -> Result<(), MQTTError> {
+        match self {
+            Self::SessionExpiryInterval(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::ReceiveMaximum(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::MaximumPacketSize(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::TopicAliasMaximum(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::TopicAlias(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::RequestResponseInformation(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::RequestProblemInformation(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::UserProperty(Cow::Borrowed(p)) => self.write_to_stream(stream, *p).await?,
+            Self::AuthenticationMethod(Some(p)) => {
+                self.write_to_stream(stream, &p.to_string()).await?
+            }
+            Self::AuthenticationData(Some(p)) => self.write_to_stream(stream, &p.to_vec()).await?,
+            Self::WillDelayInterval(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::PayloadFormatIndicator(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::MessageExpiryInterval(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::ContentType(Some(p)) => self.write_to_stream(stream, &p.to_string()).await?,
+            Self::ResponseTopic(Some(p)) => self.write_to_stream(stream, &p.to_string()).await?,
+            Self::CorrelationData(Some(p)) => self.write_to_stream(stream, &p.to_vec()).await?,
+            Self::SubscriptionIdentifier(_) => {
+                self.write_to_stream(stream, &(<Self as BufferIO<R, W>>::encode(self).await?))
+                    .await?
+            }
+            Self::AssignedClientIdentifier(Some(p)) => {
+                self.write_to_stream(stream, &p.to_string()).await?
+            }
+            Self::ServerKeepAlive(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::ResponseInformation(Some(p)) => {
+                self.write_to_stream(stream, &p.to_string()).await?
+            }
+            Self::ServerReference(Some(p)) => self.write_to_stream(stream, &p.to_string()).await?,
+            Self::ReasonString(Some(p)) => self.write_to_stream(stream, &p.to_string()).await?,
+            Self::MaximumQoS(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::RetainAvailable(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::WildCardSubscription(Some(p)) => self.write_to_stream(stream, p).await?,
+            Self::SubscriptionIdentifierAvailable(Some(p)) => {
+                self.write_to_stream(stream, p).await?
+            }
+            Self::SharedSubscriptionAvailable(Some(p)) => self.write_to_stream(stream, p).await?,
+            _ => (),
+        }
+
+        Ok(())
+    }
+}
 
 // impl<'a> BufferIO for Property<'a> {
 //     fn length(&self) -> usize {
@@ -64,7 +123,6 @@ impl<'a, R, W> BufferIO<R, W> for Property<'a>
 //         }
 //     }
 
-
 //     fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
 //         if buf.is_empty() { return Err(MQTTError::IncompleteData("MQTT Property", 1, 0))}
 
@@ -100,8 +158,6 @@ impl<'a, R, W> BufferIO<R, W> for Property<'a>
 //         }
 //     }
 // }
-
-
 
 // /// this would eventually be changed to use derive_more lib
 // impl<'a> Display for Property<'a> {
