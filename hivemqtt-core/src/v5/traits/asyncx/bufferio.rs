@@ -92,7 +92,7 @@ where
     ///     must also implement `DataSize` proc. So that there is a default accurate length property
     fn length(&self) -> usize;
 
-    // async fn read(_buf: &mut R) -> Result<Self, MQTTError>;
+    async fn read(_buf: &mut R) -> Result<Self, MQTTError>;
 
     // async fn read_with_fixedheader(_buf: &mut R, _header: FixedHeader) -> Result<Self, MQTTError>;
 
