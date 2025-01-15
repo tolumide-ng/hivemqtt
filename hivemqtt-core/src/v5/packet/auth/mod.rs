@@ -5,8 +5,12 @@ pub use properties::{AuthProperties, AuthReasonCode};
 
 use bytes::Bytes;
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{syncx::bufferio::BufferIO, syncx::read::Read, syncx::write::Write}};
-
+use crate::v5::{
+    commons::{
+        error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property,
+    },
+    traits::{syncx::bufferio::BufferIO, syncx::read::Read, syncx::write::Write},
+};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Auth {
@@ -32,17 +36,39 @@ impl BufferIO for Auth {
         let mut packet = Self::default();
 
         // reason code and property length can be omitted if reason_code is success and there are no properties
-        if buf.is_empty() { return Ok(packet) }
+        if buf.is_empty() {
+            return Ok(packet);
+        }
 
-        packet.reason_code = AuthReasonCode::try_from(u8::read(buf)?).map_err(MQTTError::UnknownData)?;
+        packet.reason_code =
+            AuthReasonCode::try_from(u8::read(buf)?).map_err(MQTTError::UnknownData)?;
         packet.properties = AuthProperties::read(buf)?;
 
         Ok(packet)
     }
 }
 
+// mod asynx {
+//     use futures::{AsyncReadExt, AsyncWriteExt};
 
+//     use crate::v5::traits::asyncx::bufferio::BufferIO;
 
+//     use super::Auth;
+
+//     impl<R, W> BufferIO<R, W> for Auth
+//     where
+//         R: AsyncReadExt + Unpin,
+//         W: AsyncWriteExt + Unpin,
+//     {
+//         async fn read(stream: &mut R) -> Result<Self, crate::v5::commons::error::MQTTError> {
+//             Ok(())
+//         }
+
+//         async fn write(&self, _buf: &mut W) -> Result<(), crate::v5::commons::error::MQTTError> {
+//             Ok(())
+//         }
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -88,8 +114,13 @@ mod tests {
     #[test]
     fn read_write() {
         let mut packet = Auth::default();
-        packet.properties = AuthProperties {auth_data: Some("serious auth data ".into()), auth_method: Some("basicAuthenticationMethod".into()), reason_string: Some("rss".into()), user_property: vec![]};
-        packet.reason_code =  AuthReasonCode::ReAuthenticate;
+        packet.properties = AuthProperties {
+            auth_data: Some("serious auth data ".into()),
+            auth_method: Some("basicAuthenticationMethod".into()),
+            reason_string: Some("rss".into()),
+            user_property: vec![],
+        };
+        packet.reason_code = AuthReasonCode::ReAuthenticate;
 
         let mut buf = BytesMut::with_capacity(0);
 

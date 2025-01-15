@@ -109,5 +109,5 @@ where
         Ok(Some(len))
     }
 
-    async fn write(&self, _buf: &mut W) -> Result<(), MQTTError>;
+    async fn write(&self, stream: &mut W) -> Result<(), MQTTError>;
 }

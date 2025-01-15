@@ -7,7 +7,7 @@ use crate::v5::{
     traits::asyncx::{bufferio::BufferIO, read::Read, write::Write},
 };
 
-#[cfg(feature = "async")]
+// #[cfg(feature = "async")]
 impl<'a> Property<'a> {
     async fn write_to_stream<S, T>(&self, stream: &mut S, value: &T) -> Result<(), MQTTError>
     where
