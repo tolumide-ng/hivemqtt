@@ -1,5 +1,4 @@
 mod properties;
-mod reason_code;
 
 pub use properties::{AuthProperties, AuthReasonCode};
 

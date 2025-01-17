@@ -82,11 +82,13 @@ mod syncx {
         }
 
         fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+            // let mut props = Self::default();
             let Some(len) = Self::parse_len(buf)? else {
                 return Ok(Self::default());
             };
 
             let mut data = buf.split_to(len);
+
             Self::read_data(&mut data)
         }
     }
@@ -128,7 +130,8 @@ mod asynx {
             encoded_length.write(stream).await?;
 
             Property::AuthenticationMethod(self.auth_method.as_deref().map(Cow::Borrowed))
-                .write::<R, W>(stream);
+                .write(stream)
+                .await;
 
             Ok(())
         }
