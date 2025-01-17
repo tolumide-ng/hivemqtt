@@ -1,5 +1,7 @@
+// #[cfg(not(feature = "asyncx"))]
 #[cfg(not(feature = "syncx"))]
 pub(crate) mod asyncx;
+// #[cfg(feature = "asyncx")]
 pub(crate) mod syncx;
 
 use crate::v5::commons::fixed_header::FixedHeader;

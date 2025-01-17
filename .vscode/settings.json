@@ -1,5 +1,5 @@
 {
-    // "rust-analyzer.cargo.features": "all"
+    // "rust-analyzer.cargo.features": "all",
     "rust-analyzer.cargo.features": ["syncx", "asyncx"],
     "rust-analyzer.cargo.noDefaultFeatures": false,
     "rust-analyzer.cargo.allTargets": true,

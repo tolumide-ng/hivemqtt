@@ -15,9 +15,6 @@ path = "src/lib.rs"
 default = ["logs"]
 syncx = []
 asyncx = []
-dev = ["asyncx", "syncx"]
-ws = ["dep:websocket"]
-logs = ["dep:tracing"]
 
 [dependencies]
 bytes = "1.7.1"

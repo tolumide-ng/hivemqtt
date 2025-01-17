@@ -1,0 +1,26 @@
+{
+    "crates": [
+        {
+            "root_module": "./hivemqtt-macros/src/lib.rs",
+            "edition": "2021",
+            "deps": [],
+            "package": {
+                "name": "hivemqtt_macros"
+            }
+        },
+        {
+            "root_module": "./hivemqtt-core/src/lib.rs",
+            "edition": "2021",
+            "deps": [
+                {
+                    "crate": 0,
+                    "name": "hivemqtt_macros"
+                }
+            ],
+            "package": {
+                "name": "hivemqtt_core"
+            },
+            "features": ["syncx", "asyncx"]
+        }
+    ]
+}
