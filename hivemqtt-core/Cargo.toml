@@ -13,9 +13,9 @@ path = "src/lib.rs"
 
 [features]
 default = ["logs"]
-sync = []
-async = []
-dev = ["async", "sync"]
+syncx = []
+asyncx = []
+dev = ["asyncx", "syncx"]
 ws = ["dep:websocket"]
 logs = ["dep:tracing"]
 

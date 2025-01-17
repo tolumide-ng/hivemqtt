@@ -1,6 +1,8 @@
 {
     // "rust-analyzer.cargo.features": "all"
-    "rust-analyzer.cargo.features": ["sync", "async"],
+    "rust-analyzer.cargo.features": ["syncx", "asyncx"],
+    "rust-analyzer.cargo.noDefaultFeatures": false,
+    "rust-analyzer.cargo.allTargets": true,
     "editor.formatOnSave": true,
     "rust-analyzer.checkOnSave": true,
     "rust-analyzer.cargo.autoreload": true,

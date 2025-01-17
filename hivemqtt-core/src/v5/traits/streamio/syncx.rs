@@ -6,30 +6,6 @@ use crate::v5::commons::error::MQTTError;
 use super::{FixedHeader, StreamIOBase};
 
 pub(crate) trait StreamIO: Sized + StreamIOBase {
-    /// Encodes a non-negative Integer into the Variable Byte Integer encoding
-    fn encode(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
-        let mut len = self.length();
-
-        // 268_435_455
-        if len > 0xFFFFFFF {
-            return Err(MQTTError::PayloadTooLong);
-        }
-
-        for _ in 0..4 {
-            let mut byte = len % 128;
-            len /= 128;
-
-            if len > 0 {
-                byte |= 128;
-            }
-            br(byte as u8).write(buf); // writes the encoded byte into the buffer
-            if len == 0 {
-                break;
-            }
-        }
-        Ok(())
-    }
-
     /// Decodes a Variable byte Inetger
     fn decode(buf: &mut Bytes) -> Result<(usize, usize), MQTTError> {
         let mut result = 0;
@@ -66,9 +42,9 @@ pub(crate) trait StreamIO: Sized + StreamIOBase {
         Ok(Some(len))
     }
 
-    fn w(&self, _buf: &mut BytesMut) {}
+    fn w(&self, buf: &mut BytesMut) {}
 
-    fn write(&self, _buf: &mut BytesMut) -> Result<(), MQTTError> {
+    fn write(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
         Ok(())
     }
 

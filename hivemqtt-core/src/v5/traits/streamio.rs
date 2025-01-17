@@ -49,6 +49,7 @@ pub(crate) trait StreamIOBase: Sized {
 
         Ok(result)
     }
+
     /// Applies to fields that results in Protocol Error if their value appears more than once
     fn try_update<T>(
         field: &mut Option<T>,
