@@ -1,5 +1,6 @@
 use crate::v5::commons::{error::MQTTError, property::Property};
 use crate::v5::traits::asyncx::read::Read;
+use crate::v5::traits::asyncx::write::Write;
 
 use futures::{AsyncReadExt, AsyncWriteExt};
 
@@ -16,11 +17,12 @@ pub(crate) trait StreamIO: Sized {
             1
         }
     }
-
     /// Encodes a non-negative Integer into the Variable Byte Integer encoding
-    async fn encode(&self) -> Result<Vec<u8>, MQTTError> {
+    async fn encode<T>(&self, stream: &mut T) -> Result<(), MQTTError>
+    where
+        T: AsyncWriteExt + Unpin,
+    {
         let mut len = self.length();
-        let mut result = vec![];
 
         // 268_435_455
         if len > 0xFFFFFFF {
@@ -35,14 +37,14 @@ pub(crate) trait StreamIO: Sized {
                 byte |= 128;
             }
 
-            // (byte as u8).write(stream).await?; // writes the encoded byte into the buffer
-            result.push(byte as u8);
+            (byte as u8).write(stream).await?;
+
             if len == 0 {
                 break;
             }
         }
 
-        return Ok(result);
+        Ok(())
     }
 
     /// Decodes a Variable byte Integer

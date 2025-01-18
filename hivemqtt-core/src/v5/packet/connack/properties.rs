@@ -305,4 +305,47 @@ mod new_approach {
             }
         }
     }
+
+    mod asyncx {
+        use bytes::Bytes;
+
+        use crate::v5::{
+            commons::{error::MQTTError, property::new_approach::Property},
+            packet::connack::properties::ConnAckProperties,
+            traits::{asyncx::write::Write, streamio::StreamIO},
+        };
+
+        impl StreamIO for ConnAckProperties {
+            fn length(&self) -> usize {
+                self.len()
+            }
+
+            async fn write<W>(
+                &self,
+                stream: &mut W,
+            ) -> Result<(), crate::v5::commons::error::MQTTError>
+            where
+                W: futures::AsyncWriteExt + Unpin,
+            {
+                self.encode(stream).await?;
+                Ok(())
+            }
+
+            async fn read<R>(stream: &mut R) -> Result<Self, MQTTError>
+            where
+                R: futures::AsyncReadExt + Unpin,
+            {
+                let Some(len) = Self::parse_len(stream).await? else {
+                    return Ok(Self::default());
+                };
+
+                let mut data = Vec::with_capacity(len);
+                stream.read_exact(&mut data).await?;
+
+                let mut data = Bytes::copy_from_slice(&data);
+
+                Self::read_data(&mut data)
+            }
+        }
+    }
 }

@@ -7,6 +7,7 @@ pub(crate) use syncx::Property;
 pub(crate) mod new_approach {
     use std::borrow::Cow;
     use std::fmt::Display;
+    use std::future::Future;
 
     use bytes::BytesMut;
     use futures::AsyncWriteExt;
@@ -139,6 +140,22 @@ pub(crate) mod new_approach {
             use traits::asyncx::write::Write;
             u8::from(self).write(stream).await?;
             value.write(stream).await
+        }
+
+        async fn write_async<'b, S, F, Fut>(
+            &self,
+            stream: &'b mut S,
+            func: F,
+        ) -> Result<(), MQTTError>
+        where
+            S: AsyncWriteExt + Unpin + 'b,
+            F: FnOnce(&'b mut S) -> Fut,
+            Fut: Future<Output = Result<(), MQTTError>> + 'b,
+        {
+            use traits::asyncx::write::Write;
+            u8::from(self).write(stream).await?;
+
+            func(stream).await
         }
     }
 
@@ -300,6 +317,13 @@ pub(crate) mod new_approach {
         use crate::v5::{commons::property::new_approach::Property, traits::streamio::StreamIO};
 
         impl<'a> StreamIO for Property<'a> {
+            fn length(&self) -> usize {
+                match self {
+                    Self::SubscriptionIdentifier(length) => **length,
+                    _ => 0,
+                }
+            }
+
             async fn read<R>(stream: &mut R) -> Result<Self, crate::v5::commons::error::MQTTError>
             where
                 R: futures::AsyncReadExt + Unpin,
@@ -414,8 +438,8 @@ pub(crate) mod new_approach {
                         self.write_to_stream(stream, &p.to_vec()).await?
                     }
                     Self::SubscriptionIdentifier(_) => {
-                        self.write_to_stream(stream, &(self.encode().await?))
-                            .await?
+                        self.write_async(stream, |s| async move { self.encode(s).await })
+                            .await;
                     }
                     Self::AssignedClientIdentifier(Some(p)) => {
                         self.write_to_stream(stream, &p.to_string()).await?

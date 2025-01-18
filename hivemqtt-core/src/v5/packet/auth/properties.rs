@@ -142,10 +142,14 @@ mod new_approach {
         use crate::v5::commons::error::MQTTError;
         use crate::v5::commons::property::new_approach::Property;
         use crate::v5::packet::auth::AuthProperties;
-        use crate::v5::traits::{asyncx::write::Write, streamio::StreamIO};
+        use crate::v5::traits::streamio::StreamIO;
         use bytes::Bytes;
 
         impl StreamIO for AuthProperties {
+            fn length(&self) -> usize {
+                self.len()
+            }
+
             async fn read<R>(stream: &mut R) -> Result<Self, MQTTError>
             where
                 R: futures::AsyncReadExt + Unpin,
@@ -166,8 +170,7 @@ mod new_approach {
             where
                 W: futures::AsyncWriteExt + Unpin,
             {
-                let encoded_length = Self::encode(self).await?;
-                encoded_length.write(stream).await?;
+                self.encode(stream).await?;
 
                 Property::AuthenticationMethod(self.auth_method.as_deref().map(Cow::Borrowed))
                     .write(stream)

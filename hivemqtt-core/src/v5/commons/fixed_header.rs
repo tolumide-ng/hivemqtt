@@ -160,8 +160,7 @@ pub(crate) mod new_approach {
                 let byte0 = (self.packet_type as u8) | &self.flags.unwrap_or(0);
                 (byte0 as u8).write(stream).await?;
 
-                let encoded_length = self.encode().await?;
-                encoded_length.write(stream).await?;
+                self.encode(stream).await?;
 
                 Ok(())
             }
