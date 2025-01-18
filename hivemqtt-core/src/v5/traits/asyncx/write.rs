@@ -1,6 +1,5 @@
-use std::{borrow::Cow, future::Future};
+use std::future::Future;
 
-use bytes::Bytes;
 use futures::AsyncWriteExt;
 
 use crate::v5::commons::error::MQTTError;

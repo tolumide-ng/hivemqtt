@@ -7,6 +7,8 @@ use crate::v5::commons::error::MQTTError;
 
 use super::{BufferIO, Property};
 
+use hivemqtt_macros::FromU8;
+
 #[derive(Debug, Default, Length, PartialEq, Eq)]
 pub struct AuthProperties {
     pub auth_method: Option<String>,
@@ -15,18 +17,8 @@ pub struct AuthProperties {
     pub user_property: Vec<(String, String)>,
 }
 
-use hivemqtt_macros::FromU8;
-
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, FromU8)]
-pub enum AuthReasonCode {
-    #[default]
-    Success = 0,
-    ContinueAuthentication = 24,
-    ReAuthenticate = 25,
-}
-
 impl AuthProperties {
-    fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
+    pub(crate) fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();
 
         loop {
@@ -56,6 +48,14 @@ impl AuthProperties {
     }
 }
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, FromU8)]
+pub enum AuthReasonCode {
+    #[default]
+    Success = 0,
+    ContinueAuthentication = 24,
+    ReAuthenticate = 25,
+}
+
 mod syncx {
     use std::borrow::Cow;
 
@@ -82,7 +82,6 @@ mod syncx {
         }
 
         fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-            // let mut props = Self::default();
             let Some(len) = Self::parse_len(buf)? else {
                 return Ok(Self::default());
             };
@@ -94,46 +93,100 @@ mod syncx {
     }
 }
 
-// mod asynx {
-//     use std::borrow::Cow;
+mod new_approach {
 
-//     use bytes::Bytes;
-//     use futures::{AsyncReadExt, AsyncWriteExt};
+    mod syncx {
+        use std::borrow::Cow;
 
-//     use crate::v5::{
-//         commons::{error::MQTTError, property::asyncx::Property},
-//         traits::asyncx::{bufferio::BufferIO, read::Read, write::Write},
-//     };
+        use bytes::Bytes;
 
-//     use super::AuthProperties;
+        use crate::v5::commons::property::new_approach::Property;
+        use crate::v5::packet::auth::AuthProperties;
+        use crate::v5::{commons::error::MQTTError, traits::bufferio::BufferIO};
 
-//     impl<R, W> BufferIO<R, W> for AuthProperties
-//     where
-//         R: AsyncReadExt + Unpin,
-//         W: AsyncWriteExt + Unpin,
-//     {
-//         async fn read(stream: &mut R) -> Result<Self, crate::v5::commons::error::MQTTError> {
-//             let Some(len) = <Self as BufferIO<R, W>>::parse_len(stream).await? else {
-//                 return Ok(Self::default());
-//             };
+        impl BufferIO for AuthProperties {
+            fn length(&self) -> usize {
+                self.len()
+            }
 
-//             let mut data = Vec::with_capacity(len);
-//             stream.read_exact(&mut data).await?;
+            fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
+                self.encode(buf)?;
 
-//             let mut data = Bytes::copy_from_slice(&data);
+                Property::AuthenticationMethod(self.auth_method.as_deref().map(Cow::Borrowed))
+                    .write(buf)?;
+                Property::AuthenticationData(self.auth_data.as_deref().map(Cow::Borrowed))
+                    .write(buf)?;
+                Property::ReasonString(self.reason_string.as_deref().map(Cow::Borrowed))
+                    .write(buf)?;
+                self.user_property
+                    .iter()
+                    .try_for_each(|up| Property::UserProperty(Cow::Borrowed(&up)).write(buf))?;
+                Ok(())
+            }
 
-//             Self::read_data(&mut data)
-//         }
+            fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+                let Some(len) = Self::parse_len(buf)? else {
+                    return Ok(Self::default());
+                };
 
-//         async fn write(&self, stream: &mut W) -> Result<(), MQTTError> {
-//             let encoded_length = <Self as BufferIO<R, W>>::encode(self).await?;
-//             encoded_length.write(stream).await?;
+                let mut data = buf.split_to(len);
 
-//             Property::AuthenticationMethod(self.auth_method.as_deref().map(Cow::Borrowed))
-//                 .write(stream)
-//                 .await;
+                Self::read_data(&mut data)
+            }
+        }
+    }
 
-//             Ok(())
-//         }
-//     }
-// }
+    mod asyncx {
+        use std::borrow::Cow;
+
+        use crate::v5::commons::error::MQTTError;
+        use crate::v5::commons::property::new_approach::Property;
+        use crate::v5::packet::auth::AuthProperties;
+        use crate::v5::traits::{asyncx::write::Write, streamio::StreamIO};
+        use bytes::Bytes;
+
+        impl StreamIO for AuthProperties {
+            async fn read<R>(stream: &mut R) -> Result<Self, MQTTError>
+            where
+                R: futures::AsyncReadExt + Unpin,
+            {
+                let Some(len) = Self::parse_len(stream).await? else {
+                    return Ok(Self::default());
+                };
+
+                let mut data = Vec::with_capacity(len);
+                stream.read_exact(&mut data).await?;
+
+                let mut data = Bytes::copy_from_slice(&data);
+
+                Self::read_data(&mut data)
+            }
+
+            async fn write<W>(&self, stream: &mut W) -> Result<(), MQTTError>
+            where
+                W: futures::AsyncWriteExt + Unpin,
+            {
+                let encoded_length = Self::encode(self).await?;
+                encoded_length.write(stream).await?;
+
+                Property::AuthenticationMethod(self.auth_method.as_deref().map(Cow::Borrowed))
+                    .write(stream)
+                    .await?;
+                Property::AuthenticationData(self.auth_data.as_deref().map(Cow::Borrowed))
+                    .write(stream)
+                    .await?;
+                Property::ReasonString(self.reason_string.as_deref().map(Cow::Borrowed))
+                    .write(stream)
+                    .await?;
+
+                for up in &self.user_property {
+                    Property::UserProperty(Cow::Borrowed(up))
+                        .write(stream)
+                        .await?
+                }
+
+                Ok(())
+            }
+        }
+    }
+}

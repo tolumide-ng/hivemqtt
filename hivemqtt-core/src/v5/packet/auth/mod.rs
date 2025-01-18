@@ -47,27 +47,94 @@ impl BufferIO for Auth {
     }
 }
 
-// mod asynx {
-//     use futures::{AsyncReadExt, AsyncWriteExt};
+mod new_approach {
+    mod synx {
+        use bytes::Bytes;
 
-//     use crate::v5::traits::asyncx::bufferio::BufferIO;
+        use crate::v5::{
+            commons::error::MQTTError,
+            packet::auth::{Auth, AuthProperties, AuthReasonCode, FixedHeader, PacketType},
+            traits::{
+                bufferio::BufferIO,
+                syncx::{read::Read, write::Write},
+            },
+        };
 
-//     use super::Auth;
+        impl BufferIO for Auth {
+            fn length(&self) -> usize {
+                1 + self.properties.length() + self.properties.variable_length()
+            }
 
-//     impl<R, W> BufferIO<R, W> for Auth
-//     where
-//         R: AsyncReadExt + Unpin,
-//         W: AsyncWriteExt + Unpin,
-//     {
-//         async fn read(stream: &mut R) -> Result<Self, crate::v5::commons::error::MQTTError> {
-//             Ok(())
-//         }
+            fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
+                FixedHeader::new(PacketType::Auth, 0, self.length()).write(buf)?;
 
-//         async fn write(&self, _buf: &mut W) -> Result<(), crate::v5::commons::error::MQTTError> {
-//             Ok(())
-//         }
-//     }
-// }
+                u8::from(self.reason_code).write(buf);
+                self.properties.write(buf)?;
+
+                Ok(())
+            }
+
+            fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+                let mut packet = Self::default();
+
+                // reason code and property length can be omitted if reason_code is success and there are no properties
+                if buf.is_empty() {
+                    return Ok(packet);
+                }
+
+                packet.reason_code =
+                    AuthReasonCode::try_from(u8::read(buf)?).map_err(MQTTError::UnknownData)?;
+                packet.properties = AuthProperties::read(buf)?;
+
+                Ok(packet)
+            }
+        }
+    }
+
+    mod asynx {
+        use crate::v5::commons::error::MQTTError;
+        use crate::v5::packet::auth::{AuthProperties, AuthReasonCode, FixedHeader, PacketType};
+        use crate::v5::traits::asyncx::{read::Read, write::Write};
+        use crate::v5::{packet::auth::Auth, traits::streamio::StreamIO};
+
+        impl StreamIO for Auth {
+            fn length(&self) -> usize {
+                1 + self.properties.length() + self.properties.variable_length()
+            }
+
+            async fn write<W>(
+                &self,
+                stream: &mut W,
+            ) -> Result<(), crate::v5::commons::error::MQTTError>
+            where
+                W: futures::AsyncWriteExt + Unpin,
+            {
+                FixedHeader::new(PacketType::Auth, 0, self.length())
+                    .write(stream)
+                    .await?;
+                u8::from(self.reason_code).write(stream).await?;
+                self.properties.write(stream).await
+            }
+
+            async fn read<R>(stream: &mut R) -> Result<Self, crate::v5::commons::error::MQTTError>
+            where
+                R: futures::AsyncReadExt + Unpin,
+            {
+                let mut packet = Self::default();
+
+                let Ok(reason_code) = u8::read(stream).await else {
+                    return Ok(packet);
+                };
+
+                packet.reason_code =
+                    AuthReasonCode::try_from(reason_code).map_err(MQTTError::UnknownData)?;
+                packet.properties = AuthProperties::read(stream).await?;
+
+                Ok(Self::default())
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

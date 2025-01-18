@@ -71,8 +71,8 @@ mod synx {
     }
 }
 
-mod new_approach {
-    mod syncx {
+pub(crate) mod new_approach {
+    pub(crate) mod syncx {
         use crate::v5::commons::fixed_header::FixedHeader;
         use crate::v5::commons::packet_type::PacketType;
         use crate::v5::traits::bufferio::BufferIO;
@@ -118,7 +118,7 @@ mod new_approach {
         }
     }
 
-    mod asynx {
+    pub(crate) mod asynx {
         use crate::v5::commons::fixed_header::FixedHeader;
         use crate::v5::commons::packet_type::PacketType;
         use crate::v5::traits::streamio::StreamIO;

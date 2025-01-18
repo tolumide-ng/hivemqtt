@@ -4,7 +4,7 @@ mod syncx;
 /// this needs to be removed. it will not be needed.
 pub(crate) use syncx::Property;
 
-mod new_approach {
+pub(crate) mod new_approach {
     use std::borrow::Cow;
     use std::fmt::Display;
 
@@ -152,7 +152,7 @@ mod new_approach {
         }
     }
 
-    mod synx {
+    pub(crate) mod synx {
         use bytes::{Bytes, BytesMut};
         use std::borrow::Cow;
 
@@ -292,7 +292,7 @@ mod new_approach {
         }
     }
 
-    mod asyncx {
+    pub(crate) mod asyncx {
         use std::borrow::Cow;
 
         use crate::v5::commons::error::MQTTError;

@@ -1,5 +1,5 @@
 use crate::v5::{
-    commons::{fixed_header::FixedHeader, property::Property},
+    commons::fixed_header::FixedHeader,
     traits::syncx::{read::Read, write::Write},
 };
 use bytes::{Bytes, BytesMut};
@@ -100,22 +100,6 @@ pub(crate) trait BufferIO: Sized {
             2
         } else {
             1
-        }
-    }
-
-    /// Applies to fields that results in Protocol Error if their value appears more than once
-    fn try_update<T>(
-        field: &mut Option<T>,
-        value: Option<T>,
-    ) -> impl Fn(Property) -> Result<(), MQTTError> {
-        let is_duplicate = field.is_some();
-        *field = value;
-
-        move |ppt| {
-            if is_duplicate {
-                return Err(MQTTError::DuplicateProperty(ppt.to_string()));
-            }
-            return Ok(());
         }
     }
 }
