@@ -1,21 +1,21 @@
 mod properties;
 mod reason_code;
 
-
 use properties::ConnAckProperties;
 use reason_code::ConnAckReasonCode;
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType}, traits::{syncx::bufferio::BufferIO, syncx::read::Read, syncx::write::Write}};
-
+use crate::v5::{
+    commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType},
+    traits::{syncx::bufferio::BufferIO, syncx::read::Read, syncx::write::Write},
+};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ConnAck {
     /// 3.2.2.1.1 Connect Acknowledge flag
     pub session_present: bool, // bit 0 of the COnnect Acknowledge flag
-    pub reason: ConnAckReasonCode,
+    pub(crate) reason: ConnAckReasonCode,
     pub properties: ConnAckProperties,
 }
-
 
 impl BufferIO for ConnAck {
     /// This is the length of the Variable Header
@@ -41,13 +41,13 @@ impl BufferIO for ConnAck {
         let mut packet = Self::default();
         packet.session_present = u8::read(buf)? != 0;
         let reason = u8::read(buf)?;
-        packet.reason = ConnAckReasonCode::try_from(reason).map_err(|_| MQTTError::UnknownData(format!("Unrecognized reason code: {reason}")))?;
+        packet.reason = ConnAckReasonCode::try_from(reason)
+            .map_err(|_| MQTTError::UnknownData(format!("Unrecognized reason code: {reason}")))?;
         packet.properties = ConnAckProperties::read(buf)?;
 
         Ok(packet)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -61,26 +61,28 @@ mod tests {
             session_present: true,
             reason: ConnAckReasonCode::Success,
             properties: ConnAckProperties {
-                session_expiry_interval: Some(3000), 
-                receive_maximum: Some(14000), 
-                maximum_qos: Some(false), 
-                retain_available: Some(true), 
-                maximum_packet_size: Some(65_536), 
-                assigned_client_id: Some(String::from("HiveMQTT")), 
-                topic_alias_maximum: Some(3287), 
-                reason_string: None, 
-                user_property: vec![(String::from("key"), String::from("value")), (String::from("abcde"), String::from("fghij"))], 
-                wildcard_subscription_available: Some(true), 
-                subscription_identifiers_available: None, 
-                shared_subscription_available: Some(true), 
-                server_keep_alive: Some(3_600), 
-                response_information: None, 
-                server_reference: None, 
-                authentication_method: Some(String::from("basic access authentication")), 
-                authentication_data: None
-            }
+                session_expiry_interval: Some(3000),
+                receive_maximum: Some(14000),
+                maximum_qos: Some(false),
+                retain_available: Some(true),
+                maximum_packet_size: Some(65_536),
+                assigned_client_id: Some(String::from("HiveMQTT")),
+                topic_alias_maximum: Some(3287),
+                reason_string: None,
+                user_property: vec![
+                    (String::from("key"), String::from("value")),
+                    (String::from("abcde"), String::from("fghij")),
+                ],
+                wildcard_subscription_available: Some(true),
+                subscription_identifiers_available: None,
+                shared_subscription_available: Some(true),
+                server_keep_alive: Some(3_600),
+                response_information: None,
+                server_reference: None,
+                authentication_method: Some(String::from("basic access authentication")),
+                authentication_data: None,
+            },
         };
-
 
         let mut buf = BytesMut::with_capacity(200);
         packet.write(&mut buf).unwrap();
