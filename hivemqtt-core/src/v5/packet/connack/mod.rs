@@ -49,6 +49,104 @@ impl BufferIO for ConnAck {
     }
 }
 
+mod synx {
+    use crate::v5::commons::{error::MQTTError, fixed_header::FixedHeader};
+    use crate::v5::traits::{
+        bufferio::BufferIO,
+        syncx::{read::Read, write::Write},
+    };
+
+    use super::properties::ConnAckProperties;
+    use super::{ConnAck, ConnAckReasonCode, PacketType};
+
+    impl BufferIO for ConnAck {
+        /// This is the length of the Variable Header
+        fn length(&self) -> usize {
+            let mut len = 1 + 1; // session present + reason code
+            len += self.properties.length();
+            len += self.properties.variable_length();
+            len
+        }
+
+        fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
+            FixedHeader::new(PacketType::ConnAck, 0, self.length()).write(buf)?;
+
+            u8::from(self.session_present).write(buf);
+            (self.reason as u8).write(buf);
+            self.properties.write(buf)?;
+
+            Ok(())
+        }
+
+        fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
+            // Assumption is that the fixed header as been read already
+            let mut packet = Self::default();
+            packet.session_present = u8::read(buf)? != 0;
+            let reason = u8::read(buf)?;
+            packet.reason = ConnAckReasonCode::try_from(reason).map_err(|_| {
+                MQTTError::UnknownData(format!("Unrecognized reason code: {reason}"))
+            })?;
+            packet.properties = ConnAckProperties::read(buf)?;
+
+            Ok(packet)
+        }
+    }
+}
+
+mod asynx {
+    use crate::v5::{
+        commons::error::MQTTError,
+        traits::{
+            asyncx::{read::Read, write::Write},
+            streamio::StreamIO,
+        },
+    };
+
+    use super::{
+        properties::ConnAckProperties, ConnAck, ConnAckReasonCode, FixedHeader, PacketType,
+    };
+
+    impl StreamIO for ConnAck {
+        /// This is the length of the Variable Header
+        fn length(&self) -> usize {
+            let mut len = 1 + 1; // session present + reason code
+            len += self.properties.length();
+            len += self.properties.variable_length();
+            len
+        }
+
+        async fn read<R>(stream: &mut R) -> Result<Self, MQTTError>
+        where
+            R: futures::AsyncReadExt + Unpin,
+        {
+            let mut packet = Self::default();
+            packet.session_present = u8::read(stream).await? != 0;
+            let reason = u8::read(stream).await?;
+            packet.reason = ConnAckReasonCode::try_from(reason).map_err(|_| {
+                MQTTError::UnknownData(format!("Unrecognized reason code: {reason}"))
+            })?;
+            packet.properties = ConnAckProperties::read(stream).await?;
+
+            Ok(packet)
+        }
+
+        async fn write<W>(&self, stream: &mut W) -> Result<(), MQTTError>
+        where
+            W: futures::AsyncWriteExt + Unpin,
+        {
+            FixedHeader::new(PacketType::ConnAck, 0, self.length())
+                .write(stream)
+                .await?;
+
+            u8::from(self.session_present).write(stream).await?;
+            (self.reason as u8).write(stream).await?;
+            self.properties.write(stream).await?;
+
+            Ok(())
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use bytes::{Bytes, BytesMut};

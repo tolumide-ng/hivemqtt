@@ -307,12 +307,15 @@ mod new_approach {
     }
 
     mod asyncx {
+        use std::borrow::{Borrow, Cow};
+
         use bytes::Bytes;
+        use futures::{stream, StreamExt, TryStreamExt};
 
         use crate::v5::{
             commons::{error::MQTTError, property::new_approach::Property},
             packet::connack::properties::ConnAckProperties,
-            traits::{asyncx::write::Write, streamio::StreamIO},
+            traits::streamio::StreamIO,
         };
 
         impl StreamIO for ConnAckProperties {
@@ -328,6 +331,75 @@ mod new_approach {
                 W: futures::AsyncWriteExt + Unpin,
             {
                 self.encode(stream).await?;
+
+                Property::SessionExpiryInterval(self.session_expiry_interval)
+                    .write(stream)
+                    .await?;
+                Property::ReceiveMaximum(self.receive_maximum)
+                    .write(stream)
+                    .await?;
+                Property::MaximumQoS(self.maximum_qos.map(|q| q as u8))
+                    .write(stream)
+                    .await?;
+                Property::RetainAvailable(self.retain_available.map(|x| x as u8))
+                    .write(stream)
+                    .await?;
+                Property::MaximumPacketSize(self.maximum_packet_size)
+                    .write(stream)
+                    .await?;
+                Property::AssignedClientIdentifier(
+                    self.assigned_client_id.as_deref().map(Cow::Borrowed),
+                )
+                .write(stream)
+                .await?;
+                Property::TopicAliasMaximum(self.topic_alias_maximum)
+                    .write(stream)
+                    .await?;
+                Property::ReasonString(self.reason_string.borrow().as_deref().map(Cow::Borrowed))
+                    .write(stream)
+                    .await?;
+                for kv in &self.user_property {
+                    Property::UserProperty(Cow::Borrowed(kv))
+                        .write(stream)
+                        .await?;
+                }
+                Property::WildCardSubscription(
+                    self.wildcard_subscription_available.map(|x| x as u8),
+                )
+                .write(stream)
+                .await?;
+                Property::SubscriptionIdentifierAvailable(
+                    self.subscription_identifiers_available.map(|x| x as u8),
+                )
+                .write(stream)
+                .await?;
+                Property::SharedSubscriptionAvailable(
+                    self.shared_subscription_available.map(|x| x as u8),
+                )
+                .write(stream)
+                .await?;
+                Property::ServerKeepAlive(self.server_keep_alive)
+                    .write(stream)
+                    .await?;
+                Property::ResponseInformation(
+                    self.response_information.as_deref().map(Cow::Borrowed),
+                )
+                .write(stream)
+                .await?;
+                Property::ServerReference(self.server_reference.as_deref().map(Cow::Borrowed))
+                    .write(stream)
+                    .await?;
+                Property::AuthenticationMethod(
+                    self.authentication_method.as_deref().map(Cow::Borrowed),
+                )
+                .write(stream)
+                .await?;
+                Property::AuthenticationData(
+                    self.authentication_data.as_deref().map(Cow::Borrowed),
+                )
+                .write(stream)
+                .await?;
+
                 Ok(())
             }
 
