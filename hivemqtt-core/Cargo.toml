@@ -12,9 +12,9 @@ path = "src/lib.rs"
 
 
 [features]
-default = ["logs"]
 syncx = []
 asyncx = []
+default = ["syncx", "asyncx"]
 
 [dependencies]
 bytes = "1.7.1"

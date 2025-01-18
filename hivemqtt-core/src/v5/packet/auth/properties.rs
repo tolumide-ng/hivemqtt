@@ -94,46 +94,46 @@ mod syncx {
     }
 }
 
-mod asynx {
-    use std::borrow::Cow;
+// mod asynx {
+//     use std::borrow::Cow;
 
-    use bytes::Bytes;
-    use futures::{AsyncReadExt, AsyncWriteExt};
+//     use bytes::Bytes;
+//     use futures::{AsyncReadExt, AsyncWriteExt};
 
-    use crate::v5::{
-        commons::{error::MQTTError, property::asyncx::Property},
-        traits::asyncx::{bufferio::BufferIO, read::Read, write::Write},
-    };
+//     use crate::v5::{
+//         commons::{error::MQTTError, property::asyncx::Property},
+//         traits::asyncx::{bufferio::BufferIO, read::Read, write::Write},
+//     };
 
-    use super::AuthProperties;
+//     use super::AuthProperties;
 
-    impl<R, W> BufferIO<R, W> for AuthProperties
-    where
-        R: AsyncReadExt + Unpin,
-        W: AsyncWriteExt + Unpin,
-    {
-        async fn read(stream: &mut R) -> Result<Self, crate::v5::commons::error::MQTTError> {
-            let Some(len) = <Self as BufferIO<R, W>>::parse_len(stream).await? else {
-                return Ok(Self::default());
-            };
+//     impl<R, W> BufferIO<R, W> for AuthProperties
+//     where
+//         R: AsyncReadExt + Unpin,
+//         W: AsyncWriteExt + Unpin,
+//     {
+//         async fn read(stream: &mut R) -> Result<Self, crate::v5::commons::error::MQTTError> {
+//             let Some(len) = <Self as BufferIO<R, W>>::parse_len(stream).await? else {
+//                 return Ok(Self::default());
+//             };
 
-            let mut data = Vec::with_capacity(len);
-            stream.read_exact(&mut data).await?;
+//             let mut data = Vec::with_capacity(len);
+//             stream.read_exact(&mut data).await?;
 
-            let mut data = Bytes::copy_from_slice(&data);
+//             let mut data = Bytes::copy_from_slice(&data);
 
-            Self::read_data(&mut data)
-        }
+//             Self::read_data(&mut data)
+//         }
 
-        async fn write(&self, stream: &mut W) -> Result<(), MQTTError> {
-            let encoded_length = <Self as BufferIO<R, W>>::encode(self).await?;
-            encoded_length.write(stream).await?;
+//         async fn write(&self, stream: &mut W) -> Result<(), MQTTError> {
+//             let encoded_length = <Self as BufferIO<R, W>>::encode(self).await?;
+//             encoded_length.write(stream).await?;
 
-            Property::AuthenticationMethod(self.auth_method.as_deref().map(Cow::Borrowed))
-                .write(stream)
-                .await;
+//             Property::AuthenticationMethod(self.auth_method.as_deref().map(Cow::Borrowed))
+//                 .write(stream)
+//                 .await;
 
-            Ok(())
-        }
-    }
-}
+//             Ok(())
+//         }
+//     }
+// }

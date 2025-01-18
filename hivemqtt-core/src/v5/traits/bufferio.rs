@@ -1,23 +1,12 @@
-use crate::v5::commons::fixed_header::FixedHeader;
-use crate::v5::commons::property::Property;
-use crate::v5::traits::{syncx::read::Read, syncx::write::Write};
+use crate::v5::{
+    commons::{fixed_header::FixedHeader, property::Property},
+    traits::syncx::{read::Read, write::Write},
+};
 use bytes::{Bytes, BytesMut};
 
 use crate::v5::commons::error::MQTTError;
 
 pub(crate) trait BufferIO: Sized {
-    fn variable_length(&self) -> usize {
-        if self.length() >= 2_097_152 {
-            4
-        } else if self.length() >= 16_384 {
-            3
-        } else if self.length() >= 128 {
-            2
-        } else {
-            1
-        }
-    }
-
     /// Encodes a non-negative Integer into the Variable Byte Integer encoding
     fn encode(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
         let mut len = self.length();
@@ -63,22 +52,6 @@ pub(crate) trait BufferIO: Sized {
         return Err(MQTTError::MalformedPacket);
     }
 
-    /// Applies to fields that results in Protocol Error if their value appears more than once
-    fn try_update<T>(
-        field: &mut Option<T>,
-        value: Option<T>,
-    ) -> impl Fn(Property) -> Result<(), MQTTError> {
-        let is_duplicate = field.is_some();
-        *field = value;
-
-        move |ppt| {
-            if is_duplicate {
-                return Err(MQTTError::DuplicateProperty(ppt.to_string()));
-            }
-            return Ok(());
-        }
-    }
-
     /// Allows a struct specify what it's length is to it's external users
     /// Normally this is obtainable using the .len() method (internally on structs implementing Length(formerly DataSize)),
     /// However, this method allows the struct customize what its actual length is.
@@ -89,7 +62,11 @@ pub(crate) trait BufferIO: Sized {
         0
     }
 
-    fn read(_buf: &mut Bytes) -> Result<Self, MQTTError> {
+    fn write(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
+        Ok(())
+    }
+
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
         Err(MQTTError::MalformedPacket)
     }
 
@@ -113,9 +90,32 @@ pub(crate) trait BufferIO: Sized {
         Ok(Some(len))
     }
 
-    fn w(&self, _buf: &mut BytesMut) {}
+    fn variable_length(&self) -> usize {
+        let len = self.length();
+        if len >= 2_097_152 {
+            4
+        } else if len >= 16_384 {
+            3
+        } else if len >= 128 {
+            2
+        } else {
+            1
+        }
+    }
 
-    fn write(&self, _buf: &mut BytesMut) -> Result<(), MQTTError> {
-        Ok(())
+    /// Applies to fields that results in Protocol Error if their value appears more than once
+    fn try_update<T>(
+        field: &mut Option<T>,
+        value: Option<T>,
+    ) -> impl Fn(Property) -> Result<(), MQTTError> {
+        let is_duplicate = field.is_some();
+        *field = value;
+
+        move |ppt| {
+            if is_duplicate {
+                return Err(MQTTError::DuplicateProperty(ppt.to_string()));
+            }
+            return Ok(());
+        }
     }
 }

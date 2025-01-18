@@ -1,7 +1,4 @@
-use bytes::{Bytes, BytesMut};
-
-use super::{error::MQTTError, packet_type::PacketType};
-use crate::v5::traits::{syncx::bufferio::BufferIO, syncx::read::Read, syncx::write::Write};
+use super::packet_type::PacketType;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct FixedHeader {
@@ -29,8 +26,6 @@ impl FixedHeader {
         }
     }
 }
-
-pub use synx::*;
 
 mod synx {
     use super::{FixedHeader, PacketType};
@@ -76,49 +71,100 @@ mod synx {
     }
 }
 
-mod asyncx {
-    use futures::{AsyncReadExt, AsyncWriteExt};
+mod new_approach {
+    mod syncx {
+        use crate::v5::commons::fixed_header::FixedHeader;
+        use crate::v5::commons::packet_type::PacketType;
+        use crate::v5::traits::bufferio::BufferIO;
+        use crate::v5::{
+            commons::error::MQTTError,
+            traits::syncx::{read::Read, write::Write},
+        };
+        use bytes::{Bytes, BytesMut};
 
-    use super::{FixedHeader, PacketType};
-    use crate::v5::{
-        commons::error::MQTTError,
-        traits::asyncx::{bufferio::BufferIO, read::Read, write::Write},
-    };
+        impl BufferIO for FixedHeader {
+            fn length(&self) -> usize {
+                self.remaining_length
+            }
 
-    impl<R, W> BufferIO<R, W> for FixedHeader
-    where
-        R: AsyncReadExt + Unpin,
-        W: AsyncWriteExt + Unpin,
-    {
-        fn length(&self) -> usize {
-            self.remaining_length
+            fn write(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
+                // let f = self.flags.unwrap_or(0);
+                ((self.packet_type as u8) | &self.flags.unwrap_or(0)).write(buf);
+                self.encode(buf)?;
+
+                Ok(())
+            }
+
+            fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+                if buf.len() < 2 {
+                    return Err(MQTTError::InsufficientBytes);
+                }
+
+                let byte0 = u8::read(buf)?;
+                let packet = byte0 & 0b11110000;
+                let packet_type = PacketType::try_from(packet).map_err(|_| {
+                    MQTTError::UnknownData(format!("Unexpected packet type: {}", packet))
+                })?;
+
+                let (remaining_length, header_len) = Self::decode(buf)?;
+
+                Ok(Self {
+                    packet_type,
+                    flags: Some(byte0 & 0b00001111).filter(|n| *n != 0),
+                    remaining_length,
+                    header_len,
+                })
+            }
         }
+    }
 
-        async fn read(stream: &mut R) -> Result<Self, crate::v5::commons::error::MQTTError> {
-            let byte0 = u8::read(stream).await?;
-            let packet = byte0 & 0b11110000;
-            let packet_type = PacketType::try_from(packet).map_err(|_| {
-                MQTTError::UnknownData(format!("Unexpected packet type: {}", packet))
-            })?;
+    mod asynx {
+        use crate::v5::commons::fixed_header::FixedHeader;
+        use crate::v5::commons::packet_type::PacketType;
+        use crate::v5::traits::streamio::StreamIO;
+        use crate::v5::{
+            commons::error::MQTTError,
+            traits::asyncx::{read::Read, write::Write},
+        };
+        use futures::{AsyncReadExt, AsyncWriteExt};
 
-            let (remaining_length, header_len) = <Self as BufferIO<R, W>>::decode(stream).await?;
+        impl StreamIO for FixedHeader {
+            fn length(&self) -> usize {
+                0
+            }
 
-            Ok(Self {
-                packet_type,
-                flags: Some(byte0 & 0b00001111).filter(|n| *n != 0),
-                remaining_length,
-                header_len,
-            })
-        }
+            async fn read<R>(stream: &mut R) -> Result<Self, MQTTError>
+            where
+                R: AsyncReadExt + Unpin,
+            {
+                let byte0 = u8::read(stream).await?;
+                let packet = byte0 & 0b11110000;
+                let packet_type = PacketType::try_from(packet).map_err(|_| {
+                    MQTTError::UnknownData(format!("Unexpected packet type: {}", packet))
+                })?;
 
-        async fn write(&self, stream: &mut W) -> Result<(), crate::v5::commons::error::MQTTError> {
-            let byte0 = (self.packet_type as u8) | &self.flags.unwrap_or(0);
-            (byte0 as u8).write(stream).await?;
+                let (remaining_length, header_len) = Self::decode(stream).await?;
 
-            let encoded_length = <Self as BufferIO<R, W>>::encode(self).await?;
-            encoded_length.write(stream).await?;
+                Ok(Self {
+                    packet_type,
+                    flags: Some(byte0 & 0b00001111).filter(|n| *n != 0),
+                    remaining_length,
+                    header_len,
+                })
+            }
 
-            Ok(())
+            async fn write<W>(&self, stream: &mut W) -> Result<(), MQTTError>
+            where
+                W: AsyncWriteExt + Unpin,
+            {
+                let byte0 = (self.packet_type as u8) | &self.flags.unwrap_or(0);
+                (byte0 as u8).write(stream).await?;
+
+                let encoded_length = self.encode().await?;
+                encoded_length.write(stream).await?;
+
+                Ok(())
+            }
         }
     }
 }
