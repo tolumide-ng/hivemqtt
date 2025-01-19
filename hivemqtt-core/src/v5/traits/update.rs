@@ -1,4 +1,7 @@
-use crate::v5::commons::{error::MQTTError, property::new_approach::Property};
+use bytes::Bytes;
+
+use crate::v5::commons::{error::MQTTError, property::Property};
+use crate::v5::traits::syncx::read::Read;
 
 // use super::{bufferio::BufferIO, streamio::StreamIO};
 
@@ -15,4 +18,25 @@ pub(crate) fn try_update<T>(
         }
         return Ok(());
     }
+}
+
+/// Decodes a Variable byte Inetger
+/// To be moved into a utils traits implemented automatically for bytes(?)
+pub(crate) fn decode(buf: &mut Bytes) -> Result<(usize, usize), MQTTError> {
+    let mut result = 0;
+
+    for i in 0..4 {
+        if buf.is_empty() {
+            return Err(MQTTError::MalformedPacket);
+        }
+        let byte = u8::read(buf)?;
+
+        result += ((byte as usize) & 0x7F) << (7 * i);
+
+        if (byte & 0x80) == 0 {
+            return Ok((result, i + 1));
+        }
+    }
+
+    return Err(MQTTError::MalformedPacket);
 }

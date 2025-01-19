@@ -1,10 +1,8 @@
-use std::borrow::Cow;
-
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
 use crate::v5::commons::{error::MQTTError, qos::QoS};
-use crate::v5::traits::{syncx::bufferio::BufferIO, syncx::read::Read, syncx::write::Write};
+use crate::v5::traits::update::try_update;
 
 use super::Property;
 
@@ -17,47 +15,6 @@ pub struct WillProperties {
     pub response_topic: Option<String>,
     pub correlation_data: Option<Bytes>,
     pub user_property: Vec<(String, String)>,
-}
-
-impl BufferIO for WillProperties {
-    fn length(&self) -> usize {
-        self.len()
-    }
-
-    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        self.encode(buf)?; // 3.1.3.2.1
-
-        Property::WillDelayInterval(self.delay_interval).w(buf); // 3.1.3.2.2
-        Property::PayloadFormatIndicator(self.payload_format_indicator).w(buf); // 3.1.3.2.3
-        Property::MessageExpiryInterval(self.message_expiry_interval).w(buf); // 3.1.3.2.4
-        Property::ContentType(self.content_type.as_deref().map(Cow::Borrowed)).w(buf); // 3.1.3.2.5
-        Property::ResponseTopic(self.response_topic.as_deref().map(Cow::Borrowed)).w(buf); // 3.1.3.2.6
-        Property::CorrelationData(self.correlation_data.as_deref().map(Cow::Borrowed)).w(buf); // 3.1.3.2.7
-        self.user_property
-            .iter()
-            .for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf)); // 3.1.3.2.8
-
-        Ok(())
-    }
-
-    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-        let (length, _) = Self::decode(buf)?;
-        let mut properties = Self::default();
-
-        if length == 0 {
-            return Ok(properties);
-        } else if length > buf.len() {
-            return Err(MQTTError::IncompleteData(
-                "WillProperties",
-                length,
-                buf.len(),
-            ));
-        };
-
-        let mut data = buf.split_to(length);
-
-        Self::read_data(&mut data)
-    }
 }
 
 #[derive(Debug, Length, Default)]
@@ -74,28 +31,6 @@ pub struct Will {
     pub(super) retain: bool,
 }
 
-impl BufferIO for Will {
-    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        self.properties.write(buf)?;
-        self.topic.write(buf); // 3.1.3.3
-        self.payload.write(buf); // 3.1.3.4
-        Ok(())
-    }
-
-    fn length(&self) -> usize {
-        self.len() + self.properties.variable_length() + self.properties.length()
-    }
-
-    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-        let mut will = Self::default();
-
-        will.properties = WillProperties::read(buf)?;
-        will.topic = String::read(buf)?;
-        will.payload = Bytes::read(buf)?;
-        Ok(will)
-    }
-}
-
 impl WillProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut properties = Self::default();
@@ -104,23 +39,23 @@ impl WillProperties {
             let property = Property::read(data)?;
             match property {
                 Property::WillDelayInterval(value) => {
-                    Self::try_update(&mut properties.delay_interval, value)(property)?
+                    try_update(&mut properties.delay_interval, value)(property)?
                 }
                 Property::PayloadFormatIndicator(value) => {
-                    Self::try_update(&mut properties.payload_format_indicator, value)(property)?
+                    try_update(&mut properties.payload_format_indicator, value)(property)?
                 }
                 Property::MessageExpiryInterval(value) => {
-                    Self::try_update(&mut properties.message_expiry_interval, value)(property)?
+                    try_update(&mut properties.message_expiry_interval, value)(property)?
                 }
-                Property::ContentType(ref value) => Self::try_update(
+                Property::ContentType(ref value) => try_update(
                     &mut properties.content_type,
                     value.as_deref().map(|x| String::from(x)),
                 )(property)?,
-                Property::ResponseTopic(ref value) => Self::try_update(
+                Property::ResponseTopic(ref value) => try_update(
                     &mut properties.response_topic,
                     value.as_deref().map(|x| String::from(x)),
                 )(property)?,
-                Property::CorrelationData(ref value) => Self::try_update(
+                Property::CorrelationData(ref value) => try_update(
                     &mut properties.correlation_data,
                     value.as_deref().map(|x| Bytes::from_iter(x.to_vec())),
                 )(property)?,
@@ -145,7 +80,7 @@ mod syncx {
     use bytes::Bytes;
 
     use crate::v5::{
-        commons::{error::MQTTError, property::new_approach::Property},
+        commons::{error::MQTTError, property::Property},
         traits::{
             bufferio::BufferIO,
             syncx::{read::Read, write::Write},
@@ -225,7 +160,7 @@ mod asynx {
 
     use bytes::Bytes;
 
-    use crate::v5::commons::property::new_approach::Property;
+    use crate::v5::commons::property::Property;
     use crate::v5::{
         commons::error::MQTTError,
         traits::{

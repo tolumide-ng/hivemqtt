@@ -1,9 +1,5 @@
-use bytes::{Buf, BufMut};
-
 use crate::v5::commons::error::MQTTError;
 use crate::v5::commons::qos::QoS;
-
-use crate::v5::traits::syncx::bufferio::BufferIO;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct SubscriptionOptions {
@@ -38,23 +34,6 @@ impl TryFrom<u8> for SubscriptionOptions {
             retain_as_published,
             retain_handling,
         })
-    }
-}
-
-impl BufferIO for SubscriptionOptions {
-    fn length(&self) -> usize {
-        1
-    }
-
-    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        buf.put_u8(u8::from(*self));
-        Ok(())
-    }
-
-    fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
-        let byte = buf.get_u8();
-
-        SubscriptionOptions::try_from(byte)
     }
 }
 

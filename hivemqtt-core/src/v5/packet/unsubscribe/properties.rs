@@ -1,11 +1,7 @@
-use std::borrow::Cow;
-
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::v5::commons::error::MQTTError;
-
-use super::{BufferIO, Property};
+use crate::v5::commons::{error::MQTTError, property::Property};
 
 #[derive(Debug, Length, Default, PartialEq, Eq, Clone)]
 pub struct UnSubscribeProperties {
@@ -31,35 +27,11 @@ impl UnSubscribeProperties {
     }
 }
 
-impl BufferIO for UnSubscribeProperties {
-    fn length(&self) -> usize {
-        self.len()
-    }
-
-    fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
-        self.encode(buf)?;
-        self.user_property
-            .iter()
-            .for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
-        Ok(())
-    }
-
-    fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
-        let Some(len) = Self::parse_len(buf)? else {
-            return Ok(Self::default());
-        };
-
-        let mut data = buf.split_to(len);
-
-        Self::read_data(&mut data)
-    }
-}
-
 mod syncx {
     use std::borrow::Cow;
 
     use crate::v5::{
-        commons::{error::MQTTError, property::new_approach::Property},
+        commons::{error::MQTTError, property::Property},
         traits::bufferio::BufferIO,
     };
 
@@ -96,7 +68,7 @@ mod asyncx {
 
     use bytes::Bytes;
 
-    use crate::v5::{commons::property::new_approach::Property, traits::streamio::StreamIO};
+    use crate::v5::{commons::property::Property, traits::streamio::StreamIO};
 
     use super::UnSubscribeProperties;
 
