@@ -2,10 +2,15 @@ mod properties;
 
 use properties::{PubCompProperties, PubCompReasonCode};
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{syncx::bufferio::BufferIO, syncx::read::Read, syncx::write::Write}};
+use crate::v5::{
+    commons::{
+        error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property,
+    },
+    traits::{syncx::bufferio::BufferIO, syncx::read::Read, syncx::write::Write},
+};
 
 #[derive(Debug, Default, PartialEq, Eq)]
-pub  struct PubComp {
+pub struct PubComp {
     pub(crate) pkid: u16,
     pub(crate) reason_code: PubCompReasonCode,
     pub(crate) properties: PubCompProperties,
@@ -14,7 +19,9 @@ pub  struct PubComp {
 impl BufferIO for PubComp {
     fn length(&self) -> usize {
         let mut len = std::mem::size_of::<u16>(); // packet identifier
-        if self.reason_code == PubCompReasonCode::Success && self.properties.length() == 0 { return len; }
+        if self.reason_code == PubCompReasonCode::Success && self.properties.length() == 0 {
+            return len;
+        }
         len += 1 + self.properties.length() + self.properties.variable_length(); // reason code
         len
     }
@@ -23,15 +30,19 @@ impl BufferIO for PubComp {
         FixedHeader::new(PacketType::PubComp, 0, self.length()).write(buf)?;
 
         self.pkid.write(buf);
-        if self.properties.length() == 0 && self.reason_code == PubCompReasonCode::Success { return Ok(()) }
-        
+        if self.properties.length() == 0 && self.reason_code == PubCompReasonCode::Success {
+            return Ok(());
+        }
+
         u8::from(self.reason_code).write(buf);
         self.properties.write(buf)?;
         Ok(())
     }
-    
 
-    fn read_with_fixedheader(buf: &mut bytes::Bytes, header: FixedHeader) -> Result<Self, MQTTError> {
+    fn read_with_fixedheader(
+        buf: &mut bytes::Bytes,
+        header: FixedHeader,
+    ) -> Result<Self, MQTTError> {
         let mut packet = Self::default();
         packet.pkid = u16::read(buf)?;
 
@@ -39,14 +50,140 @@ impl BufferIO for PubComp {
             packet.reason_code = PubCompReasonCode::Success;
             return Ok(packet);
         }
-        
-        packet.reason_code = PubCompReasonCode::try_from(u8::read(buf)?).map_err(|e| MQTTError::UnknownData(e))?;
+
+        packet.reason_code =
+            PubCompReasonCode::try_from(u8::read(buf)?).map_err(|e| MQTTError::UnknownData(e))?;
         packet.properties = PubCompProperties::read(buf)?;
-        
+
         Ok(packet)
     }
 }
 
+mod syncx {
+    use crate::v5::{
+        commons::error::MQTTError,
+        traits::{
+            bufferio::BufferIO,
+            syncx::{read::Read, write::Write},
+        },
+    };
+
+    use super::{
+        properties::{PubCompProperties, PubCompReasonCode},
+        FixedHeader, PacketType, PubComp,
+    };
+
+    impl BufferIO for PubComp {
+        fn length(&self) -> usize {
+            let mut len = std::mem::size_of::<u16>(); // packet identifier
+            if self.reason_code == PubCompReasonCode::Success && self.properties.length() == 0 {
+                return len;
+            }
+            len += 1 + self.properties.length() + self.properties.variable_length(); // reason code
+            len
+        }
+
+        fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
+            FixedHeader::new(PacketType::PubComp, 0, self.length()).write(buf)?;
+
+            self.pkid.write(buf);
+            if self.properties.length() == 0 && self.reason_code == PubCompReasonCode::Success {
+                return Ok(());
+            }
+
+            u8::from(self.reason_code).write(buf);
+            self.properties.write(buf)?;
+            Ok(())
+        }
+
+        fn read_with_fixedheader(
+            buf: &mut bytes::Bytes,
+            header: FixedHeader,
+        ) -> Result<Self, MQTTError> {
+            let mut packet = Self::default();
+            packet.pkid = u16::read(buf)?;
+
+            if header.remaining_length == 2 {
+                packet.reason_code = PubCompReasonCode::Success;
+                return Ok(packet);
+            }
+
+            packet.reason_code = PubCompReasonCode::try_from(u8::read(buf)?)
+                .map_err(|e| MQTTError::UnknownData(e))?;
+            packet.properties = PubCompProperties::read(buf)?;
+
+            Ok(packet)
+        }
+    }
+}
+
+mod asyncx {
+    use crate::v5::{
+        commons::error::MQTTError,
+        traits::{
+            asyncx::{read::Read, write::Write},
+            streamio::StreamIO,
+        },
+    };
+
+    use super::{
+        properties::{PubCompProperties, PubCompReasonCode},
+        FixedHeader, PacketType, PubComp,
+    };
+
+    impl StreamIO for PubComp {
+        fn length(&self) -> usize {
+            let mut len = std::mem::size_of::<u16>(); // packet identifier
+            if self.reason_code == PubCompReasonCode::Success && self.properties.length() == 0 {
+                return len;
+            }
+            len += 1 + self.properties.length() + self.properties.variable_length(); // reason code
+            len
+        }
+
+        async fn write<W>(&self, stream: &mut W) -> Result<(), crate::v5::commons::error::MQTTError>
+        where
+            W: futures::AsyncWriteExt + Unpin,
+        {
+            FixedHeader::new(PacketType::PubComp, 0, self.length())
+                .write(stream)
+                .await?;
+
+            self.pkid.write(stream).await?;
+            if self.properties.length() == 0 && self.reason_code == PubCompReasonCode::Success {
+                return Ok(());
+            }
+
+            u8::from(self.reason_code).write(stream).await?;
+            self.properties.write(stream).await?;
+
+            Ok(())
+        }
+
+        async fn read_with_fixedheader<R>(
+            stream: &mut R,
+            header: &FixedHeader,
+        ) -> Result<Self, crate::v5::commons::error::MQTTError>
+        where
+            R: futures::AsyncReadExt + Unpin,
+            Self: Default,
+        {
+            let mut packet = Self::default();
+            packet.pkid = u16::read(stream).await?;
+
+            if header.remaining_length == 2 {
+                packet.reason_code = PubCompReasonCode::Success;
+                return Ok(packet);
+            }
+
+            packet.reason_code = PubCompReasonCode::try_from(u8::read(stream).await?)
+                .map_err(|e| MQTTError::UnknownData(e))?;
+            packet.properties = PubCompProperties::read(stream).await?;
+
+            Ok(packet)
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -81,8 +218,8 @@ mod tests {
         let mut buf = BytesMut::with_capacity(10);
         packet.write(&mut buf).unwrap();
 
-        assert_eq!(buf.to_vec(),  b"p\x02\0\0".to_vec());
-        
+        assert_eq!(buf.to_vec(), b"p\x02\0\0".to_vec());
+
         let mut read_buf = Bytes::from_iter(buf.to_vec());
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
@@ -97,14 +234,18 @@ mod tests {
     #[test]
     fn read_write_with_properties_and_reasoncode() {
         let mut packet = PubComp::default();
-        packet.properties.reason_string = Some(String::from("thisIsAReasonStriing--andMoreAndMore"));
-        packet.properties.user_property = vec![(String::from("notAuthorized"), String::from("value"))];
+        packet.properties.reason_string =
+            Some(String::from("thisIsAReasonStriing--andMoreAndMore"));
+        packet.properties.user_property =
+            vec![(String::from("notAuthorized"), String::from("value"))];
         packet.reason_code = PubCompReasonCode::PacketIdentifierNotFound;
 
         let mut buf = BytesMut::with_capacity(50);
         packet.write(&mut buf).unwrap();
 
-        let expected = b"pB\0\0\x92>\x1f\0$thisIsAReasonStriing--andMoreAndMore&\0\rnotAuthorized\0\x05value".to_vec();
+        let expected =
+            b"pB\0\0\x92>\x1f\0$thisIsAReasonStriing--andMoreAndMore&\0\rnotAuthorized\0\x05value"
+                .to_vec();
         assert_eq!(buf.to_vec(), expected);
 
         let mut read_buf = Bytes::from_iter(expected);
