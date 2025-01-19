@@ -10,7 +10,6 @@ pub struct Auth {
     properties: AuthProperties,
 }
 
-#[cfg(not(feature = "asyncx"))]
 mod synx {
     use bytes::Bytes;
 
@@ -54,7 +53,6 @@ mod synx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::commons::error::MQTTError;
     use crate::v5::packet::auth::{AuthProperties, AuthReasonCode, FixedHeader, PacketType};

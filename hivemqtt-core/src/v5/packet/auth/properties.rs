@@ -3,7 +3,7 @@ use hivemqtt_macros::Length;
 
 use crate::v5::{
     commons::{error::MQTTError, property::Property},
-    traits::update::try_update,
+    traits::update::Utils,
 };
 
 use hivemqtt_macros::FromU8;
@@ -23,16 +23,18 @@ impl AuthProperties {
         loop {
             let property = Property::read(data)?;
             match property {
-                Property::AuthenticationMethod(ref v) => {
-                    try_update(&mut props.auth_method, v.as_deref().map(String::from))(property)?
-                }
-                Property::AuthenticationData(ref value) => try_update(
+                Property::AuthenticationMethod(ref v) => Self::try_update(
+                    &mut props.auth_method,
+                    v.as_deref().map(String::from),
+                )(property)?,
+                Property::AuthenticationData(ref value) => Self::try_update(
                     &mut props.auth_data,
                     value.as_deref().map(|x| Bytes::from_iter(x.to_vec())),
                 )(property)?,
-                Property::ReasonString(ref v) => {
-                    try_update(&mut props.reason_string, v.as_deref().map(String::from))(property)?
-                }
+                Property::ReasonString(ref v) => Self::try_update(
+                    &mut props.reason_string,
+                    v.as_deref().map(String::from),
+                )(property)?,
                 Property::UserProperty(v) => props.user_property.push(v.into_owned()),
                 p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string())),
             }
@@ -53,7 +55,6 @@ pub enum AuthReasonCode {
     ReAuthenticate = 25,
 }
 
-#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use std::borrow::Cow;
 
@@ -93,7 +94,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use std::borrow::Cow;
 

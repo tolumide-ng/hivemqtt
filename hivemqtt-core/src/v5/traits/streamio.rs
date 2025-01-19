@@ -1,13 +1,10 @@
-use std::default;
-
+use crate::v5::commons::error::MQTTError;
 use crate::v5::commons::fixed_header::FixedHeader;
-use crate::v5::commons::{error::MQTTError, property::Property};
 use crate::v5::traits::asyncx::read::Read;
 use crate::v5::traits::asyncx::write::Write;
 
 use futures::{AsyncReadExt, AsyncWriteExt};
 
-#[cfg(feature = "asyncx")]
 pub(crate) trait StreamIO: Sized {
     fn variable_length(&self) -> usize {
         let len = self.length();

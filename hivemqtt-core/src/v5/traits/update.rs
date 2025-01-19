@@ -3,9 +3,7 @@ use bytes::Bytes;
 use crate::v5::commons::{error::MQTTError, property::Property};
 use crate::v5::traits::syncx::read::Read;
 
-#[cfg(not(feature = "asyncx"))]
 use super::bufferio::BufferIO;
-#[cfg(feature = "asyncx")]
 use super::streamio::StreamIO;
 
 // use super::{bufferio::BufferIO, streamio::StreamIO};
@@ -46,7 +44,7 @@ pub(crate) fn decode(buf: &mut Bytes) -> Result<(usize, usize), MQTTError> {
     return Err(MQTTError::MalformedPacket);
 }
 
-pub(crate) trait TryUpdate {
+pub(crate) trait Utils {
     fn try_update<T>(
         field: &mut Option<T>,
         value: Option<T>,
@@ -61,10 +59,30 @@ pub(crate) trait TryUpdate {
             return Ok(());
         }
     }
+
+    /// Decodes a Variable byte Integer
+    fn decode(buf: &mut Bytes) -> Result<(usize, usize), MQTTError> {
+        let mut result = 0;
+
+        for i in 0..4 {
+            if buf.is_empty() {
+                return Err(MQTTError::MalformedPacket);
+            }
+            let byte = u8::read(buf)?;
+
+            result += ((byte as usize) & 0x7F) << (7 * i);
+
+            if (byte & 0x80) == 0 {
+                return Ok((result, i + 1));
+            }
+        }
+
+        return Err(MQTTError::MalformedPacket);
+    }
 }
 
-#[cfg(feature = "asyncx")]
-impl<T: StreamIO> TryUpdate for T {}
+// #[cfg(feature = "asyncx")]
 
-#[cfg(not(feature = "asyncx"))]
-impl<T: BufferIO> TryUpdate for T {}
+// #[cfg(not(feature = "asyncx"))]
+impl<T: StreamIO + BufferIO> Utils for T {}
+// impl<T: BufferIO> TryUpdate for T {}

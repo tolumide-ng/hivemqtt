@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::v5::{commons::error::MQTTError, traits::update::try_update};
+use crate::v5::{commons::error::MQTTError, traits::update::Utils};
 
 use super::{BufferIO, Property};
 
@@ -22,14 +22,15 @@ impl DisconnectProperties {
         loop {
             let property = Property::read(data)?;
             match property {
-                Property::ReasonString(ref v) => {
-                    try_update(&mut props.reason_string, v.as_deref().map(String::from))(property)?
-                }
+                Property::ReasonString(ref v) => Self::try_update(
+                    &mut props.reason_string,
+                    v.as_deref().map(String::from),
+                )(property)?,
                 Property::UserProperty(v) => props.user_property.push(v.into_owned()),
                 Property::SessionExpiryInterval(v) => {
-                    try_update(&mut props.session_expiry_interval, v)(property)?
+                    Self::try_update(&mut props.session_expiry_interval, v)(property)?
                 }
-                Property::ServerReference(ref v) => try_update(
+                Property::ServerReference(ref v) => Self::try_update(
                     &mut props.server_reference,
                     v.as_deref().map(String::from),
                 )(property)?,
@@ -45,7 +46,6 @@ impl DisconnectProperties {
     }
 }
 
-#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use std::borrow::Cow;
 
@@ -87,7 +87,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use std::borrow::Cow;
 

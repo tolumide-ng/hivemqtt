@@ -3,7 +3,7 @@ use hivemqtt_macros::{FromU8, Length};
 
 use crate::v5::{
     commons::{error::MQTTError, property::Property},
-    traits::update::try_update,
+    traits::update::Utils,
 };
 
 #[repr(u8)]
@@ -35,9 +35,10 @@ impl PubRecProperties {
             let property = Property::read(data)?;
 
             match property {
-                Property::ReasonString(ref v) => {
-                    try_update(&mut props.reason_string, v.as_deref().map(String::from))(property)?
-                }
+                Property::ReasonString(ref v) => Self::try_update(
+                    &mut props.reason_string,
+                    v.as_deref().map(String::from),
+                )(property)?,
                 Property::UserProperty(value) => props.user_property.push(value.into_owned()),
                 p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string())),
             };
@@ -51,7 +52,6 @@ impl PubRecProperties {
     }
 }
 
-#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use std::borrow::Cow;
 
@@ -90,7 +90,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use std::borrow::Cow;
 

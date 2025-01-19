@@ -27,7 +27,6 @@ impl FixedHeader {
     }
 }
 
-#[cfg(not(feature = "asyncx"))]
 pub(crate) mod syncx {
     use crate::v5::commons::fixed_header::FixedHeader;
     use crate::v5::commons::packet_type::PacketType;
@@ -74,7 +73,6 @@ pub(crate) mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 pub(crate) mod asyncx {
     use crate::v5::commons::fixed_header::FixedHeader;
     use crate::v5::commons::packet_type::PacketType;

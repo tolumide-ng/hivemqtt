@@ -2,9 +2,8 @@ use bytes::Bytes;
 use hivemqtt_macros::Length;
 
 use crate::v5::commons::property::Property;
-use crate::v5::traits::syncx::read::Read;
-use crate::v5::traits::update::try_update;
-use crate::v5::{commons::error::MQTTError, traits::syncx::bufferio::BufferIO};
+use crate::v5::traits::update::Utils;
+use crate::v5::commons::error::MQTTError;
 
 #[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct ConnAckProperties {
@@ -36,60 +35,61 @@ impl ConnAckProperties {
 
             match property {
                 Property::SessionExpiryInterval(value) => {
-                    try_update(&mut properties.session_expiry_interval, value)(property)?
+                    Self::try_update(&mut properties.session_expiry_interval, value)(property)?
                 }
                 Property::ReceiveMaximum(value) => {
-                    try_update(&mut properties.receive_maximum, value)(property)?
+                    Self::try_update(&mut properties.receive_maximum, value)(property)?
                 }
                 Property::MaximumQoS(value) => {
-                    try_update(&mut properties.maximum_qos, value.map(|x| x != 0))(property)?
+                    Self::try_update(&mut properties.maximum_qos, value.map(|x| x != 0))(property)?
                 }
-                Property::RetainAvailable(value) => {
-                    try_update(&mut properties.retain_available, value.map(|x| x != 0))(property)?
-                }
+                Property::RetainAvailable(value) => Self::try_update(
+                    &mut properties.retain_available,
+                    value.map(|x| x != 0),
+                )(property)?,
                 Property::MaximumPacketSize(value) => {
-                    try_update(&mut properties.maximum_packet_size, value)(property)?
+                    Self::try_update(&mut properties.maximum_packet_size, value)(property)?
                 }
-                Property::AssignedClientIdentifier(ref v) => try_update(
+                Property::AssignedClientIdentifier(ref v) => Self::try_update(
                     &mut properties.assigned_client_id,
                     v.as_deref().map(|x| String::from(x)),
                 )(property)?,
                 Property::TopicAliasMaximum(value) => {
-                    try_update(&mut properties.topic_alias_maximum, value)(property)?
+                    Self::try_update(&mut properties.topic_alias_maximum, value)(property)?
                 }
-                Property::ReasonString(ref v) => try_update(
+                Property::ReasonString(ref v) => Self::try_update(
                     &mut properties.reason_string,
                     v.as_deref().map(|x| String::from(x)),
                 )(property)?,
                 Property::UserProperty(value) => properties.user_property.push(value.into_owned()),
-                Property::WildCardSubscription(value) => try_update(
+                Property::WildCardSubscription(value) => Self::try_update(
                     &mut properties.wildcard_subscription_available,
                     value.map(|x| x != 0),
                 )(property)?,
-                Property::SubscriptionIdentifierAvailable(value) => try_update(
+                Property::SubscriptionIdentifierAvailable(value) => Self::try_update(
                     &mut properties.subscription_identifiers_available,
                     value.map(|x| x != 0),
                 )(property)?,
-                Property::SharedSubscriptionAvailable(value) => try_update(
+                Property::SharedSubscriptionAvailable(value) => Self::try_update(
                     &mut properties.shared_subscription_available,
                     value.map(|x| x != 0),
                 )(property)?,
                 Property::ServerKeepAlive(value) => {
-                    try_update(&mut properties.server_keep_alive, value)(property)?
+                    Self::try_update(&mut properties.server_keep_alive, value)(property)?
                 }
-                Property::ResponseInformation(ref v) => try_update(
+                Property::ResponseInformation(ref v) => Self::try_update(
                     &mut properties.response_information,
                     v.as_deref().map(|x| String::from(x)),
                 )(property)?,
-                Property::ServerReference(ref v) => try_update(
+                Property::ServerReference(ref v) => Self::try_update(
                     &mut properties.server_reference,
                     v.as_deref().map(|x| String::from(x)),
                 )(property)?,
-                Property::AuthenticationMethod(ref v) => try_update(
+                Property::AuthenticationMethod(ref v) => Self::try_update(
                     &mut properties.authentication_method,
                     v.as_deref().map(|x| String::from(x)),
                 )(property)?,
-                Property::AuthenticationData(ref v) => try_update(
+                Property::AuthenticationData(ref v) => Self::try_update(
                     &mut properties.authentication_data,
                     v.to_owned().map(|x| Bytes::from_iter(x.into_owned())),
                 )(property)?,
@@ -105,7 +105,6 @@ impl ConnAckProperties {
     }
 }
 
-#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use std::borrow::{Borrow, Cow};
 
@@ -179,7 +178,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use std::borrow::{Borrow, Cow};
 

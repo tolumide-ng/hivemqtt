@@ -6,6 +6,7 @@ pub use reason_code::UnSubAckReasonCode;
 
 use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property};
 
+// #[cfg(any(not(feature = "asyncx"), feature = "asyncx"))]
 /// Sent by the Server to the Client to confirm receipt of an UNSUBSCRIBE packet
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct UnSubAck {
@@ -14,7 +15,6 @@ pub struct UnSubAck {
     pub payload: Vec<UnSubAckReasonCode>,
 }
 
-#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use crate::v5::{
         commons::error::MQTTError,
@@ -66,7 +66,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::{
         commons::error::MQTTError,

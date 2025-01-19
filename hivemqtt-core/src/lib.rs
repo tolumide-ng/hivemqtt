@@ -6,6 +6,9 @@ pub mod v5;
 // #[cfg(all(feature = "syncx", feature = "asyncx"))]
 // compile_error!("feature \"syncx\" and feature \"asyncx\" cannot be enabled at the same time");
 
+// #[cfg(not(any(feature = "syncx", feature = "asyncx")))]
+// compile_error!("Either feature \"syncx\" or feature \"asyncx\" must be enabled");
+
 // pub(crate) trait FromLeBytes {
 //     fn from_be_bytes(bytes: &[u8]) -> Self;
 // }

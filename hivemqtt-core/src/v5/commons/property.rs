@@ -215,7 +215,6 @@ impl<'a> Display for Property<'a> {
     }
 }
 
-#[cfg(not(feature = "asyncx"))]
 pub(crate) mod synx {
     use bytes::{Bytes, BytesMut};
     use std::borrow::Cow;
@@ -353,7 +352,6 @@ pub(crate) mod synx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 pub(crate) mod asyncx {
     use std::borrow::Cow;
 

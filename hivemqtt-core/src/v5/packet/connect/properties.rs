@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::v5::{commons::error::MQTTError, traits::update::try_update};
+use crate::v5::{commons::error::MQTTError, traits::update::Utils};
 
 use super::Property;
 
@@ -29,31 +29,31 @@ impl ConnectProperties {
             let property = Property::read(data)?;
             match property {
                 Property::SessionExpiryInterval(value) => {
-                    try_update(&mut properties.session_expiry_interval, value)(property)?
+                    Self::try_update(&mut properties.session_expiry_interval, value)(property)?
                 }
                 Property::ReceiveMaximum(value) => {
-                    try_update(&mut properties.receive_maximum, value)(property)?
+                    Self::try_update(&mut properties.receive_maximum, value)(property)?
                 }
                 Property::MaximumPacketSize(value) => {
-                    try_update(&mut properties.maximum_packet_size, value)(property)?;
+                    Self::try_update(&mut properties.maximum_packet_size, value)(property)?;
                 }
                 Property::TopicAliasMaximum(value) => {
-                    try_update(&mut properties.topic_alias_maximum, value)(property)?;
+                    Self::try_update(&mut properties.topic_alias_maximum, value)(property)?;
                 }
                 Property::RequestResponseInformation(value) => {
-                    try_update(&mut properties.request_response_information, value)(property)?
+                    Self::try_update(&mut properties.request_response_information, value)(property)?
                 }
                 Property::RequestProblemInformation(value) => {
-                    try_update(&mut properties.request_problem_information, value)(property)?
+                    Self::try_update(&mut properties.request_problem_information, value)(property)?
                 }
                 Property::UserProperty(value) => {
                     properties.user_property.push(value.into_owned());
                 }
-                Property::AuthenticationMethod(ref value) => try_update(
+                Property::AuthenticationMethod(ref value) => Self::try_update(
                     &mut properties.authentication_method,
                     value.as_deref().map(|x| String::from(x)),
                 )(property)?,
-                Property::AuthenticationData(ref value) => try_update(
+                Property::AuthenticationData(ref value) => Self::try_update(
                     &mut properties.authentication_data,
                     value.to_owned().map(|x| Bytes::from_iter(x.into_owned())),
                 )(property)?,
@@ -68,7 +68,6 @@ impl ConnectProperties {
     }
 }
 
-#[cfg(not(feature = "asyncx"))]
 mod synx {
     use std::borrow::Cow;
 
@@ -120,7 +119,6 @@ mod synx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asynx {
 
     use std::borrow::Cow;

@@ -3,7 +3,7 @@ use std::ops::Deref;
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::v5::{commons::error::MQTTError, traits::update::try_update};
+use crate::v5::{commons::error::MQTTError, traits::update::Utils};
 
 use super::Property;
 
@@ -22,7 +22,7 @@ impl SubscribeProperties {
 
             match property {
                 Property::SubscriptionIdentifier(ref v) => {
-                    try_update(&mut props.subscription_id, Some(*v.deref()))(property)?
+                    Self::try_update(&mut props.subscription_id, Some(*v.deref()))(property)?
                 }
                 Property::UserProperty(v) => props.user_property.push(v.into_owned()),
                 p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string())),
@@ -36,7 +36,6 @@ impl SubscribeProperties {
     }
 }
 
-#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use std::borrow::Cow;
 
@@ -79,7 +78,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use std::borrow::Cow;
 

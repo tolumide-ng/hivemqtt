@@ -3,7 +3,7 @@ use hivemqtt_macros::Length;
 
 use crate::v5::{
     commons::{error::MQTTError, property::Property},
-    traits::update::try_update,
+    traits::update::Utils,
 };
 
 #[derive(Debug, Length, Default, Clone, PartialEq, Eq)]
@@ -28,17 +28,20 @@ impl PublishProperties {
 
             match property {
                 Property::PayloadFormatIndicator(value) => {
-                    try_update(&mut props.payload_format_indicator, value)(property)?
+                    Self::try_update(&mut props.payload_format_indicator, value)(property)?
                 }
                 Property::MessageExpiryInterval(value) => {
-                    try_update(&mut props.message_expiry_internal, value)(property)?
+                    Self::try_update(&mut props.message_expiry_internal, value)(property)?
                 }
-                Property::TopicAlias(value) => try_update(&mut props.topic_alias, value)(property)?,
-                Property::ResponseTopic(ref v) => {
-                    try_update(&mut props.response_topic, v.as_deref().map(String::from))(property)?
+                Property::TopicAlias(value) => {
+                    Self::try_update(&mut props.topic_alias, value)(property)?
                 }
-                // Property::CorrelationData(ref v) => try_update(&mut props.correlation_data, v.to_owned().map(|x| Bytes::from_iter(x.into_owned())))(property)?,
-                Property::CorrelationData(ref value) => try_update(
+                Property::ResponseTopic(ref v) => Self::try_update(
+                    &mut props.response_topic,
+                    v.as_deref().map(String::from),
+                )(property)?,
+                // Property::CorrelationData(ref v) => Self::try_update(&mut props.correlation_data, v.to_owned().map(|x| Bytes::from_iter(x.into_owned())))(property)?,
+                Property::CorrelationData(ref value) => Self::try_update(
                     &mut props.correlation_data,
                     value.as_deref().map(|x| Bytes::from_iter(x.to_vec())),
                 )(property)?,
@@ -46,9 +49,10 @@ impl PublishProperties {
                 Property::SubscriptionIdentifier(value) => {
                     props.subscription_identifier.push(value.into_owned())
                 }
-                Property::ContentType(ref v) => {
-                    try_update(&mut props.content_type, v.as_deref().map(String::from))(property)?
-                }
+                Property::ContentType(ref v) => Self::try_update(
+                    &mut props.content_type,
+                    v.as_deref().map(String::from),
+                )(property)?,
                 p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string())),
             }
 
@@ -61,7 +65,6 @@ impl PublishProperties {
     }
 }
 
-#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use std::borrow::Cow;
 
@@ -112,7 +115,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use std::borrow::Cow;
 

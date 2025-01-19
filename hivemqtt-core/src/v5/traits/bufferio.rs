@@ -6,7 +6,6 @@ use bytes::{Bytes, BytesMut};
 
 use crate::v5::commons::error::MQTTError;
 
-#[cfg(not(feature = "asyncx"))]
 pub(crate) trait BufferIO: Sized {
     /// Encodes a non-negative Integer into the Variable Byte Integer encoding
     fn encode(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {

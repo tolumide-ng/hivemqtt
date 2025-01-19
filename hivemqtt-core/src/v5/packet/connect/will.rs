@@ -2,7 +2,7 @@ use bytes::Bytes;
 use hivemqtt_macros::Length;
 
 use crate::v5::commons::{error::MQTTError, qos::QoS};
-use crate::v5::traits::update::try_update;
+use crate::v5::traits::update::Utils;
 
 use super::Property;
 
@@ -39,23 +39,23 @@ impl WillProperties {
             let property = Property::read(data)?;
             match property {
                 Property::WillDelayInterval(value) => {
-                    try_update(&mut properties.delay_interval, value)(property)?
+                    Self::try_update(&mut properties.delay_interval, value)(property)?
                 }
                 Property::PayloadFormatIndicator(value) => {
-                    try_update(&mut properties.payload_format_indicator, value)(property)?
+                    Self::try_update(&mut properties.payload_format_indicator, value)(property)?
                 }
                 Property::MessageExpiryInterval(value) => {
-                    try_update(&mut properties.message_expiry_interval, value)(property)?
+                    Self::try_update(&mut properties.message_expiry_interval, value)(property)?
                 }
-                Property::ContentType(ref value) => try_update(
+                Property::ContentType(ref value) => Self::try_update(
                     &mut properties.content_type,
                     value.as_deref().map(|x| String::from(x)),
                 )(property)?,
-                Property::ResponseTopic(ref value) => try_update(
+                Property::ResponseTopic(ref value) => Self::try_update(
                     &mut properties.response_topic,
                     value.as_deref().map(|x| String::from(x)),
                 )(property)?,
-                Property::CorrelationData(ref value) => try_update(
+                Property::CorrelationData(ref value) => Self::try_update(
                     &mut properties.correlation_data,
                     value.as_deref().map(|x| Bytes::from_iter(x.to_vec())),
                 )(property)?,
@@ -74,7 +74,6 @@ impl WillProperties {
     }
 }
 
-#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use std::borrow::Cow;
 
@@ -156,7 +155,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asynx {
     use std::borrow::Cow;
 
