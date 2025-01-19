@@ -7,7 +7,6 @@ use crate::v5::commons::error::MQTTError;
 
 use super::{BufferIO, Property};
 
-
 #[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct SubscribeProperties {
     pub subscription_id: Option<usize>,
@@ -15,19 +14,27 @@ pub struct SubscribeProperties {
 }
 
 impl BufferIO for SubscribeProperties {
-    fn length(&self) -> usize { self.len() }
+    fn length(&self) -> usize {
+        self.len()
+    }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         self.encode(buf)?;
 
-        if let Some(id) = &self.subscription_id { Property::SubscriptionIdentifier(Cow::Borrowed(id)).w(buf); }
-        self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
+        if let Some(id) = &self.subscription_id {
+            Property::SubscriptionIdentifier(Cow::Borrowed(id)).w(buf);
+        }
+        self.user_property
+            .iter()
+            .for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
 
         Ok(())
     }
 
     fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-        let Some(len) = Self::parse_len(buf)? else { return Ok(Self::default()) };
+        let Some(len) = Self::parse_len(buf)? else {
+            return Ok(Self::default());
+        };
         let mut props = Self::default();
         let mut data = buf.split_to(len);
 
@@ -35,14 +42,117 @@ impl BufferIO for SubscribeProperties {
             let property = Property::read(&mut data)?;
 
             match property {
-                Property::SubscriptionIdentifier(ref v) => Self::try_update(&mut props.subscription_id, Some(*v.deref()))(property)?,
+                Property::SubscriptionIdentifier(ref v) => {
+                    Self::try_update(&mut props.subscription_id, Some(*v.deref()))(property)?
+                }
                 Property::UserProperty(v) => props.user_property.push(v.into_owned()),
-                p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string()))
+                p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string())),
             }
 
-            if data.is_empty() { break; }
+            if data.is_empty() {
+                break;
+            }
         }
         Ok(props)
     }
+}
 
+impl SubscribeProperties {
+    fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
+        let mut props = Self::default();
+
+        loop {
+            let property = Property::read(data)?;
+
+            match property {
+                Property::SubscriptionIdentifier(ref v) => {
+                    Self::try_update(&mut props.subscription_id, Some(*v.deref()))(property)?
+                }
+                Property::UserProperty(v) => props.user_property.push(v.into_owned()),
+                p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string())),
+            }
+
+            if data.is_empty() {
+                break;
+            }
+        }
+        Ok(props)
+    }
+}
+
+mod syncx {
+    use std::borrow::Cow;
+
+    use bytes::Bytes;
+
+    use crate::v5::{
+        commons::{error::MQTTError, property::new_approach::Property},
+        traits::bufferio::BufferIO,
+    };
+
+    use super::SubscribeProperties;
+
+    impl BufferIO for SubscribeProperties {
+        fn length(&self) -> usize {
+            self.len()
+        }
+
+        fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
+            self.encode(buf)?;
+
+            if let Some(id) = &self.subscription_id {
+                Property::SubscriptionIdentifier(Cow::Borrowed(id)).write(buf)?;
+            }
+            self.user_property
+                .iter()
+                .try_for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).write(buf))?;
+
+            Ok(())
+        }
+
+        fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+            let Some(len) = Self::parse_len(buf)? else {
+                return Ok(Self::default());
+            };
+
+            let mut data = buf.split_to(len);
+
+            Self::read_data(&mut data)
+        }
+    }
+}
+
+mod asyncx {
+    use std::borrow::Cow;
+
+    use crate::v5::{commons::property::new_approach::Property, traits::streamio::StreamIO};
+
+    use super::SubscribeProperties;
+
+    impl StreamIO for SubscribeProperties {
+        fn length(&self) -> usize {
+            self.len()
+        }
+
+        async fn write<W>(&self, stream: &mut W) -> Result<(), crate::v5::commons::error::MQTTError>
+        where
+            W: futures::AsyncWriteExt + Unpin,
+        {
+            self.encode(stream).await?;
+
+            if let Some(id) = &self.subscription_id {
+                Property::SubscriptionIdentifier(Cow::Borrowed(id))
+                    .write(stream)
+                    .await?;
+            }
+
+            for kv in &self.user_property {
+                Property::UserProperty(Cow::Borrowed(kv))
+                    .write(stream)
+                    .await?;
+            }
+
+            Ok(())
+        }
+    }
 }
