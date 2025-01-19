@@ -4,12 +4,7 @@ mod reason_code;
 use properties::UnSubAckProperties;
 pub use reason_code::UnSubAckReasonCode;
 
-use crate::v5::{
-    commons::{
-        error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property,
-    },
-    traits::{syncx::bufferio::BufferIO, syncx::read::Read, syncx::write::Write},
-};
+use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property};
 
 /// Sent by the Server to the Client to confirm receipt of an UNSUBSCRIBE packet
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -19,6 +14,7 @@ pub struct UnSubAck {
     pub payload: Vec<UnSubAckReasonCode>,
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use crate::v5::{
         commons::error::MQTTError,
@@ -70,6 +66,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::{
         commons::error::MQTTError,
@@ -98,7 +95,7 @@ mod asyncx {
                 .await?;
 
             // packet identifier, properties
-            self.pkid.write(stream);
+            self.pkid.write(stream).await?;
             self.properties.write(stream).await?;
 
             for p in &self.payload {

@@ -1,7 +1,6 @@
-use crate::v5::commons::fixed_header::FixedHeader;
 use crate::v5::commons::property::Property;
-use crate::v5::traits::{asyncx::read::Read, asyncx::write::Write};
-use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use crate::v5::traits::asyncx::read::Read;
+use futures::{AsyncReadExt, AsyncWriteExt};
 
 use crate::v5::commons::error::MQTTError;
 

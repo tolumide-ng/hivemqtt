@@ -5,11 +5,12 @@ use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType, pro
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct PubRel {
-    pub pkid: u16,
-    pub reason_code: PubRelReasonCode,
-    pub properties: PubRelProperties,
+    pub(crate) pkid: u16,
+    pub(crate) reason_code: PubRelReasonCode,
+    pub(crate) properties: PubRelProperties,
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use crate::v5::{
         commons::error::MQTTError,
@@ -64,6 +65,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::{
         commons::error::MQTTError,

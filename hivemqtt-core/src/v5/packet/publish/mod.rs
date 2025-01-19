@@ -16,6 +16,7 @@ pub(crate) struct Publish {
     pub(crate) payload: Bytes,
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use bytes::Bytes;
 
@@ -85,6 +86,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asyncx {
     use bytes::Bytes;
 

@@ -10,6 +10,7 @@ pub struct PubRec {
     pub(crate) properties: PubRecProperties,
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use crate::v5::traits::syncx::{read::Read, write::Write};
     use crate::v5::{commons::error::MQTTError, traits::bufferio::BufferIO};
@@ -64,6 +65,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::{
         commons::error::MQTTError,

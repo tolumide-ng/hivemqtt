@@ -3,7 +3,7 @@ use hivemqtt_macros::Length;
 
 use crate::v5::{
     commons::{error::MQTTError, property::Property},
-    traits::{bufferio::BufferIO, update::try_update},
+    traits::update::try_update,
 };
 
 use hivemqtt_macros::FromU8;
@@ -53,6 +53,7 @@ pub enum AuthReasonCode {
     ReAuthenticate = 25,
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use std::borrow::Cow;
 
@@ -92,6 +93,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asyncx {
     use std::borrow::Cow;
 

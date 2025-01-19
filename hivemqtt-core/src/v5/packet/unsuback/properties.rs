@@ -5,6 +5,7 @@ use crate::v5::{commons::error::MQTTError, traits::update::try_update};
 
 use super::Property;
 
+#[cfg(any(feature = "asyncx", not(feature = "asyncx")))]
 #[derive(Debug, Default, Length, PartialEq, Eq)]
 pub struct UnSubAckProperties {
     pub reason_string: Option<String>,
@@ -33,6 +34,7 @@ impl UnSubAckProperties {
     }
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use std::borrow::Cow;
 
@@ -70,6 +72,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asyncx {
     use std::borrow::Cow;
 

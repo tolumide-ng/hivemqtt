@@ -1,12 +1,10 @@
 mod properties;
 pub mod will;
 
-use bytes::Bytes;
 use hivemqtt_macros::Length;
 use properties::ConnectProperties;
 use will::Will;
 
-use crate::v5::traits::{syncx::read::Read, syncx::write::Write};
 use crate::{
     constants::PROTOCOL_NAME,
     v5::{
@@ -15,7 +13,6 @@ use crate::{
             error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType,
             property::Property, qos::QoS, version::Version,
         },
-        traits::syncx::bufferio::BufferIO,
     },
 };
 
@@ -79,6 +76,7 @@ impl From<ConnectOptions> for Connect {
     }
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use bytes::Bytes;
 
@@ -184,6 +182,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::{
         commons::error::MQTTError,

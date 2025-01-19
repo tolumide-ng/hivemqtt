@@ -8,6 +8,7 @@ pub struct UnSubscribe {
     pub(crate) payload: Vec<String>,
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod sycnx {
     use crate::v5::{
         commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType},
@@ -66,7 +67,8 @@ mod sycnx {
     }
 }
 
-mod asynx {
+#[cfg(feature = "asyncx")]
+mod asyncx {
     use crate::v5::{
         commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType},
         traits::{
@@ -99,7 +101,7 @@ mod asynx {
                 .write(stream)
                 .await?;
 
-            self.pkid.write(stream).await;
+            self.pkid.write(stream).await?;
             self.properties.write(stream).await?;
             for p in &self.payload {
                 p.write(stream).await?;

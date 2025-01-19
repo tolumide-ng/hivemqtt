@@ -6,6 +6,11 @@ pub use properties::SubscribeProperties;
 
 use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property};
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(not(feature = "asyncx"))]
+pub(crate) use syncx::*;
+
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Subscribe {
     pub(crate) pkid: u16,
@@ -14,6 +19,7 @@ pub struct Subscribe {
     pub(crate) payload: Vec<(String, SubscriptionOptions)>,
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use bytes::Bytes;
 
@@ -82,6 +88,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::{
         commons::error::MQTTError,

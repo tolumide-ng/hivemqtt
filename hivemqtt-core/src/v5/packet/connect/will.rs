@@ -74,6 +74,7 @@ impl WillProperties {
     }
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use std::borrow::Cow;
 
@@ -155,6 +156,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asynx {
     use std::borrow::Cow;
 

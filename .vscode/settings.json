@@ -1,8 +1,25 @@
 {
     "rust-analyzer.cargo.features": "all",
+    "rust-analyzer.cargo.allTargets": true,
+    // "rust-analyzer.cargo.noDefaultFeaturesa": false,
+    // "rust-analyzer.cargo.allFeatures": true,
+    "rust-analyzer.check.noDefaultFeatures": true,
+    "rust-analyzer.check.features": "all",
+    "rust-analyzer.cargo.noDefaultFeatures": true,
     // "rust-analyzer.cargo.features": ["syncx", "asyncx"],
     "editor.formatOnSave": true,
     "rust-analyzer.checkOnSave": true,
     "rust-analyzer.cargo.autoreload": true,
-    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+    // "rust-analyzer.check.noDefaultFeatures": true,
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    // "rust-analyzer.check.overrideCommand": [
+    //     "cargo",
+    //     "clippy",
+    //     "--all-features"
+    // ]
+    "rust-analyzer.cargo.cfgs": [
+        "asyncx",
+        "!asyncx"
+    ],
+    "rust-analyzer.inlayHints.typeHints.enable": true,
 }

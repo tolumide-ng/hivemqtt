@@ -68,6 +68,7 @@ impl ConnectProperties {
     }
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod synx {
     use std::borrow::Cow;
 
@@ -119,6 +120,7 @@ mod synx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asynx {
 
     use std::borrow::Cow;

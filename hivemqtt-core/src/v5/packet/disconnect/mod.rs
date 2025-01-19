@@ -15,6 +15,7 @@ pub struct Disconnect {
     properties: DisconnectProperties,
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use bytes::{Buf, Bytes, BytesMut};
 
@@ -70,6 +71,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asyncx {
 
     use crate::v5::{
@@ -103,7 +105,7 @@ mod asyncx {
                 .write(stream)
                 .await?;
 
-            u8::from(self.reason_code).write(stream).await;
+            u8::from(self.reason_code).write(stream).await?;
 
             if self.reason_code == DisconnectReasonCode::NormalDisconnection
                 && self.properties.length() == 0

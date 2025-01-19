@@ -8,11 +8,12 @@ use crate::v5::{
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct PubAck {
-    pub pkid: u16,
-    pub reason_code: PubAckReasonCode,
-    pub properties: PubAckProperties,
+    pub(crate) pkid: u16,
+    pub(crate) reason_code: PubAckReasonCode,
+    pub(crate) properties: PubAckProperties,
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use crate::v5::{
         commons::error::MQTTError,
@@ -72,6 +73,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::{
         commons::error::MQTTError,

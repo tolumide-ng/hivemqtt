@@ -105,6 +105,7 @@ impl ConnAckProperties {
     }
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use std::borrow::{Borrow, Cow};
 
@@ -178,6 +179,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asyncx {
     use std::borrow::{Borrow, Cow};
 

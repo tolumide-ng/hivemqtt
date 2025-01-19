@@ -44,6 +44,7 @@ impl PubRelProperties {
     }
 }
 
+#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use std::borrow::Cow;
 
@@ -81,6 +82,7 @@ mod syncx {
     }
 }
 
+#[cfg(feature = "asyncx")]
 mod asyncx {
     use std::borrow::Cow;
 
