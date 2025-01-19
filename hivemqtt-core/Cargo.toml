@@ -13,7 +13,8 @@ path = "src/lib.rs"
 
 [features]
 asyncx = []
-default = ["asyncx"]
+wasm = ["dep:js-sys", "dep:wasm-bindgen"]
+default = ["asyncx", "wasm"]
 
 [dependencies]
 bytes = "1.7.1"
@@ -29,3 +30,7 @@ smol = { version = "2.0.2", features = [] }
 tokio = { version = "1.42.0", features = ["macros", "io-util", "net", "sync", "rt"] }
 async-std = "1.10"
 tokio-util = { version = "0.7.13", features= ["compat"]}
+
+
+js-sys = { version = "0.3.77", optional = true }
+wasm-bindgen = { version = "0.2.100", optional = true }
