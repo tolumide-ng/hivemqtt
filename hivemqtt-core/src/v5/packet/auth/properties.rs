@@ -160,7 +160,6 @@ mod new_approach {
 
                 let mut data = Vec::with_capacity(len);
                 stream.read_exact(&mut data).await?;
-
                 let mut data = Bytes::copy_from_slice(&data);
 
                 Self::read_data(&mut data)

@@ -23,7 +23,9 @@ pub(crate) struct ConnectProperties {
 
 impl BufferIO for ConnectProperties {
     /// The length of the Properties in the CONNECT packet Variable Header encoded as a Variable Byte Integer 3.1.2.11.1
-    fn length(&self) -> usize { self.len() }
+    fn length(&self) -> usize {
+        self.len()
+    }
 
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         self.encode(buf)?; // 3.1.2.11.1 (Property Length)
@@ -33,38 +35,269 @@ impl BufferIO for ConnectProperties {
         Property::TopicAliasMaximum(self.topic_alias_maximum).w(buf);
         Property::RequestResponseInformation(self.request_response_information).w(buf);
         Property::RequestProblemInformation(self.request_problem_information).w(buf);
-        self.user_property.iter().for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
-        Property::AuthenticationMethod(self.authentication_method.as_deref().map(Cow::Borrowed)).w(buf);
+        self.user_property
+            .iter()
+            .for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).w(buf));
+        Property::AuthenticationMethod(self.authentication_method.as_deref().map(Cow::Borrowed))
+            .w(buf);
         Property::AuthenticationData(self.authentication_data.as_deref().map(Cow::Borrowed)).w(buf);
-        Ok(())  
+        Ok(())
     }
 
     fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-        let Some(len) = Self::parse_len(buf)? else { return Ok(Self::default()) };
+        let Some(len) = Self::parse_len(buf)? else {
+            return Ok(Self::default());
+        };
         let mut properties = Self::default();
         let mut data = buf.split_to(len);
 
         loop {
             let property = Property::read(&mut data)?;
             match property {
-                Property::SessionExpiryInterval(value) => Self::try_update(&mut properties.session_expiry_interval, value)(property)?,
-                Property::ReceiveMaximum(value) => Self::try_update(&mut properties.receive_maximum, value)(property)?,
-                Property::MaximumPacketSize(value) => { Self::try_update(&mut properties.maximum_packet_size, value)(property)?; },
-                Property::TopicAliasMaximum(value) => { Self::try_update(&mut properties.topic_alias_maximum, value)(property)?; },
-                Property::RequestResponseInformation(value) => { Self::try_update(&mut properties.request_response_information, value)(property)? }
-                Property::RequestProblemInformation(value) => { Self::try_update(&mut properties.request_problem_information, value)(property)? }
-                Property::UserProperty(value) => { properties.user_property.push(value.into_owned()); }
-                Property::AuthenticationMethod(ref value) => { Self::try_update(&mut properties.authentication_method, value.as_deref().map(|x| String::from(x)))(property)? }
-                Property::AuthenticationData(ref value) => {
-                    Self::try_update(&mut properties.authentication_data, value.to_owned().map(|x| Bytes::from_iter(x.into_owned())))(property)?
+                Property::SessionExpiryInterval(value) => {
+                    Self::try_update(&mut properties.session_expiry_interval, value)(property)?
                 }
-                p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string()))
+                Property::ReceiveMaximum(value) => {
+                    Self::try_update(&mut properties.receive_maximum, value)(property)?
+                }
+                Property::MaximumPacketSize(value) => {
+                    Self::try_update(&mut properties.maximum_packet_size, value)(property)?;
+                }
+                Property::TopicAliasMaximum(value) => {
+                    Self::try_update(&mut properties.topic_alias_maximum, value)(property)?;
+                }
+                Property::RequestResponseInformation(value) => {
+                    Self::try_update(&mut properties.request_response_information, value)(property)?
+                }
+                Property::RequestProblemInformation(value) => {
+                    Self::try_update(&mut properties.request_problem_information, value)(property)?
+                }
+                Property::UserProperty(value) => {
+                    properties.user_property.push(value.into_owned());
+                }
+                Property::AuthenticationMethod(ref value) => Self::try_update(
+                    &mut properties.authentication_method,
+                    value.as_deref().map(|x| String::from(x)),
+                )(property)?,
+                Property::AuthenticationData(ref value) => Self::try_update(
+                    &mut properties.authentication_data,
+                    value.to_owned().map(|x| Bytes::from_iter(x.into_owned())),
+                )(property)?,
+                p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string())),
             }
-            if data.is_empty() { break; }
+            if data.is_empty() {
+                break;
+            }
         }
-        
+
         Ok(properties)
     }
 }
 
+impl ConnectProperties {
+    fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
+        let mut properties = Self::default();
 
+        loop {
+            let property = Property::read(data)?;
+            match property {
+                Property::SessionExpiryInterval(value) => {
+                    Self::try_update(&mut properties.session_expiry_interval, value)(property)?
+                }
+                Property::ReceiveMaximum(value) => {
+                    Self::try_update(&mut properties.receive_maximum, value)(property)?
+                }
+                Property::MaximumPacketSize(value) => {
+                    Self::try_update(&mut properties.maximum_packet_size, value)(property)?;
+                }
+                Property::TopicAliasMaximum(value) => {
+                    Self::try_update(&mut properties.topic_alias_maximum, value)(property)?;
+                }
+                Property::RequestResponseInformation(value) => {
+                    Self::try_update(&mut properties.request_response_information, value)(property)?
+                }
+                Property::RequestProblemInformation(value) => {
+                    Self::try_update(&mut properties.request_problem_information, value)(property)?
+                }
+                Property::UserProperty(value) => {
+                    properties.user_property.push(value.into_owned());
+                }
+                Property::AuthenticationMethod(ref value) => Self::try_update(
+                    &mut properties.authentication_method,
+                    value.as_deref().map(|x| String::from(x)),
+                )(property)?,
+                Property::AuthenticationData(ref value) => Self::try_update(
+                    &mut properties.authentication_data,
+                    value.to_owned().map(|x| Bytes::from_iter(x.into_owned())),
+                )(property)?,
+                p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string())),
+            }
+            if data.is_empty() {
+                break;
+            }
+        }
+
+        Ok(properties)
+    }
+}
+
+mod synx {
+    use std::borrow::Cow;
+
+    use bytes::Bytes;
+
+    use crate::v5::{
+        commons::{error::MQTTError, property::new_approach::Property},
+        traits::bufferio::BufferIO,
+    };
+
+    use super::ConnectProperties;
+
+    impl BufferIO for ConnectProperties {
+        /// The length of the Properties in the CONNECT packet Variable Header encoded as a Variable Byte Integer 3.1.2.11.1
+        fn length(&self) -> usize {
+            self.len()
+        }
+
+        fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
+            self.encode(buf)?; // 3.1.2.11.1 (Property Length)
+            Property::SessionExpiryInterval(self.session_expiry_interval).write(buf)?;
+            Property::ReceiveMaximum(self.receive_maximum).write(buf)?;
+            Property::MaximumPacketSize(self.maximum_packet_size).write(buf)?;
+            Property::TopicAliasMaximum(self.topic_alias_maximum).write(buf)?;
+            Property::RequestResponseInformation(self.request_response_information).write(buf)?;
+            Property::RequestProblemInformation(self.request_problem_information).write(buf)?;
+            self.user_property
+                .iter()
+                .try_for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).write(buf))?;
+            Property::AuthenticationMethod(
+                self.authentication_method.as_deref().map(Cow::Borrowed),
+            )
+            .write(buf)?;
+            Property::AuthenticationData(self.authentication_data.as_deref().map(Cow::Borrowed))
+                .write(buf)?;
+
+            Ok(())
+        }
+
+        fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+            let Some(len) = Self::parse_len(buf)? else {
+                return Ok(Self::default());
+            };
+
+            let mut data = buf.split_to(len);
+
+            Self::read_data(&mut data)
+        }
+    }
+}
+
+mod asynx {
+    // impl BufferIO for ConnectProperties {
+    //     /// The length of the Properties in the CONNECT packet Variable Header encoded as a Variable Byte Integer 3.1.2.11.1
+    //     fn length(&self) -> usize {
+    //         self.len()
+    //     }
+
+    //     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
+    //         self.encode(buf)?; // 3.1.2.11.1 (Property Length)
+    //         Property::SessionExpiryInterval(self.session_expiry_interval).write(buf)?;
+    //         Property::ReceiveMaximum(self.receive_maximum).write(buf)?;
+    //         Property::MaximumPacketSize(self.maximum_packet_size).write(buf)?;
+    //         Property::TopicAliasMaximum(self.topic_alias_maximum).write(buf)?;
+    //         Property::RequestResponseInformation(self.request_response_information).write(buf)?;
+    //         Property::RequestProblemInformation(self.request_problem_information).write(buf)?;
+    //         self.user_property
+    //             .iter()
+    //             .try_for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).write(buf))?;
+    //         Property::AuthenticationMethod(
+    //             self.authentication_method.as_deref().map(Cow::Borrowed),
+    //         )
+    //         .write(buf)?;
+    //         Property::AuthenticationData(self.authentication_data.as_deref().map(Cow::Borrowed))
+    //             .write(buf)?;
+
+    //         Ok(())
+    //     }
+
+    //     fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
+    //         let Some(len) = Self::parse_len(buf)? else {
+    //             return Ok(Self::default());
+    //         };
+
+    //         let mut data = buf.split_to(len);
+
+    //         Self::read_data(&mut data)
+    //     }
+    // }
+
+    use std::borrow::Cow;
+
+    use bytes::Bytes;
+
+    use crate::v5::{commons::property::new_approach::Property, traits::streamio::StreamIO};
+
+    use super::ConnectProperties;
+
+    impl StreamIO for ConnectProperties {
+        /// The length of the Properties in the CONNECT packet Variable Header encoded as a Variable Byte Integer 3.1.2.11.1
+        fn length(&self) -> usize {
+            self.len()
+        }
+
+        async fn write<W>(&self, stream: &mut W) -> Result<(), crate::v5::commons::error::MQTTError>
+        where
+            W: futures::AsyncWriteExt + Unpin,
+        {
+            self.encode(stream).await?; // 3.1.2.11.1 (Property Length)
+            Property::SessionExpiryInterval(self.session_expiry_interval)
+                .write(stream)
+                .await?;
+            Property::ReceiveMaximum(self.receive_maximum)
+                .write(stream)
+                .await?;
+            Property::MaximumPacketSize(self.maximum_packet_size)
+                .write(stream)
+                .await?;
+            Property::TopicAliasMaximum(self.topic_alias_maximum)
+                .write(stream)
+                .await?;
+            Property::RequestResponseInformation(self.request_response_information)
+                .write(stream)
+                .await?;
+            Property::RequestProblemInformation(self.request_problem_information)
+                .write(stream)
+                .await?;
+            for kv in &self.user_property {
+                Property::UserProperty(Cow::Borrowed(kv))
+                    .write(stream)
+                    .await?;
+            }
+            Property::AuthenticationMethod(
+                self.authentication_method.as_deref().map(Cow::Borrowed),
+            )
+            .write(stream)
+            .await?;
+            Property::AuthenticationData(self.authentication_data.as_deref().map(Cow::Borrowed))
+                .write(stream)
+                .await?;
+
+            Ok(())
+        }
+
+        async fn read<R>(stream: &mut R) -> Result<Self, crate::v5::commons::error::MQTTError>
+        where
+            R: futures::AsyncReadExt + Unpin,
+        {
+            let Some(len) = Self::parse_len(stream).await? else {
+                return Ok(Self::default());
+            };
+
+            let mut data = Vec::with_capacity(len);
+            stream.read_exact(&mut data).await?;
+            let mut data = Bytes::copy_from_slice(&data);
+
+            Self::read_data(&mut data)
+        }
+    }
+}
