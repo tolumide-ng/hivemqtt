@@ -1,3 +1,6 @@
+use std::default;
+
+use crate::v5::commons::fixed_header::FixedHeader;
 use crate::v5::commons::{error::MQTTError, property::Property};
 use crate::v5::traits::asyncx::read::Read;
 use crate::v5::traits::asyncx::write::Write;
@@ -80,7 +83,22 @@ pub(crate) trait StreamIO: Sized {
 
     async fn read<R>(stream: &mut R) -> Result<Self, MQTTError>
     where
-        R: AsyncReadExt + Unpin;
+        R: AsyncReadExt + Unpin,
+        Self: Default,
+    {
+        Ok(Self::default())
+    }
+
+    async fn read_with_fixedheader<R>(
+        stream: &mut R,
+        header: &FixedHeader,
+    ) -> Result<Self, MQTTError>
+    where
+        R: AsyncReadExt + Unpin,
+        Self: Default,
+    {
+        Ok(Self::default())
+    }
 
     async fn parse_len<R>(stream: &mut R) -> Result<Option<usize>, MQTTError>
     where

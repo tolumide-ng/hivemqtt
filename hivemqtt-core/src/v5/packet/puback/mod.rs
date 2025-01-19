@@ -1,7 +1,12 @@
 mod properties;
 pub use properties::{PubAckProperties, PubAckReasonCode};
 
-use crate::v5::{commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property}, traits::{syncx::bufferio::BufferIO, syncx::read::Read, syncx::write::Write}};
+use crate::v5::{
+    commons::{
+        error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType, property::Property,
+    },
+    traits::{syncx::bufferio::BufferIO, syncx::read::Read, syncx::write::Write},
+};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct PubAck {
@@ -10,15 +15,16 @@ pub struct PubAck {
     pub properties: PubAckProperties,
 }
 
-
 impl BufferIO for PubAck {
     /// Length of the Variable Header, encoded as Variable Byte Integer
     fn length(&self) -> usize {
         let mut len = std::mem::size_of::<u16>(); // packet identifier
 
         // only add reason code if there's no properties
-        if self.reason_code == PubAckReasonCode::Success && self.properties.length() == 0 { return len; }
-        
+        if self.reason_code == PubAckReasonCode::Success && self.properties.length() == 0 {
+            return len;
+        }
+
         len += 1; // reason code
         len += self.properties.length() + self.properties.variable_length();
         len
@@ -27,31 +33,162 @@ impl BufferIO for PubAck {
     fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
         FixedHeader::new(PacketType::PubAck, 0, self.length()).write(buf)?;
         self.pkid.write(buf);
-        if self.reason_code == PubAckReasonCode::Success && self.properties.length() == 0 { 
-            return Ok(())
+        if self.reason_code == PubAckReasonCode::Success && self.properties.length() == 0 {
+            return Ok(());
         }
-            
+
         u8::from(self.reason_code).write(buf);
         self.properties.write(buf)?;
         Ok(())
     }
 
-    fn read_with_fixedheader(buf: &mut bytes::Bytes, header: FixedHeader) -> Result<Self, MQTTError> {
+    fn read_with_fixedheader(
+        buf: &mut bytes::Bytes,
+        header: FixedHeader,
+    ) -> Result<Self, MQTTError> {
         let mut packet = Self::default();
         packet.pkid = u16::read(buf)?;
 
-        if header.remaining_length == 2 { 
+        if header.remaining_length == 2 {
             packet.reason_code = PubAckReasonCode::Success;
-            return Ok(packet)
+            return Ok(packet);
         }
 
-        packet.reason_code = PubAckReasonCode::try_from(u8::read(buf)?).map_err(|e| MQTTError::UnknownData(format!("Uknown reason code: {e}")))?;
+        packet.reason_code = PubAckReasonCode::try_from(u8::read(buf)?)
+            .map_err(|e| MQTTError::UnknownData(format!("Uknown reason code: {e}")))?;
         packet.properties = PubAckProperties::read(buf)?;
 
         Ok(packet)
     }
 }
 
+mod syncx {
+    use crate::v5::{
+        commons::error::MQTTError,
+        traits::{
+            bufferio::BufferIO,
+            syncx::{read::Read, write::Write},
+        },
+    };
+
+    use super::{FixedHeader, PacketType, PubAck, PubAckProperties, PubAckReasonCode};
+
+    impl BufferIO for PubAck {
+        /// Length of the Variable Header, encoded as Variable Byte Integer
+        fn length(&self) -> usize {
+            let mut len = std::mem::size_of::<u16>(); // packet identifier
+
+            // only add reason code if there's no properties
+            if self.reason_code == PubAckReasonCode::Success && self.properties.length() == 0 {
+                return len;
+            }
+
+            len += 1; // reason code
+            len += self.properties.length() + self.properties.variable_length();
+            len
+        }
+
+        fn write(&self, buf: &mut bytes::BytesMut) -> Result<(), MQTTError> {
+            FixedHeader::new(PacketType::PubAck, 0, self.length()).write(buf)?;
+            self.pkid.write(buf);
+            if self.reason_code == PubAckReasonCode::Success && self.properties.length() == 0 {
+                return Ok(());
+            }
+
+            u8::from(self.reason_code).write(buf);
+            self.properties.write(buf)?;
+            Ok(())
+        }
+
+        fn read_with_fixedheader(
+            buf: &mut bytes::Bytes,
+            header: FixedHeader,
+        ) -> Result<Self, MQTTError> {
+            let mut packet = Self::default();
+            packet.pkid = u16::read(buf)?;
+
+            if header.remaining_length == 2 {
+                packet.reason_code = PubAckReasonCode::Success;
+                return Ok(packet);
+            }
+
+            packet.reason_code = PubAckReasonCode::try_from(u8::read(buf)?)
+                .map_err(|e| MQTTError::UnknownData(format!("Uknown reason code: {e}")))?;
+            packet.properties = PubAckProperties::read(buf)?;
+
+            Ok(packet)
+        }
+    }
+}
+
+mod asyncx {
+    use crate::v5::{
+        commons::error::MQTTError,
+        traits::{
+            asyncx::{read::Read, write::Write},
+            streamio::StreamIO,
+        },
+    };
+
+    use super::{FixedHeader, PacketType, PubAck, PubAckProperties, PubAckReasonCode};
+
+    impl StreamIO for PubAck {
+        /// Length of the Variable Header, encoded as Variable Byte Integer
+        fn length(&self) -> usize {
+            let mut len = std::mem::size_of::<u16>(); // packet identifier
+
+            // only add reason code if there's no properties
+            if self.reason_code == PubAckReasonCode::Success && self.properties.length() == 0 {
+                return len;
+            }
+
+            len += 1; // reason code
+            len += self.properties.length() + self.properties.variable_length();
+            len
+        }
+
+        async fn write<W>(&self, stream: &mut W) -> Result<(), crate::v5::commons::error::MQTTError>
+        where
+            W: futures::AsyncWriteExt + Unpin,
+        {
+            FixedHeader::new(PacketType::PubAck, 0, self.length())
+                .write(stream)
+                .await?;
+            self.pkid.write(stream).await?;
+            if self.reason_code == PubAckReasonCode::Success && self.properties.length() == 0 {
+                return Ok(());
+            }
+
+            u8::from(self.reason_code).write(stream).await?;
+            self.properties.write(stream).await?;
+
+            Ok(())
+        }
+
+        async fn read_with_fixedheader<R>(
+            stream: &mut R,
+            header: &FixedHeader,
+        ) -> Result<Self, crate::v5::commons::error::MQTTError>
+        where
+            R: futures::AsyncReadExt + Unpin,
+            Self: Default,
+        {
+            let mut packet = Self::default();
+            packet.pkid = u16::read(stream).await?;
+
+            if header.remaining_length == 2 {
+                packet.reason_code = PubAckReasonCode::Success;
+                return Ok(packet);
+            }
+
+            packet.reason_code = PubAckReasonCode::try_from(u8::read(stream).await?)
+                .map_err(|e| MQTTError::UnknownData(format!("Uknown reason code: {e}")))?;
+            packet.properties = PubAckProperties::read(stream).await?;
+
+            Ok(packet)
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -67,8 +204,8 @@ mod tests {
         let mut buf = BytesMut::with_capacity(200);
         packet.write(&mut buf).unwrap();
 
-        assert_eq!(buf.to_vec(),  b"@\x02\0\0".to_vec());
-        
+        assert_eq!(buf.to_vec(), b"@\x02\0\0".to_vec());
+
         let mut read_buf = Bytes::from_iter(buf.to_vec());
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
@@ -86,8 +223,8 @@ mod tests {
         let mut buf = BytesMut::with_capacity(200);
         packet.write(&mut buf).unwrap();
 
-        assert_eq!(buf.to_vec(),  b"@\x02\0\0".to_vec());
-        
+        assert_eq!(buf.to_vec(), b"@\x02\0\0".to_vec());
+
         let mut read_buf = Bytes::from_iter(buf.to_vec());
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
 
@@ -103,13 +240,16 @@ mod tests {
     fn read_write_with_reasoncode_and_properties() {
         let mut packet = PubAck::default();
         packet.reason_code = PubAckReasonCode::Success;
-        packet.properties.reason_string = Some(String::from("thisIsAReasonStriing--andMoreAndMore"));
+        packet.properties.reason_string =
+            Some(String::from("thisIsAReasonStriing--andMoreAndMore"));
         packet.properties.user_property = vec![(String::from("keyKey"), String::from("value"))];
 
         let mut buf = BytesMut::with_capacity(200);
         packet.write(&mut buf).unwrap();
-        
-        let expected = b"@;\0\0\07\x1f\0$thisIsAReasonStriing--andMoreAndMore&\0\x06keyKey\0\x05value".to_vec();
+
+        let expected =
+            b"@;\0\0\07\x1f\0$thisIsAReasonStriing--andMoreAndMore&\0\x06keyKey\0\x05value"
+                .to_vec();
 
         let mut read_buf = Bytes::from_iter(expected);
         let fixed_header = FixedHeader::read(&mut read_buf).unwrap();
