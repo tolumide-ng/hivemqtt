@@ -3,6 +3,7 @@ use crate::v5::commons::fixed_header::FixedHeader;
 use crate::v5::traits::asyncx::read::Read;
 use crate::v5::traits::asyncx::write::Write;
 
+use bytes::Bytes;
 use futures::{AsyncReadExt, AsyncWriteExt};
 
 use super::read_data::ReadData;
@@ -86,10 +87,15 @@ pub(crate) trait StreamIO: Sized + ReadData {
         R: AsyncReadExt + Unpin,
         Self: Default,
     {
-        // let Some(len) = Self::parse_len(stream).await? else {
-        //     return Ok(Self::default());
-        // };
-        Ok(Self::default())
+        let Some(len) = Self::parse_len(stream).await? else {
+            return Ok(Self::default());
+        };
+
+        let mut data = Vec::with_capacity(len);
+        stream.read_exact(&mut data).await?;
+        let mut data = Bytes::copy_from_slice(&data);
+
+        Self::read_data(&mut data)
     }
 
     async fn read_with_fixedheader<R>(

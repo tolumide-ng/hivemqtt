@@ -265,21 +265,5 @@ mod asyncx {
 
             Ok(())
         }
-
-        async fn read<R>(stream: &mut R) -> Result<Self, MQTTError>
-        where
-            R: futures::AsyncReadExt + Unpin,
-        {
-            let Some(len) = Self::parse_len(stream).await? else {
-                return Ok(Self::default());
-            };
-
-            let mut data = Vec::with_capacity(len);
-            stream.read_exact(&mut data).await?;
-
-            let mut data = Bytes::copy_from_slice(&data);
-
-            Self::read_data(&mut data)
-        }
     }
 }
