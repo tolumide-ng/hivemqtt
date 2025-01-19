@@ -3,7 +3,10 @@ mod reason_code;
 use properties::SubAckProperties;
 pub use reason_code::SubAckReasonCode;
 
-use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType};
+use crate::v5::{
+    commons::{fixed_header::FixedHeader, packet_type::PacketType},
+    traits::read_data::ReadData,
+};
 
 /// 3.9: Sent by the Server to the Client to confirm receipt and processing of a SUBSCRIBE packet.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -12,6 +15,8 @@ pub struct SubAck {
     pub payload: Vec<SubAckReasonCode>,
     pub properties: SubAckProperties,
 }
+
+impl ReadData for SubAck {}
 
 #[cfg(not(feature = "asyncx"))]
 mod syncx {

@@ -2,13 +2,18 @@ mod properties;
 
 pub use properties::{AuthProperties, AuthReasonCode};
 
-use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType};
+use crate::v5::{
+    commons::{fixed_header::FixedHeader, packet_type::PacketType},
+    traits::read_data::ReadData,
+};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Auth {
     reason_code: AuthReasonCode,
     properties: AuthProperties,
 }
+
+impl ReadData for Auth {}
 
 mod synx {
     use bytes::Bytes;

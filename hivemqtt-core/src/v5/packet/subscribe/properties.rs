@@ -5,7 +5,7 @@ use hivemqtt_macros::Length;
 
 use crate::v5::{commons::error::MQTTError, traits::utils::Utils};
 
-use super::Property;
+use super::{Property, ReadData};
 
 #[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct SubscribeProperties {
@@ -13,7 +13,7 @@ pub struct SubscribeProperties {
     pub user_property: Vec<(String, String)>,
 }
 
-impl SubscribeProperties {
+impl ReadData for SubscribeProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();
 
@@ -43,7 +43,7 @@ mod syncx {
 
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::bufferio::BufferIO,
+        traits::{bufferio::BufferIO, read_data::ReadData},
     };
 
     use super::SubscribeProperties;
@@ -81,7 +81,10 @@ mod syncx {
 mod asyncx {
     use std::borrow::Cow;
 
-    use crate::v5::{commons::property::Property, traits::streamio::StreamIO};
+    use crate::v5::{
+        commons::property::Property,
+        traits::{read_data::ReadData, streamio::StreamIO},
+    };
 
     use super::SubscribeProperties;
 

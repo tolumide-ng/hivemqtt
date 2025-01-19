@@ -5,7 +5,7 @@ use hivemqtt_macros::Length;
 
 use crate::v5::{commons::error::MQTTError, traits::utils::Utils};
 
-use super::{BufferIO, Property};
+use super::{BufferIO, Property, ReadData};
 
 #[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct DisconnectProperties {
@@ -15,7 +15,7 @@ pub struct DisconnectProperties {
     pub server_reference: Option<String>,
 }
 
-impl DisconnectProperties {
+impl ReadData for DisconnectProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();
 
@@ -51,7 +51,7 @@ mod syncx {
 
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::bufferio::BufferIO,
+        traits::{bufferio::BufferIO, read_data::ReadData},
     };
 
     use super::DisconnectProperties;
@@ -92,7 +92,10 @@ mod asyncx {
 
     use bytes::Bytes;
 
-    use crate::v5::{commons::property::Property, traits::streamio::StreamIO};
+    use crate::v5::{
+        commons::property::Property,
+        traits::{read_data::ReadData, streamio::StreamIO},
+    };
 
     use super::DisconnectProperties;
 

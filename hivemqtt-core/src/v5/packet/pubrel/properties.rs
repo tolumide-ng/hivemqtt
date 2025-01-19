@@ -3,7 +3,7 @@ use hivemqtt_macros::{FromU8, Length};
 
 use crate::v5::{commons::error::MQTTError, traits::utils::Utils};
 
-use super::Property;
+use super::{Property, ReadData};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FromU8, Default)]
 pub enum PubRelReasonCode {
@@ -18,7 +18,7 @@ pub struct PubRelProperties {
     pub user_property: Vec<(String, String)>,
 }
 
-impl PubRelProperties {
+impl ReadData for PubRelProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();
 
@@ -48,7 +48,7 @@ mod syncx {
 
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::bufferio::BufferIO,
+        traits::{bufferio::BufferIO, read_data::ReadData},
     };
 
     use super::PubRelProperties;
@@ -85,7 +85,10 @@ mod asyncx {
 
     use bytes::Bytes;
 
-    use crate::v5::{commons::property::Property, traits::streamio::StreamIO};
+    use crate::v5::{
+        commons::property::Property,
+        traits::{read_data::ReadData, streamio::StreamIO},
+    };
 
     use super::PubRelProperties;
 

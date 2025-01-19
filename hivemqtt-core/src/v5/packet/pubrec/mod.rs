@@ -1,7 +1,10 @@
 pub mod properties;
 use properties::{PubRecProperties, PubRecReasonCode};
 
-use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType};
+use crate::v5::{
+    commons::{fixed_header::FixedHeader, packet_type::PacketType},
+    traits::read_data::ReadData,
+};
 
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct PubRec {
@@ -10,7 +13,8 @@ pub struct PubRec {
     pub(crate) properties: PubRecProperties,
 }
 
-#[cfg(not(feature = "asyncx"))]
+impl ReadData for PubRec {}
+
 mod syncx {
     use crate::v5::traits::syncx::{read::Read, write::Write};
     use crate::v5::{commons::error::MQTTError, traits::bufferio::BufferIO};
@@ -65,7 +69,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::{
         commons::error::MQTTError,

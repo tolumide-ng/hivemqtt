@@ -4,7 +4,7 @@ use hivemqtt_macros::Length;
 use crate::v5::commons::{error::MQTTError, qos::QoS};
 use crate::v5::traits::utils::Utils;
 
-use super::Property;
+use super::{Property, ReadData};
 
 #[derive(Length, Debug, Clone, Default)]
 pub struct WillProperties {
@@ -31,7 +31,7 @@ pub struct Will {
     pub(super) retain: bool,
 }
 
-impl WillProperties {
+impl ReadData for WillProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut properties = Self::default();
 
@@ -74,6 +74,8 @@ impl WillProperties {
     }
 }
 
+impl ReadData for Will {}
+
 mod syncx {
     use std::borrow::Cow;
 
@@ -83,6 +85,7 @@ mod syncx {
         commons::{error::MQTTError, property::Property},
         traits::{
             bufferio::BufferIO,
+            read_data::ReadData,
             syncx::{read::Read, write::Write},
         },
     };
@@ -165,7 +168,7 @@ mod asynx {
         commons::error::MQTTError,
         traits::{
             asyncx::{read::Read, write::Write},
-            streamio::StreamIO,
+            {read_data::ReadData, streamio::StreamIO},
         },
     };
 

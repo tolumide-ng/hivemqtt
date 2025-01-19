@@ -4,7 +4,10 @@ mod reason_code;
 use properties::UnSubAckProperties;
 pub use reason_code::UnSubAckReasonCode;
 
-use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property};
+use crate::v5::{
+    commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property},
+    traits::read_data::ReadData,
+};
 
 // #[cfg(any(not(feature = "asyncx"), feature = "asyncx"))]
 /// Sent by the Server to the Client to confirm receipt of an UNSUBSCRIBE packet
@@ -14,6 +17,8 @@ pub struct UnSubAck {
     pub properties: UnSubAckProperties,
     pub payload: Vec<UnSubAckReasonCode>,
 }
+
+impl ReadData for UnSubAck {}
 
 mod syncx {
     use crate::v5::{

@@ -6,6 +6,7 @@ use bytes::{Bytes, BytesMut};
 use futures::AsyncWriteExt;
 
 use crate::v5::commons::error::MQTTError;
+use crate::v5::traits::read_data::ReadData;
 use crate::v5::traits::utils::Utils;
 use crate::v5::traits::{self, syncx::read::Read};
 
@@ -41,6 +42,8 @@ pub(crate) enum Property<'a> {
     SubscriptionIdentifierAvailable(Option<u8>) = 41,
     SharedSubscriptionAvailable(Option<u8>) = 42,
 }
+
+impl<'a> ReadData for Property<'a> {}
 
 impl<'a> From<&Property<'a>> for u8 {
     fn from(value: &Property) -> Self {

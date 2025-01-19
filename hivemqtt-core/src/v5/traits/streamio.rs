@@ -5,7 +5,9 @@ use crate::v5::traits::asyncx::write::Write;
 
 use futures::{AsyncReadExt, AsyncWriteExt};
 
-pub(crate) trait StreamIO: Sized {
+use super::read_data::ReadData;
+
+pub(crate) trait StreamIO: Sized + ReadData {
     fn variable_length(&self) -> usize {
         let len = self.length();
         if len >= 2_097_152 {

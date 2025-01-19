@@ -1,7 +1,10 @@
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::v5::{commons::error::MQTTError, traits::utils::Utils};
+use crate::v5::{
+    commons::error::MQTTError,
+    traits::{read_data::ReadData, utils::Utils},
+};
 
 use super::Property;
 
@@ -11,16 +14,17 @@ pub struct UnSubAckProperties {
     pub user_property: Vec<(String, String)>,
 }
 
-impl UnSubAckProperties {
+impl ReadData for UnSubAckProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();
 
         loop {
             let property = Property::read(data)?;
             match property {
-                Property::ReasonString(ref v) => {
-                    Self::try_update(&mut props.reason_string, v.as_deref().map(String::from))(property)?
-                }
+                Property::ReasonString(ref v) => Self::try_update(
+                    &mut props.reason_string,
+                    v.as_deref().map(String::from),
+                )(property)?,
                 Property::UserProperty(v) => props.user_property.push(v.into_owned()),
                 p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string())),
             }
@@ -38,7 +42,7 @@ mod syncx {
 
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::bufferio::BufferIO,
+        traits::{bufferio::BufferIO, read_data::ReadData},
     };
 
     use super::UnSubAckProperties;
@@ -75,7 +79,10 @@ mod asyncx {
 
     use bytes::Bytes;
 
-    use crate::v5::{commons::property::Property, traits::streamio::StreamIO};
+    use crate::v5::{
+        commons::property::Property,
+        traits::{read_data::ReadData, streamio::StreamIO},
+    };
 
     use super::UnSubAckProperties;
 

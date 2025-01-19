@@ -1,4 +1,7 @@
-use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType};
+use crate::v5::{
+    commons::{fixed_header::FixedHeader, packet_type::PacketType},
+    traits::read_data::ReadData,
+};
 
 #[derive(Debug, Default)]
 pub struct PingReq {}
@@ -6,7 +9,9 @@ pub struct PingReq {}
 #[derive(Debug, Default)]
 pub struct PingResp;
 
-#[cfg(not(feature = "asyncx"))]
+impl ReadData for PingReq {}
+impl ReadData for PingResp {}
+
 mod syncx {
     use crate::v5::{commons::error::MQTTError, traits::bufferio::BufferIO};
 
@@ -35,7 +40,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::traits::streamio::StreamIO;
 

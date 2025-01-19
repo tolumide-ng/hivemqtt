@@ -6,7 +6,7 @@ pub use reason_code::DisconnectReasonCode;
 
 use crate::v5::{
     commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property},
-    traits::syncx::bufferio::BufferIO,
+    traits::{read_data::ReadData, syncx::bufferio::BufferIO},
 };
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -14,6 +14,8 @@ pub struct Disconnect {
     reason_code: DisconnectReasonCode,
     properties: DisconnectProperties,
 }
+
+impl ReadData for Disconnect {}
 
 #[cfg(not(feature = "asyncx"))]
 mod syncx {

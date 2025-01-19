@@ -3,7 +3,7 @@ pub use properties::{PubAckProperties, PubAckReasonCode};
 
 use crate::v5::{
     commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property},
-    traits::syncx::bufferio::BufferIO,
+    traits::{read_data::ReadData, syncx::bufferio::BufferIO},
 };
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -12,6 +12,8 @@ pub struct PubAck {
     pub(crate) reason_code: PubAckReasonCode,
     pub(crate) properties: PubAckProperties,
 }
+
+impl ReadData for PubAck {}
 
 #[cfg(not(feature = "asyncx"))]
 mod syncx {

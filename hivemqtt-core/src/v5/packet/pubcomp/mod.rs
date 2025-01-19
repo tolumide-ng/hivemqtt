@@ -2,7 +2,10 @@ mod properties;
 
 use properties::{PubCompProperties, PubCompReasonCode};
 
-use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property};
+use crate::v5::{
+    commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property},
+    traits::read_data::ReadData,
+};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct PubComp {
@@ -10,6 +13,8 @@ pub struct PubComp {
     pub(crate) reason_code: PubCompReasonCode,
     pub(crate) properties: PubCompProperties,
 }
+
+impl ReadData for PubComp {}
 
 #[cfg(not(feature = "asyncx"))]
 mod syncx {

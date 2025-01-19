@@ -3,7 +3,7 @@ use hivemqtt_macros::Length;
 
 use crate::v5::{
     commons::{error::MQTTError, property::Property},
-    traits::utils::Utils,
+    traits::{read_data::ReadData, utils::Utils},
 };
 
 #[derive(Debug, Length, Default, Clone, PartialEq, Eq)]
@@ -19,7 +19,7 @@ pub struct PublishProperties {
     pub(crate) content_type: Option<String>,
 }
 
-impl PublishProperties {
+impl ReadData for PublishProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();
 
@@ -72,7 +72,7 @@ mod syncx {
 
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::bufferio::BufferIO,
+        traits::{bufferio::BufferIO, read_data::ReadData},
     };
 
     use super::PublishProperties;
@@ -118,7 +118,10 @@ mod syncx {
 mod asyncx {
     use std::borrow::Cow;
 
-    use crate::v5::{commons::property::Property, traits::streamio::StreamIO};
+    use crate::v5::{
+        commons::property::Property,
+        traits::{read_data::ReadData, streamio::StreamIO},
+    };
 
     use super::PublishProperties;
 

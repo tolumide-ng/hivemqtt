@@ -3,7 +3,10 @@ use std::borrow::Cow;
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::v5::{commons::error::MQTTError, traits::utils::Utils};
+use crate::v5::{
+    commons::error::MQTTError,
+    traits::{read_data::ReadData, utils::Utils},
+};
 
 use super::Property;
 
@@ -21,7 +24,7 @@ pub(crate) struct ConnectProperties {
     pub(crate) authentication_data: Option<Bytes>,
 }
 
-impl ConnectProperties {
+impl ReadData for ConnectProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut properties = Self::default();
 
@@ -75,7 +78,7 @@ mod synx {
 
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::bufferio::BufferIO,
+        traits::{bufferio::BufferIO, read_data::ReadData},
     };
 
     use super::ConnectProperties;
@@ -125,7 +128,10 @@ mod asynx {
 
     use bytes::Bytes;
 
-    use crate::v5::{commons::property::Property, traits::streamio::StreamIO};
+    use crate::v5::{
+        commons::property::Property,
+        traits::{read_data::ReadData, streamio::StreamIO},
+    };
 
     use super::ConnectProperties;
 

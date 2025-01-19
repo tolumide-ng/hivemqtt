@@ -6,6 +6,8 @@ use crate::v5::{
     traits::utils::Utils,
 };
 
+use super::ReadData;
+
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FromU8, Default)]
 pub enum PubRecReasonCode {
@@ -27,7 +29,7 @@ pub struct PubRecProperties {
     pub user_property: Vec<(String, String)>,
 }
 
-impl PubRecProperties {
+impl ReadData for PubRecProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();
 
@@ -53,6 +55,7 @@ impl PubRecProperties {
 }
 
 mod syncx {
+    use super::*;
     use std::borrow::Cow;
 
     use crate::v5::{
@@ -91,9 +94,9 @@ mod syncx {
 }
 
 mod asyncx {
-    use std::borrow::Cow;
-
+    use super::*;
     use bytes::Bytes;
+    use std::borrow::Cow;
 
     use crate::v5::{commons::property::Property, traits::streamio::StreamIO};
 

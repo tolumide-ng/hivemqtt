@@ -3,7 +3,10 @@ use std::borrow::Cow;
 use bytes::Bytes;
 use hivemqtt_macros::{FromU8, Length};
 
-use crate::v5::{commons::error::MQTTError, traits::utils::Utils};
+use crate::v5::{
+    commons::error::MQTTError,
+    traits::{read_data::ReadData, utils::Utils},
+};
 
 use super::{BufferIO, Property};
 
@@ -28,7 +31,7 @@ pub struct PubAckProperties {
     pub user_property: Vec<(String, String)>,
 }
 
-impl PubAckProperties {
+impl ReadData for PubAckProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();
 
@@ -58,7 +61,7 @@ mod syncx {
 
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::bufferio::BufferIO,
+        traits::{bufferio::BufferIO, read_data::ReadData},
     };
 
     use super::PubAckProperties;
@@ -97,7 +100,7 @@ mod asyncx {
 
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::streamio::StreamIO,
+        traits::{read_data::ReadData, streamio::StreamIO},
     };
 
     use super::PubAckProperties;

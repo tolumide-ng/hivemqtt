@@ -1,9 +1,10 @@
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::v5::commons::property::Property;
-use crate::v5::traits::utils::Utils;
 use crate::v5::commons::error::MQTTError;
+use crate::v5::commons::property::Property;
+use crate::v5::traits::read_data::ReadData;
+use crate::v5::traits::utils::Utils;
 
 #[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct ConnAckProperties {
@@ -26,7 +27,7 @@ pub struct ConnAckProperties {
     pub authentication_data: Option<Bytes>,
 }
 
-impl ConnAckProperties {
+impl ReadData for ConnAckProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut properties = Self::default();
 
@@ -113,7 +114,7 @@ mod syncx {
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
         packet::connack::properties::ConnAckProperties,
-        traits::bufferio::BufferIO,
+        traits::{bufferio::BufferIO, read_data::ReadData},
     };
 
     impl BufferIO for ConnAckProperties {
@@ -186,7 +187,7 @@ mod asyncx {
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
         packet::connack::properties::ConnAckProperties,
-        traits::streamio::StreamIO,
+        traits::{read_data::ReadData, streamio::StreamIO},
     };
 
     impl StreamIO for ConnAckProperties {

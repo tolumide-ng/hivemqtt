@@ -6,7 +6,9 @@ use bytes::{Bytes, BytesMut};
 
 use crate::v5::commons::error::MQTTError;
 
-pub(crate) trait BufferIO: Sized {
+use super::read_data::ReadData;
+
+pub(crate) trait BufferIO: Sized + ReadData {
     /// Encodes a non-negative Integer into the Variable Byte Integer encoding
     fn encode(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
         let mut len = self.length();

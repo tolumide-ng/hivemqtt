@@ -1,6 +1,8 @@
+use crate::v5::traits::read_data::ReadData;
+
 use super::packet_type::PacketType;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) struct FixedHeader {
     pub(crate) packet_type: PacketType,
     pub(crate) flags: Option<u8>,
@@ -8,6 +10,8 @@ pub(crate) struct FixedHeader {
     pub(crate) remaining_length: usize,
     pub(crate) header_len: usize,
 }
+
+impl ReadData for FixedHeader {}
 
 impl FixedHeader {
     pub(crate) fn new(packet_type: PacketType, flags: u8, remaining_length: usize) -> Self {

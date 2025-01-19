@@ -3,7 +3,10 @@ pub use properties::PublishProperties;
 
 use bytes::Bytes;
 
-use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType, qos::QoS};
+use crate::v5::{
+    commons::{fixed_header::FixedHeader, packet_type::PacketType, qos::QoS},
+    traits::read_data::ReadData,
+};
 
 #[derive(Debug, Default, PartialEq, Clone, Eq)]
 pub(crate) struct Publish {
@@ -16,7 +19,8 @@ pub(crate) struct Publish {
     pub(crate) payload: Bytes,
 }
 
-#[cfg(not(feature = "asyncx"))]
+impl ReadData for Publish {}
+
 mod syncx {
     use bytes::Bytes;
 
@@ -86,7 +90,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use bytes::Bytes;
 

@@ -1,6 +1,8 @@
 use crate::v5::commons::error::MQTTError;
 use crate::v5::commons::qos::QoS;
 
+use super::ReadData;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct SubscriptionOptions {
     qos: QoS,
@@ -8,6 +10,8 @@ pub struct SubscriptionOptions {
     retain_as_published: bool,
     retain_handling: RetainHandling,
 }
+
+impl ReadData for SubscriptionOptions {}
 
 impl From<SubscriptionOptions> for u8 {
     fn from(v: SubscriptionOptions) -> Self {
@@ -37,12 +41,12 @@ impl TryFrom<u8> for SubscriptionOptions {
     }
 }
 
-#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use crate::v5::{
         commons::error::MQTTError,
         traits::{
             bufferio::BufferIO,
+            read_data::ReadData,
             syncx::{read::Read, write::Write},
         },
     };
@@ -67,10 +71,10 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::traits::{
         asyncx::{read::Read, write::Write},
+        read_data::ReadData,
         streamio::StreamIO,
     };
 

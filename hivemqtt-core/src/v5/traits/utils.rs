@@ -41,8 +41,6 @@ pub(crate) trait Utils: Sized {
 
         return Err(MQTTError::MalformedPacket);
     }
-
-    // fn read_data(data: &mut Bytes) -> Result<Self, MQTTError>;
 }
 
 impl<T: StreamIO + BufferIO> Utils for T {}

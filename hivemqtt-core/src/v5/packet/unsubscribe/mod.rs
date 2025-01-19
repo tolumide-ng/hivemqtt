@@ -1,12 +1,16 @@
 mod properties;
 pub use properties::UnSubscribeProperties;
 
+use crate::v5::traits::read_data::ReadData;
+
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct UnSubscribe {
     pub(crate) pkid: u16,
     pub(crate) properties: UnSubscribeProperties,
     pub(crate) payload: Vec<String>,
 }
+
+impl ReadData for UnSubscribe {}
 
 #[cfg(not(feature = "asyncx"))]
 mod sycnx {

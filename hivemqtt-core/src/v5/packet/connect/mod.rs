@@ -13,6 +13,7 @@ use crate::{
             error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType,
             property::Property, qos::QoS, version::Version,
         },
+        traits::read_data::ReadData,
     },
 };
 
@@ -75,6 +76,8 @@ impl From<ConnectOptions> for Connect {
         }
     }
 }
+
+impl ReadData for Connect {}
 
 #[cfg(not(feature = "asyncx"))]
 mod syncx {
@@ -182,13 +185,12 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::{
         commons::error::MQTTError,
         traits::{
             asyncx::{read::Read, write::Write},
-            streamio::StreamIO,
+            {read_data::ReadData, streamio::StreamIO},
         },
     };
 

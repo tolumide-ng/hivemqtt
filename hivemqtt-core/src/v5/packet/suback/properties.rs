@@ -6,22 +6,25 @@ use crate::v5::{
     traits::utils::Utils,
 };
 
+use super::ReadData;
+
 #[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct SubAckProperties {
     pub reason_string: Option<String>,
     pub user_property: Vec<(String, String)>,
 }
 
-impl SubAckProperties {
+impl ReadData for SubAckProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();
 
         loop {
             let property = Property::read(data)?;
             match property {
-                Property::ReasonString(ref v) => {
-                    Self::try_update(&mut props.reason_string, v.as_deref().map(String::from))(property)?
-                }
+                Property::ReasonString(ref v) => Self::try_update(
+                    &mut props.reason_string,
+                    v.as_deref().map(String::from),
+                )(property)?,
                 Property::UserProperty(v) => props.user_property.push(v.into_owned()),
                 p => return Err(MQTTError::UnexpectedProperty(p.to_string(), "".to_string())),
             }
@@ -39,7 +42,7 @@ mod syncx {
 
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::bufferio::BufferIO,
+        traits::{bufferio::BufferIO, read_data::ReadData},
     };
 
     use super::SubAckProperties;
@@ -76,7 +79,10 @@ mod asyncx {
 
     use bytes::Bytes;
 
-    use crate::v5::{commons::property::Property, traits::streamio::StreamIO};
+    use crate::v5::{
+        commons::property::Property,
+        traits::{read_data::ReadData, streamio::StreamIO},
+    };
 
     use super::SubAckProperties;
 

@@ -1,7 +1,10 @@
 mod properties;
 pub use properties::{PubRelProperties, PubRelReasonCode};
 
-use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property};
+use crate::v5::{
+    commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property},
+    traits::read_data::ReadData,
+};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct PubRel {
@@ -9,6 +12,8 @@ pub struct PubRel {
     pub(crate) reason_code: PubRelReasonCode,
     pub(crate) properties: PubRelProperties,
 }
+
+impl ReadData for PubRel {}
 
 #[cfg(not(feature = "asyncx"))]
 mod syncx {

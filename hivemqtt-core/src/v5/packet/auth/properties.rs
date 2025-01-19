@@ -3,7 +3,7 @@ use hivemqtt_macros::Length;
 
 use crate::v5::{
     commons::{error::MQTTError, property::Property},
-    traits::utils::Utils,
+    traits::{read_data::ReadData, utils::Utils},
 };
 
 use hivemqtt_macros::FromU8;
@@ -16,8 +16,8 @@ pub struct AuthProperties {
     pub user_property: Vec<(String, String)>,
 }
 
-impl AuthProperties {
-    pub(crate) fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
+impl ReadData for AuthProperties {
+    fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();
 
         loop {
@@ -61,7 +61,10 @@ mod syncx {
     use bytes::Bytes;
 
     use super::{AuthProperties, Property};
-    use crate::v5::{commons::error::MQTTError, traits::bufferio::BufferIO};
+    use crate::v5::{
+        commons::error::MQTTError,
+        traits::{bufferio::BufferIO, read_data::ReadData},
+    };
 
     impl BufferIO for AuthProperties {
         fn length(&self) -> usize {
@@ -99,7 +102,7 @@ mod asyncx {
 
     use crate::v5::commons::error::MQTTError;
     use crate::v5::packet::auth::AuthProperties;
-    use crate::v5::traits::streamio::StreamIO;
+    use crate::v5::traits::{read_data::ReadData, streamio::StreamIO};
     use bytes::Bytes;
 
     use super::Property;

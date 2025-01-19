@@ -36,7 +36,8 @@ pub enum MQTTError {
     InvalidProperty(String),
     #[error("Packet Id required")]
     PacketIdRequired,
-
+    #[error("UnImplemented")]
+    UnImplemented,
 
     #[error("Stream ended prematurely")]
     StreamEndedPrematurely,

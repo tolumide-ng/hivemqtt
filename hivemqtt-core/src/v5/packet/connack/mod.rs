@@ -4,7 +4,10 @@ mod reason_code;
 use properties::ConnAckProperties;
 use reason_code::ConnAckReasonCode;
 
-use crate::v5::commons::{fixed_header::FixedHeader, packet_type::PacketType};
+use crate::v5::{
+    commons::{fixed_header::FixedHeader, packet_type::PacketType},
+    traits::read_data::ReadData,
+};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ConnAck {
@@ -13,6 +16,8 @@ pub struct ConnAck {
     pub(crate) reason: ConnAckReasonCode,
     pub properties: ConnAckProperties,
 }
+
+impl ReadData for ConnAck {}
 
 mod synx {
     use crate::v5::commons::{error::MQTTError, fixed_header::FixedHeader};
