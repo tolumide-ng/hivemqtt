@@ -6,7 +6,7 @@ use bytes::{Bytes, BytesMut};
 use futures::AsyncWriteExt;
 
 use crate::v5::commons::error::MQTTError;
-use crate::v5::traits::update::decode;
+use crate::v5::traits::utils::Utils;
 use crate::v5::traits::{self, syncx::read::Read};
 
 /// Must be encoded using the VBI
@@ -163,7 +163,9 @@ impl<'a> Property<'a> {
             9 => Ok(Property::CorrelationData(Some(Cow::Owned(
                 Bytes::read(buf)?.to_vec(),
             )))),
-            11 => Ok(Property::SubscriptionIdentifier(Cow::Owned(decode(buf)?.0))),
+            11 => Ok(Property::SubscriptionIdentifier(Cow::Owned(
+                Self::decode(buf)?.0,
+            ))),
             17 => Ok(Property::SessionExpiryInterval(Some(u32::read(buf)?))),
             18 => Ok(Property::AssignedClientIdentifier(Some(Cow::Owned(
                 String::read(buf)?,

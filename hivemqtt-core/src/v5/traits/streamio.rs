@@ -84,6 +84,9 @@ pub(crate) trait StreamIO: Sized {
         R: AsyncReadExt + Unpin,
         Self: Default,
     {
+        // let Some(len) = Self::parse_len(stream).await? else {
+        //     return Ok(Self::default());
+        // };
         Ok(Self::default())
     }
 

@@ -14,7 +14,6 @@ pub struct ConnAck {
     pub properties: ConnAckProperties,
 }
 
-#[cfg(not(feature = "asyncx"))]
 mod synx {
     use crate::v5::commons::{error::MQTTError, fixed_header::FixedHeader};
     use crate::v5::traits::{
@@ -59,7 +58,6 @@ mod synx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::{
         commons::error::MQTTError,

@@ -3,7 +3,7 @@ use hivemqtt_macros::{FromU8, Length};
 
 use crate::v5::{
     commons::{error::MQTTError, property::Property},
-    traits::update::Utils,
+    traits::utils::Utils,
 };
 
 #[repr(u8)]

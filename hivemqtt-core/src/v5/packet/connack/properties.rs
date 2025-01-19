@@ -2,7 +2,7 @@ use bytes::Bytes;
 use hivemqtt_macros::Length;
 
 use crate::v5::commons::property::Property;
-use crate::v5::traits::update::Utils;
+use crate::v5::traits::utils::Utils;
 use crate::v5::commons::error::MQTTError;
 
 #[derive(Debug, Length, Default, PartialEq, Eq)]

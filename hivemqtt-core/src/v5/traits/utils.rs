@@ -6,45 +6,7 @@ use crate::v5::traits::syncx::read::Read;
 use super::bufferio::BufferIO;
 use super::streamio::StreamIO;
 
-// use super::{bufferio::BufferIO, streamio::StreamIO};
-
-pub(crate) fn try_update<T>(
-    field: &mut Option<T>,
-    value: Option<T>,
-) -> impl Fn(Property) -> Result<(), MQTTError> {
-    let is_duplicate = field.is_some();
-    *field = value;
-
-    move |ppt| {
-        if is_duplicate {
-            return Err(MQTTError::DuplicateProperty(ppt.to_string()));
-        }
-        return Ok(());
-    }
-}
-
-/// Decodes a Variable byte Inetger
-/// To be moved into a utils traits implemented automatically for bytes(?)
-pub(crate) fn decode(buf: &mut Bytes) -> Result<(usize, usize), MQTTError> {
-    let mut result = 0;
-
-    for i in 0..4 {
-        if buf.is_empty() {
-            return Err(MQTTError::MalformedPacket);
-        }
-        let byte = u8::read(buf)?;
-
-        result += ((byte as usize) & 0x7F) << (7 * i);
-
-        if (byte & 0x80) == 0 {
-            return Ok((result, i + 1));
-        }
-    }
-
-    return Err(MQTTError::MalformedPacket);
-}
-
-pub(crate) trait Utils {
+pub(crate) trait Utils: Sized {
     fn try_update<T>(
         field: &mut Option<T>,
         value: Option<T>,
@@ -79,10 +41,8 @@ pub(crate) trait Utils {
 
         return Err(MQTTError::MalformedPacket);
     }
+
+    // fn read_data(data: &mut Bytes) -> Result<Self, MQTTError>;
 }
 
-// #[cfg(feature = "asyncx")]
-
-// #[cfg(not(feature = "asyncx"))]
 impl<T: StreamIO + BufferIO> Utils for T {}
-// impl<T: BufferIO> TryUpdate for T {}

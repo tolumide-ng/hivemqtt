@@ -3,7 +3,7 @@ use hivemqtt_macros::Length;
 
 use crate::v5::{
     commons::{error::MQTTError, property::Property},
-    traits::update::Utils,
+    traits::utils::Utils,
 };
 
 #[derive(Debug, Length, Default, Clone, PartialEq, Eq)]

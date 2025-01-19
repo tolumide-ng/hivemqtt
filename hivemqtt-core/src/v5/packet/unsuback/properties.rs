@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
-use crate::v5::{commons::error::MQTTError, traits::update::Utils};
+use crate::v5::{commons::error::MQTTError, traits::utils::Utils};
 
 use super::Property;
 
