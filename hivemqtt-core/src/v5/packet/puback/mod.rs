@@ -3,7 +3,7 @@ pub use properties::{PubAckProperties, PubAckReasonCode};
 
 use crate::v5::{
     commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property},
-    traits::{read_data::ReadData, syncx::bufferio::BufferIO},
+    traits::read_data::ReadData,
 };
 
 #[derive(Debug, Default, PartialEq, Eq)]

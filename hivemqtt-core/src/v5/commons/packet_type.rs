@@ -1,7 +1,7 @@
 use bytes::BytesMut;
 use hivemqtt_macros::FromU8;
 
-use crate::v5::{packet::connect::Connect, traits::syncx::bufferio::BufferIO};
+use crate::v5::{packet::connect::Connect, traits::bufferio::BufferIO};
 
 use super::error::MQTTError;
 
