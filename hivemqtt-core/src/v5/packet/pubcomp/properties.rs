@@ -84,11 +84,9 @@ mod syncx {
 mod asyncx {
     use std::borrow::Cow;
 
-    use bytes::Bytes;
-
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::{read_data::ReadData, streamio::StreamIO},
+        traits::streamio::StreamIO,
     };
 
     use super::PubCompProperties;
@@ -115,22 +113,6 @@ mod asyncx {
             }
 
             Ok(())
-        }
-
-        async fn read<R>(stream: &mut R) -> Result<Self, MQTTError>
-        where
-            R: futures::AsyncReadExt + Unpin,
-            Self: Default,
-        {
-            let Some(len) = Self::parse_len(stream).await? else {
-                return Ok(Self::default());
-            };
-
-            let mut data = Vec::with_capacity(len);
-            stream.read_exact(&mut data).await?;
-            let mut data = Bytes::copy_from_slice(&data);
-
-            Self::read_data(&mut data)
         }
     }
 }

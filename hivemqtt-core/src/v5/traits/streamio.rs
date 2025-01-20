@@ -84,7 +84,7 @@ pub(crate) trait StreamIO: Sized + ReadData {
 
     async fn read<R>(stream: &mut R) -> Result<Self, MQTTError>
     where
-        R: AsyncReadExt + Unpin,
+        R: futures::AsyncReadExt + Unpin,
         Self: Default,
     {
         let Some(len) = Self::parse_len(stream).await? else {

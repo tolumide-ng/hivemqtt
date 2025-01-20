@@ -96,11 +96,9 @@ mod syncx {
 mod asyncx {
     use std::borrow::Cow;
 
-    use bytes::Bytes;
-
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::{read_data::ReadData, streamio::StreamIO},
+        traits::streamio::StreamIO,
     };
 
     use super::PubAckProperties;

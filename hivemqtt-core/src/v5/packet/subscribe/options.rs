@@ -46,7 +46,6 @@ mod syncx {
         commons::error::MQTTError,
         traits::{
             bufferio::BufferIO,
-            read_data::ReadData,
             syncx::{read::Read, write::Write},
         },
     };
@@ -74,7 +73,6 @@ mod syncx {
 mod asyncx {
     use crate::v5::traits::{
         asyncx::{read::Read, write::Write},
-        read_data::ReadData,
         streamio::StreamIO,
     };
 

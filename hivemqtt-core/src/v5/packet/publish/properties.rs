@@ -118,10 +118,7 @@ mod syncx {
 mod asyncx {
     use std::borrow::Cow;
 
-    use crate::v5::{
-        commons::property::Property,
-        traits::{read_data::ReadData, streamio::StreamIO},
-    };
+    use crate::v5::{commons::property::Property, traits::streamio::StreamIO};
 
     use super::PublishProperties;
 
