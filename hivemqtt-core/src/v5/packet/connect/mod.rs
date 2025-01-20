@@ -18,7 +18,7 @@ use crate::{
 };
 
 #[derive(Debug, Length)]
-pub(crate) struct Connect {
+pub struct Connect {
     #[bytes(no_id)]
     pub(crate) client_id: String,
     #[bytes(no_id)]

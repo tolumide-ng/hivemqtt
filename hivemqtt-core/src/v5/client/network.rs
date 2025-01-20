@@ -1,74 +1,95 @@
-use std::time::Duration;
+use std::{future::Future, pin::Pin};
 
-use async_channel::Receiver;
-use futures::{AsyncReadExt, AsyncWriteExt, StreamExt};
-// use tokio::{io::{AsyncRead, AsyncReadExt, AsyncWriteExt}, net::TcpStream};
+use futures::future;
 
-use crate::v5::commons::{error::MQTTError, packet::Packet};
+use crate::v5::commons::error::MQTTError;
 
-use super::{
-    handler::{self, AsyncHandler},
-    state::State,
-    ConnectOptions,
-};
+use super::{packet_id::PacketIdManager, ConnectOptions};
 
-pub struct Network<S, H>
-where
-    H: handler::AsyncHandler,
-    S: AsyncReadExt + AsyncWriteExt + Unpin, // S: AsyncReadExt + AsyncWriteExt
-{
-    state: State,
-    stream: Option<S>,
-    receiver: Option<Receiver<Packet>>,
-    keep_alive: Duration,
-    handler: H,
-}
+#[cfg(feature = "asyncx")]
+pub mod asyncx;
+#[cfg(feature = "syncx")]
+pub mod syncx;
 
-impl<S, H> Network<S, H>
-where
-    H: handler::AsyncHandler,
-    S: AsyncReadExt + AsyncWriteExt + Unpin, // S: AsyncReadExt + AsyncWriteExt
-{
-    // pub async fn connect(&mut self, mut stream: S, handler: &mut H) -> Result<(), MQTTError> {
-    pub async fn connect(&mut self, mut stream: S) -> Result<(), MQTTError> {
-        Ok(())
-    }
-}
+// mod not_used;
 
-mod comp_confirmation {
-    // use smol::net::TcpStream;
-    // use async_std::net::TcpStream;
-    // use tokio::net::TcpStream;
+// pub(crate) trait Network: Send + Unpin + Sync {
+//     type Output: Send + Unpin + Sync;
 
-    use tokio::net::TcpStream;
-    use tokio_util::compat::TokioAsyncReadCompatExt;
+//     type LocalResult<'a>: Future<Output = Self::Output> + 'a
+//     where
+//         Self: 'a;
 
-    use super::*;
+//     // or rename to setup
+//     fn new<'a>(options: ConnectOptions, pkids: PacketIdManager) -> Self;
 
-    struct HST {}
-    impl AsyncHandler for HST {
-        async fn handle(&mut self, packet: Packet) {}
-    }
+//     fn connect<'a>(&'a self) -> Self::LocalResult<'a>;
+// }
 
-    async fn test_impl() {
-        let xxx = HST {};
-        // let stream = tokio::net::TcpStream::connect("whatever").await.unwrap();
-        let stream = TcpStream::connect("example.com:80").await.unwrap();
-        // let stream = tokio::net::TcpStream::connect("hostname").await.unwrap();
-        // let stream = tokio::io::BufStream::new(stream);
+// pub(crate) trait SyncNetwork: Send + Sync + Unpin {
+//     type Output;
 
-        let stream = stream.compat();
+//     fn new(options: ConnectOptions, pkids: PacketIdManager) -> Self;
 
-        let mut xx = Network {
-            state: State::new(ConnectOptions::default()),
-            stream: Some(stream),
-            receiver: None,
-            keep_alive: Duration::new(60, 0),
-            handler: xxx,
-        };
+//     fn connect<'a>(&self) -> Self::Output;
+// }
 
-        let stream = TcpStream::connect("example.com:80").await.unwrap();
-        let stream = stream.compat();
-        let abc = xx.connect(stream);
-    }
-}
+// #[cfg(feature = "syncx")]
+// mod tsyncx {
+//     use super::*;
+//     // Blanet that can now be globally exposed and called simply as `new` or `connect`
+//     impl<T> Network for T
+//     where
+//         T: SyncNetwork,
+//     {
+//         type Output = T::Output;
+
+//         type LocalResult<'a>
+//             = future::Ready<Self::Output>
+//         where
+//             Self: 'a;
+
+//         fn new(options: ConnectOptions, pkids: PacketIdManager) -> Self {
+//             T::new(options, pkids)
+//         }
+
+//         fn connect<'a>(&'a self) -> Self::LocalResult<'a> {
+//             futures::future::ready(self.connect())
+//         }
+//     }
+// }
+
+// // #[cfg(feature = "asyncx")]
+// // mod tasyncx {
+// //     use crate::v5::client::ConnectOptions;
+
+// //     use super::Network;
+
+// //     pub(crate) trait AsyncNetwork: Unpin + Sync + Send {
+// //         type Output: Send + Unpin + Sync;
+
+// //         fn new(options: ConnectOptions, pkids: PacketIdManager) -> Self;
+
+// //         async fn connect(&self) -> Self::Output;
+// //     }
+
+// //     impl<T> Network for T
+// //     where
+// //         T: AsyncNetwork,
+// //     {
+// //         type Output = T::Output;
+
+// //         type LocalResult<'a>
+// //             = Pin<Box<dyn Future<Output = Self::Output> + 'a>>
+// //         where
+// //             Self: 'a;
+
+// //         fn new(options: ConnectOptions, pkids: PacketIdManager) -> Self {
+// //             T::new(options, pkids)
+// //         }
+
+// //         fn connect<'a>(&'a self) -> Self::LocalResult<'a> {
+// //             Box::pin(self.connect())
+// //         }
+// //     }
+// // }

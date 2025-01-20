@@ -9,7 +9,7 @@ use crate::v5::{
 };
 
 #[derive(Debug, Default, PartialEq, Clone, Eq)]
-pub(crate) struct Publish {
+pub struct Publish {
     pub(crate) dup: bool,
     pub(crate) retain: bool,
     pub(crate) qos: QoS,

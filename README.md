@@ -28,3 +28,9 @@ let stream = TcpStream::connect("example.com:80").await.unwrap();
 let stream = stream.compat();
 -->>
 ```
+
+
+### Credits:
+This crate derives heavy inspiration from:
+1. 
+2. 

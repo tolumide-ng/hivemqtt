@@ -1,10 +1,27 @@
-use std::{borrow::{Borrow, Cow}, collections::{HashMap, HashSet}, sync::{atomic::{AtomicU16, Ordering}, Arc, Mutex}};
+use std::{
+    collections::HashSet,
+    sync::{
+        atomic::{AtomicU16, Ordering},
+        Arc, Mutex,
+    },
+};
 
-use bytes::Bytes;
-#[cfg(feature = "logs")]
-use tracing::error;
+// #[cfg(feature = "logs")]
+// use tracing::error;
 
-use crate::v5::{commons::{error::MQTTError, packet::Packet, qos::QoS}, packet::{connack::ConnAck, puback::PubAck, pubcomp::PubComp, publish::Publish, pubrec::{properties::PubRecReasonCode, PubRec}, pubrel::PubRel, suback::SubAck, subscribe::Subscribe, unsubscribe::UnSubscribe}, utils::topic::parse_alias};
+use crate::v5::{
+    commons::{error::MQTTError, packet::Packet, qos::QoS},
+    packet::{
+        puback::PubAck,
+        pubcomp::PubComp,
+        publish::Publish,
+        pubrec::{properties::PubRecReasonCode, PubRec},
+        pubrel::PubRel,
+        suback::SubAck,
+        subscribe::Subscribe,
+    },
+    utils::topic::parse_alias,
+};
 
 use super::{packet_id::PacketIdManager, ConnectOptions};
 
@@ -16,7 +33,7 @@ struct TopicAlias {
 
 struct PubData {
     publish: Arc<Mutex<Vec<Option<Publish>>>>,
-    pubrel: Arc<Mutex<Vec<bool>>>
+    pubrel: Arc<Mutex<Vec<bool>>>,
 }
 
 // Todo: All hashsets needs to be changed to vec/VecDeque to improve performance/caching?
@@ -64,54 +81,89 @@ impl State {
         }
     }
 
-    fn parse_topic_and_try_update(&self, topic: &String, alias: Option<u16>, aliases: &Arc<Mutex<Vec<Option<String>>>>) -> Result<String, MQTTError> {
+    fn parse_topic_and_try_update(
+        &self,
+        topic: &String,
+        alias: Option<u16>,
+        aliases: &Arc<Mutex<Vec<Option<String>>>>,
+    ) -> Result<String, MQTTError> {
         match (topic, alias) {
-            (topic, None) if topic.len() > 0 => { Ok(topic.to_owned()) },
+            (topic, None) if topic.len() > 0 => Ok(topic.to_owned()),
             (topic, Some(alias)) if topic.len() > 0 => {
                 let alias = parse_alias(alias, self.topic_alias_max)?;
-                aliases.lock().unwrap().insert(alias as usize, Some(topic.clone()));
+                aliases
+                    .lock()
+                    .unwrap()
+                    .insert(alias as usize, Some(topic.clone()));
                 Ok(topic.to_owned())
             }
             (topic, Some(alias)) if topic.len() == 0 => {
                 let alias = parse_alias(alias, self.topic_alias_max)?;
                 let value = aliases.lock().unwrap()[alias as usize].clone();
-                value.ok_or(MQTTError::UnknownData(format!("Unrecognized Topic Alias {alias}")))
+                value.ok_or(MQTTError::UnknownData(format!(
+                    "Unrecognized Topic Alias {alias}"
+                )))
             }
-            _ => {Err(MQTTError::UnknownData(format!("Expected Topic or Alias but found none")))}
+            _ => Err(MQTTError::UnknownData(format!(
+                "Expected Topic or Alias but found none"
+            ))),
         }
     }
 
     fn handle_outgoing_publish(&self, packet: Publish) -> Result<(), MQTTError> {
         // Confirm that the packet identifier is not a duplicate before we proceed with anything
         if let Some(pid) = packet.pkid {
-            if self.outgoing_pub.lock().unwrap()[pid as usize].is_some() { return Err(MQTTError::PacketIdConflict(pid)) }
+            if self.outgoing_pub.lock().unwrap()[pid as usize].is_some() {
+                return Err(MQTTError::PacketIdConflict(pid));
+            }
         }
 
-        let topic = self.parse_topic_and_try_update(&packet.topic, packet.properties.topic_alias, &self.topic_aliases.outgoing)?;
+        let topic = self.parse_topic_and_try_update(
+            &packet.topic,
+            packet.properties.topic_alias,
+            &self.topic_aliases.outgoing,
+        )?;
 
         if packet.qos != QoS::Zero {
-            self.outgoing_pub.lock().unwrap()[packet.pkid.unwrap() as usize].replace(Publish {topic, ..packet});
+            self.outgoing_pub.lock().unwrap()[packet.pkid.unwrap() as usize]
+                .replace(Publish { topic, ..packet });
         }
 
         Ok(())
     }
 
     fn handle_incoming_publish(&self, packet: &mut Publish) -> Result<Option<Packet>, MQTTError> {
-        let topic = self.parse_topic_and_try_update(&packet.topic, packet.properties.topic_alias, &self.topic_aliases.incoming)?;
+        let topic = self.parse_topic_and_try_update(
+            &packet.topic,
+            packet.properties.topic_alias,
+            &self.topic_aliases.incoming,
+        )?;
         packet.topic = topic;
 
         if let Some(pid) = packet.pkid {
-            if self.outgoing_rec.lock().unwrap()[pid as usize] { return Err(MQTTError::PacketIdConflict(pid)) }
+            if self.outgoing_rec.lock().unwrap()[pid as usize] {
+                return Err(MQTTError::PacketIdConflict(pid));
+            }
         }
 
-        if packet.qos == QoS::Two { self.outgoing_rec.lock().unwrap()[packet.pkid.unwrap() as usize] = true; }
+        if packet.qos == QoS::Two {
+            self.outgoing_rec.lock().unwrap()[packet.pkid.unwrap() as usize] = true;
+        }
 
-        if self.manual_ack || packet.qos == QoS::Zero { return Ok(None) }
+        if self.manual_ack || packet.qos == QoS::Zero {
+            return Ok(None);
+        }
 
         let pkid = packet.pkid.unwrap();
         let result = match packet.qos {
-            QoS::One => Some(Packet::PubAck(PubAck {pkid, ..Default::default()})),
-            QoS::Two => Some(Packet::PubRec(PubRec {pkid, ..Default::default()})),
+            QoS::One => Some(Packet::PubAck(PubAck {
+                pkid,
+                ..Default::default()
+            })),
+            QoS::Two => Some(Packet::PubRec(PubRec {
+                pkid,
+                ..Default::default()
+            })),
             _ => None,
         };
 
@@ -122,11 +174,20 @@ impl State {
         Ok(())
     }
 
-    pub(crate) fn handle_incoming_puback(&self, packet: &PubRec) -> Result<Option<Packet>, MQTTError> {
-        if self.outgoing_pub.lock().unwrap()[packet.pkid as usize].take().is_some() {
-            return Ok(None)
+    pub(crate) fn handle_incoming_puback(
+        &self,
+        packet: &PubRec,
+    ) -> Result<Option<Packet>, MQTTError> {
+        if self.outgoing_pub.lock().unwrap()[packet.pkid as usize]
+            .take()
+            .is_some()
+        {
+            return Ok(None);
         }
-        Err(MQTTError::UnknownData(format!("Unknown Pakcet Id: {}", packet.pkid)))
+        Err(MQTTError::UnknownData(format!(
+            "Unknown Pakcet Id: {}",
+            packet.pkid
+        )))
     }
 
     pub(crate) fn handle_outgoing_pubrec(&self, _packet: PubRec) -> Result<(), MQTTError> {
@@ -138,14 +199,25 @@ impl State {
 
         if self.outgoing_pub.lock().unwrap()[pkid].take().is_none() {
             #[cfg(feature = "logs")]
-            error!("Unexpected pubrec: Have no record for publish with id {}", pkid);
-            return Err(MQTTError::UnknownData(format!("Unexpected pubrec: Have no record for publish with id {}", pkid)))
+            error!(
+                "Unexpected pubrec: Have no record for publish with id {}",
+                pkid
+            );
+            return Err(MQTTError::UnknownData(format!(
+                "Unexpected pubrec: Have no record for publish with id {}",
+                pkid
+            )));
         }
 
-        if p.reason_code == PubRecReasonCode::Success || p.reason_code == PubRecReasonCode::NoMatchingSubscribers {
+        if p.reason_code == PubRecReasonCode::Success
+            || p.reason_code == PubRecReasonCode::NoMatchingSubscribers
+        {
             self.outgoing_rel.lock().unwrap()[pkid] = true;
             if !self.manual_ack {
-                return Ok(Some(Packet::PubRel(PubRel{pkid: p.pkid, ..Default::default()})))
+                return Ok(Some(Packet::PubRel(PubRel {
+                    pkid: p.pkid,
+                    ..Default::default()
+                })));
             }
         }
 
@@ -160,11 +232,14 @@ impl State {
         let pkid = p.pkid;
         if self.outgoing_rec.lock().unwrap()[pkid as usize] {
             if self.manual_ack {
-                return Ok(Some(PubComp { pkid, ..Default::default() }))
+                return Ok(Some(PubComp {
+                    pkid,
+                    ..Default::default()
+                }));
             }
             return Ok(None);
         }
-        return Err(MQTTError::UnknownData(format!("{}", p.pkid)))
+        return Err(MQTTError::UnknownData(format!("{}", p.pkid)));
     }
 
     fn handle_outgoing_pubcomp(&self, p: &PubComp) -> Result<(), MQTTError> {
@@ -175,19 +250,19 @@ impl State {
         if self.outgoing_rel.lock().unwrap()[p.pkid as usize] {
             return Ok(None);
         }
-        return Err(MQTTError::UnknownData(format!("{}", p.pkid)))
+        return Err(MQTTError::UnknownData(format!("{}", p.pkid)));
     }
 
-    fn handle_outgoing_subscribe(&self, packet: Subscribe) -> Result<(), MQTTError>{
+    fn handle_outgoing_subscribe(&self, packet: Subscribe) -> Result<(), MQTTError> {
         // we're using the allocate method on pkid, we're confident that the pkid would always be unique
         let pkid = packet.pkid - 1;
         let mask = 1u16 << pkid;
 
         // this implementatioin is wrong
         if (self.outgoing_sub.load(Ordering::Relaxed) & mask) == 0 {
-            return Ok(())
+            return Ok(());
         }
-        return Err(MQTTError::PacketIdConflict(packet.pkid))
+        return Err(MQTTError::PacketIdConflict(packet.pkid));
     }
 
     fn handle_incoming_suback(&self, packet: SubAck) -> Result<Option<Packet>, MQTTError> {
@@ -196,9 +271,9 @@ impl State {
 
         // this implementatioin is wrong
         if (self.outgoing_sub.load(Ordering::Relaxed) & mask) != 0 {
-            return Err(MQTTError::PacketIdConflict(packet.pkid))
+            return Err(MQTTError::PacketIdConflict(packet.pkid));
         }
-        return Ok(Some(Packet::SubAck(packet)))
+        return Ok(Some(Packet::SubAck(packet)));
     }
 
     fn handle_outgoing_unsubscribe() {}
@@ -220,8 +295,11 @@ impl State {
         let pkid = p.pkid as usize;
         if self.outgoing_rel.lock().unwrap()[pkid] {
             self.outgoing_rel.lock().unwrap()[pkid] = false;
-            return Ok(())
+            return Ok(());
         }
-        return Err(MQTTError::UnknownData(format!("Unexpected pubcomp: Have no record for pubrel with id {}", pkid)))
+        return Err(MQTTError::UnknownData(format!(
+            "Unexpected pubcomp: Have no record for pubrel with id {}",
+            pkid
+        )));
     }
 }

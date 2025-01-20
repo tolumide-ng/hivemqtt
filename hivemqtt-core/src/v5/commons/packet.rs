@@ -1,5 +1,3 @@
-use bytes::Bytes;
-
 use crate::v5::{
     packet::{
         auth::Auth,
@@ -51,7 +49,6 @@ impl ReadData for Packet {}
 
 pub(crate) mod syncx {
     use super::*;
-    // use super::{Connect, FixedHeader, Packet, PacketType};
     use crate::v5::{commons::error::MQTTError, traits::bufferio::BufferIO};
 
     impl BufferIO for Packet {
