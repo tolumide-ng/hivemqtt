@@ -109,12 +109,10 @@ impl ReadData for ConnAckProperties {
 mod syncx {
     use std::borrow::{Borrow, Cow};
 
-    use bytes::Bytes;
-
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
         packet::connack::properties::ConnAckProperties,
-        traits::{bufferio::BufferIO, read_data::ReadData},
+        traits::bufferio::BufferIO,
     };
 
     impl BufferIO for ConnAckProperties {
@@ -166,28 +164,15 @@ mod syncx {
                 .write(buf)?;
             Ok(())
         }
-
-        fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-            let Some(len) = Self::parse_len(buf)? else {
-                return Ok(Self::default());
-            };
-
-            let mut data = buf.split_to(len);
-
-            Self::read_data(&mut data)
-        }
     }
 }
 
 mod asyncx {
     use std::borrow::{Borrow, Cow};
 
-    use bytes::Bytes;
-
     use crate::v5::{
-        commons::{error::MQTTError, property::Property},
-        packet::connack::properties::ConnAckProperties,
-        traits::{read_data::ReadData, streamio::StreamIO},
+        commons::property::Property, packet::connack::properties::ConnAckProperties,
+        traits::streamio::StreamIO,
     };
 
     impl StreamIO for ConnAckProperties {

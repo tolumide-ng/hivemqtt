@@ -68,11 +68,9 @@ impl ReadData for PublishProperties {
 mod syncx {
     use std::borrow::Cow;
 
-    use bytes::Bytes;
-
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::{bufferio::BufferIO, read_data::ReadData},
+        traits::bufferio::BufferIO,
     };
 
     use super::PublishProperties;
@@ -101,16 +99,6 @@ mod syncx {
             Property::ContentType(self.content_type.as_deref().map(Cow::Borrowed)).write(buf)?;
 
             Ok(())
-        }
-
-        fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-            let Some(len) = Self::parse_len(buf)? else {
-                return Ok(Self::default());
-            };
-
-            let mut data = buf.split_to(len);
-
-            Self::read_data(&mut data)
         }
     }
 }

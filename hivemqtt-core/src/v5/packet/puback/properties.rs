@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use bytes::Bytes;
 use hivemqtt_macros::{FromU8, Length};
 
@@ -8,7 +6,7 @@ use crate::v5::{
     traits::{read_data::ReadData, utils::Utils},
 };
 
-use super::{BufferIO, Property};
+use super::Property;
 
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FromU8, Default)]
@@ -61,7 +59,7 @@ mod syncx {
 
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::{bufferio::BufferIO, read_data::ReadData},
+        traits::bufferio::BufferIO,
     };
 
     use super::PubAckProperties;
@@ -79,16 +77,6 @@ mod syncx {
                 .iter()
                 .try_for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).write(buf))?;
             Ok(())
-        }
-
-        fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
-            let Some(len) = Self::parse_len(buf)? else {
-                return Ok(Self::default());
-            };
-
-            let mut data = buf.split_to(len);
-
-            Self::read_data(&mut data)
         }
     }
 }

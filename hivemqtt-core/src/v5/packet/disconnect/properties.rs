@@ -1,11 +1,9 @@
-use std::borrow::Cow;
-
 use bytes::Bytes;
 use hivemqtt_macros::Length;
 
 use crate::v5::{commons::error::MQTTError, traits::utils::Utils};
 
-use super::{BufferIO, Property, ReadData};
+use super::{Property, ReadData};
 
 #[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct DisconnectProperties {
@@ -51,7 +49,7 @@ mod syncx {
 
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::{bufferio::BufferIO, read_data::ReadData},
+        traits::bufferio::BufferIO,
     };
 
     use super::DisconnectProperties;
@@ -73,16 +71,6 @@ mod syncx {
                 .write(buf)?;
 
             Ok(())
-        }
-
-        fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
-            let Some(len) = Self::parse_len(buf)? else {
-                return Ok(Self::default());
-            };
-
-            let mut data = buf.split_to(len);
-
-            Self::read_data(&mut data)
         }
     }
 }

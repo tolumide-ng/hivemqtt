@@ -58,13 +58,8 @@ pub enum AuthReasonCode {
 mod syncx {
     use std::borrow::Cow;
 
-    use bytes::Bytes;
-
     use super::{AuthProperties, Property};
-    use crate::v5::{
-        commons::error::MQTTError,
-        traits::{bufferio::BufferIO, read_data::ReadData},
-    };
+    use crate::v5::{commons::error::MQTTError, traits::bufferio::BufferIO};
 
     impl BufferIO for AuthProperties {
         fn length(&self) -> usize {
@@ -84,16 +79,6 @@ mod syncx {
                 .try_for_each(|up| Property::UserProperty(Cow::Borrowed(&up)).write(buf))?;
             Ok(())
         }
-
-        fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-            let Some(len) = Self::parse_len(buf)? else {
-                return Ok(Self::default());
-            };
-
-            let mut data = buf.split_to(len);
-
-            Self::read_data(&mut data)
-        }
     }
 }
 
@@ -102,8 +87,7 @@ mod asyncx {
 
     use crate::v5::commons::error::MQTTError;
     use crate::v5::packet::auth::AuthProperties;
-    use crate::v5::traits::{read_data::ReadData, streamio::StreamIO};
-    use bytes::Bytes;
+    use crate::v5::traits::streamio::StreamIO;
 
     use super::Property;
 

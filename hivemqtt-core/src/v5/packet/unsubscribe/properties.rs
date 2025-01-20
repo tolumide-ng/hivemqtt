@@ -52,28 +52,13 @@ mod syncx {
                 .try_for_each(|kv| Property::UserProperty(Cow::Borrowed(kv)).write(buf))?;
             Ok(())
         }
-
-        fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
-            let Some(len) = Self::parse_len(buf)? else {
-                return Ok(Self::default());
-            };
-
-            let mut data = buf.split_to(len);
-
-            Self::read_data(&mut data)
-        }
     }
 }
 
 mod asyncx {
     use std::borrow::Cow;
 
-    use bytes::Bytes;
-
-    use crate::v5::{
-        commons::property::Property,
-        traits::{read_data::ReadData, streamio::StreamIO},
-    };
+    use crate::v5::{commons::property::Property, traits::streamio::StreamIO};
 
     use super::UnSubscribeProperties;
 

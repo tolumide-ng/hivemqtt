@@ -55,7 +55,6 @@ impl ReadData for PubRecProperties {
 }
 
 mod syncx {
-    use super::*;
     use std::borrow::Cow;
 
     use crate::v5::{
@@ -80,22 +79,10 @@ mod syncx {
 
             Ok(())
         }
-
-        fn read(buf: &mut bytes::Bytes) -> Result<Self, MQTTError> {
-            let Some(len) = Self::parse_len(buf)? else {
-                return Ok(Self::default());
-            };
-
-            let mut data = buf.split_to(len);
-
-            Self::read_data(&mut data)
-        }
     }
 }
 
 mod asyncx {
-    use super::*;
-    use bytes::Bytes;
     use std::borrow::Cow;
 
     use crate::v5::{commons::property::Property, traits::streamio::StreamIO};

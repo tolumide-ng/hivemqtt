@@ -68,8 +68,16 @@ pub(crate) trait BufferIO: Sized + ReadData {
         Ok(())
     }
 
-    fn read(buf: &mut Bytes) -> Result<Self, MQTTError> {
-        Err(MQTTError::MalformedPacket)
+    fn read(buf: &mut Bytes) -> Result<Self, MQTTError>
+    where
+        Self: Default,
+    {
+        let Some(len) = Self::parse_len(buf)? else {
+            return Ok(Self::default());
+        };
+
+        let mut data = buf.split_to(len);
+        Self::read_data(&mut data)
     }
 
     fn read_with_fixedheader(_buf: &mut Bytes, _header: FixedHeader) -> Result<Self, MQTTError> {
