@@ -10,6 +10,11 @@ pub struct UnSubscribeProperties {
     pub user_property: Vec<(String, String)>,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl ReadData for UnSubscribeProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();

@@ -12,6 +12,11 @@ pub enum PubRelReasonCode {
     PacketIdentifierNotFound = 146,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 #[derive(Debug, Length, PartialEq, Eq, Default)]
 pub struct PubRelProperties {
     pub reason_string: Option<String>,

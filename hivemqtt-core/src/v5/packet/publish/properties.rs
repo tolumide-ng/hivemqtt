@@ -19,6 +19,11 @@ pub struct PublishProperties {
     pub(crate) content_type: Option<String>,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl ReadData for PublishProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();

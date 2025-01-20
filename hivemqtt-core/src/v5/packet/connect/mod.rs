@@ -37,6 +37,11 @@ pub(crate) struct Connect {
     pub(crate) properties: ConnectProperties,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl Default for Connect {
     fn default() -> Self {
         Self {
@@ -79,7 +84,6 @@ impl From<ConnectOptions> for Connect {
 
 impl ReadData for Connect {}
 
-#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use bytes::Bytes;
 
@@ -190,7 +194,7 @@ mod asyncx {
         commons::error::MQTTError,
         traits::{
             asyncx::{read::Read, write::Write},
-            {read_data::ReadData, streamio::StreamIO},
+            streamio::StreamIO,
         },
     };
 
@@ -214,7 +218,7 @@ mod asyncx {
             len
         }
 
-        async fn write<W>(&self, stream: &mut W) -> Result<(), crate::v5::commons::error::MQTTError>
+        async fn write<W>(&self, stream: &mut W) -> Result<(), MQTTError>
         where
             W: futures::AsyncWriteExt + Unpin,
         {

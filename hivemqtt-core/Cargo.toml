@@ -13,8 +13,9 @@ path = "src/lib.rs"
 
 [features]
 asyncx = []
+syncx = []
 wasm = ["dep:js-sys", "dep:wasm-bindgen"]
-default = ["asyncx", "wasm"]
+default = ["asyncx", "syncx", "wasm"]
 
 [dependencies]
 bytes = "1.7.1"

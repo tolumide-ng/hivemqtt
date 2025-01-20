@@ -76,6 +76,11 @@ impl ReadData for WillProperties {
 
 impl ReadData for Will {}
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 mod syncx {
     use std::borrow::Cow;
 
@@ -158,7 +163,7 @@ mod syncx {
     }
 }
 
-mod asynx {
+mod asyncx {
     use std::borrow::Cow;
 
     use bytes::Bytes;

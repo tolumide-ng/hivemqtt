@@ -1,6 +1,5 @@
 use std::future::Future;
 
-use bytes::Bytes;
 use futures::AsyncReadExt;
 
 use crate::v5::commons::error::MQTTError;

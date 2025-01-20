@@ -29,6 +29,11 @@ pub struct PubRecProperties {
     pub user_property: Vec<(String, String)>,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl ReadData for PubRecProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut props = Self::default();

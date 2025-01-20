@@ -19,6 +19,11 @@ pub(crate) struct Publish {
     pub(crate) payload: Bytes,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl ReadData for Publish {}
 
 mod syncx {

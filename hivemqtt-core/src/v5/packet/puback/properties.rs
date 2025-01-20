@@ -23,6 +23,11 @@ pub enum PubAckReasonCode {
     PayloadFormatInvalid = 153,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 #[derive(Debug, Length, Default, PartialEq, Eq)]
 pub struct PubAckProperties {
     pub reason_string: Option<String>,

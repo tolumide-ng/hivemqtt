@@ -14,9 +14,13 @@ pub struct PubComp {
     pub(crate) properties: PubCompProperties,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl ReadData for PubComp {}
 
-#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use crate::v5::{
         commons::error::MQTTError,
@@ -75,7 +79,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::{
         commons::error::MQTTError,

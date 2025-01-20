@@ -24,6 +24,11 @@ pub(crate) struct ConnectProperties {
     pub(crate) authentication_data: Option<Bytes>,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl ReadData for ConnectProperties {
     fn read_data(data: &mut Bytes) -> Result<Self, MQTTError> {
         let mut properties = Self::default();
@@ -71,7 +76,7 @@ impl ReadData for ConnectProperties {
     }
 }
 
-mod synx {
+mod syncx {
     use std::borrow::Cow;
 
     use crate::v5::{
@@ -110,7 +115,7 @@ mod synx {
     }
 }
 
-mod asynx {
+mod asyncx {
 
     use std::borrow::Cow;
 

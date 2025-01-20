@@ -11,6 +11,11 @@ pub struct SubscriptionOptions {
     retain_handling: RetainHandling,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl ReadData for SubscriptionOptions {}
 
 impl From<SubscriptionOptions> for u8 {

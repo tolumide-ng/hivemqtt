@@ -13,6 +13,11 @@ pub struct PubRec {
     pub(crate) properties: PubRecProperties,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl ReadData for PubRec {}
 
 mod syncx {

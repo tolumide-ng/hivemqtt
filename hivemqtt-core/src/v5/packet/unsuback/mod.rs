@@ -18,6 +18,11 @@ pub struct UnSubAck {
     pub payload: Vec<UnSubAckReasonCode>,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl ReadData for UnSubAck {}
 
 mod syncx {

@@ -15,9 +15,13 @@ pub struct Disconnect {
     properties: DisconnectProperties,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl ReadData for Disconnect {}
 
-#[cfg(not(feature = "asyncx"))]
 mod syncx {
     use bytes::{Buf, Bytes, BytesMut};
 
@@ -41,7 +45,7 @@ mod syncx {
                 return 0;
             }
             return self.properties.length() + self.properties.variable_length() + 1;
-            // 1 is for the reason code abovegit stat
+            // 1 is for the reason code above
         }
 
         fn write(&self, buf: &mut BytesMut) -> Result<(), MQTTError> {
@@ -73,7 +77,6 @@ mod syncx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
 
     use crate::v5::{

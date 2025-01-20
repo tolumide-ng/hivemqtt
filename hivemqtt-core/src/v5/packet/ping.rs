@@ -9,6 +9,11 @@ pub struct PingReq {}
 #[derive(Debug, Default)]
 pub struct PingResp;
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl ReadData for PingReq {}
 impl ReadData for PingResp {}
 

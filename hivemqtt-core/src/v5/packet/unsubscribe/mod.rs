@@ -10,10 +10,14 @@ pub struct UnSubscribe {
     pub(crate) payload: Vec<String>,
 }
 
+#[cfg(feature = "asyncx")]
+pub(crate) use asyncx::*;
+#[cfg(feature = "syncx")]
+pub(crate) use syncx::*;
+
 impl ReadData for UnSubscribe {}
 
-#[cfg(not(feature = "asyncx"))]
-mod sycnx {
+mod syncx {
     use crate::v5::{
         commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType},
         traits::{
@@ -71,7 +75,6 @@ mod sycnx {
     }
 }
 
-#[cfg(feature = "asyncx")]
 mod asyncx {
     use crate::v5::{
         commons::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType},
