@@ -4,13 +4,13 @@ use bytes::Bytes;
 
 use super::packet::connect::will::Will;
 
-pub mod network;
+pub(crate) mod client;
 pub mod handler;
-pub(crate) mod stream;
-pub(crate) mod state;
+pub mod network;
 pub(crate) mod packet_id;
+pub(crate) mod state;
 
-
+#[derive(Debug)]
 pub struct ConnectOptions {
     /// Whether the user want's to handle all acks manually, or they want us to do this for them
     pub(crate) manual_ack: bool,
@@ -20,7 +20,7 @@ pub struct ConnectOptions {
     /// 3.1.2.11.4 Maximum number of bytes in an MQTT Control Packet
     pub(crate) server_max_size: NonZero<u32>, // set by connack
     pub(crate) client_max_size: NonZero<u32>, // set by connect
-    
+
     /// 3.1.2.11.3 Used to limit the number of QoS 1 and QoS 2 publications that the client can process concurrently
     pub(crate) client_receive_max: NonZero<u16>,
     /// 3.2.2.3.3 Used to limit the number of QoS 1 and QoS 2 publications that the client can process concurrently
@@ -34,24 +34,22 @@ pub struct ConnectOptions {
     pub(crate) client_id: String,
     pub(crate) username: Option<String>,
     pub(crate) password: Option<String>,
-    
+
     // host: Option<String>,
     // port: Option<u16>,
-
     pub(crate) request_response_information: Option<u8>,
     pub(crate) request_problem_information: Option<u8>,
     pub(crate) user_property: Vec<(String, String)>,
     pub(crate) authentication_method: Option<String>,
-    pub(crate) authentication_data: Option<Bytes>, 
+    pub(crate) authentication_data: Option<Bytes>,
 }
-
 
 impl Default for ConnectOptions {
     fn default() -> Self {
-        Self { 
-            topic_alias_max: 0, 
-            manual_ack: false, 
-            clean_start: true, 
+        Self {
+            topic_alias_max: 0,
+            manual_ack: false,
+            clean_start: true,
             session_expiry_interval: Some(0),
             client_receive_max: NonZero::<u16>::MAX, // connect
             server_receive_max: NonZero::<u16>::MAX, // connack
