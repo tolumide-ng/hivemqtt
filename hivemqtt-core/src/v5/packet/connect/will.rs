@@ -17,7 +17,7 @@ pub struct WillProperties {
     pub user_property: Vec<(String, String)>,
 }
 
-#[derive(Debug, Length, Default)]
+#[derive(Debug, Clone, Length, Default)]
 pub struct Will {
     #[bytes(ignore)]
     pub properties: WillProperties,

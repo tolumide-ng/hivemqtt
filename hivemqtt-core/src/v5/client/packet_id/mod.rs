@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicU16, Ordering};
 mod shard;
 use shard::PacketIdShard;
 
-
+#[derive(Debug)]
 pub(crate) struct PacketIdManager {
     shards: Vec<PacketIdShard>,
     allocated: AtomicU16,
@@ -15,14 +15,21 @@ impl PacketIdManager {
 
     pub(crate) fn new(max_packets: u16) -> Self {
         let num_shards = (max_packets as usize + Self::BITS - 1) / Self::BITS;
-        let shards = (0..num_shards).map(|_| PacketIdShard::default()).collect::<Vec<_>>();
-        Self { shards, allocated: AtomicU16::new(0), max_packets, }
+        let shards = (0..num_shards)
+            .map(|_| PacketIdShard::default())
+            .collect::<Vec<_>>();
+        Self {
+            shards,
+            allocated: AtomicU16::new(0),
+            max_packets,
+        }
     }
 
     // #[cfg(not(feature = "sync"))]
     pub(crate) async fn allocate(&self) -> Option<u16> {
         let allocated = self.allocated.fetch_add(1, Ordering::AcqRel);
-        if allocated >= self.max_packets { // rollback
+        if allocated >= self.max_packets {
+            // rollback
             self.allocated.fetch_sub(1, Ordering::Release);
             return None;
         }
@@ -36,7 +43,7 @@ impl PacketIdManager {
         }
 
         // It should be almost impossible for this to occur, but its better taken care of than not!
-        self.allocated.fetch_sub(1, Ordering::Release); 
+        self.allocated.fetch_sub(1, Ordering::Release);
         None
     }
 
@@ -45,29 +52,35 @@ impl PacketIdManager {
         let id = (id - 1) as usize;
         let shard_index = id / Self::BITS;
         let actual_index_in_shard = (id % Self::BITS) as u8;
-        let result = self.shards.get(shard_index).and_then(|shard| Some(shard.release(actual_index_in_shard)));
-        return result.is_some()
+        let result = self
+            .shards
+            .get(shard_index)
+            .and_then(|shard| Some(shard.release(actual_index_in_shard)));
+        return result.is_some();
     }
 
     pub(crate) fn release(&self, id: u16) {
         let id = (id - 1) as usize;
         let shard_index = id / Self::BITS;
         let actual_index_in_shard = (id % Self::BITS) as u8;
-        let result = self.shards.get(shard_index).and_then(|shard| Some(shard.release(actual_index_in_shard)));
+        let result = self
+            .shards
+            .get(shard_index)
+            .and_then(|shard| Some(shard.release(actual_index_in_shard)));
         if result.is_some_and(|r| r) {
-            let _ = self.allocated.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_sub(1));
+            let _ = self
+                .allocated
+                .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_sub(1));
         }
     }
 }
 
-
 // use futures::execut
-
 
 #[cfg(test)]
 mod test {
-    use std::sync::atomic::Ordering;
     use futures::executor::block_on;
+    use std::sync::atomic::Ordering;
 
     use super::*;
 
@@ -76,7 +89,6 @@ mod test {
         let mgr = PacketIdManager::new(2);
         assert_eq!(mgr.shards.len(), 1);
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
-
 
         let mgr = PacketIdManager::new(123);
         assert_eq!(mgr.shards.len(), 2);
@@ -88,19 +100,17 @@ mod test {
     fn can_allocate_and_release_packet_id() {
         let mgr = PacketIdManager::new(2);
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
-        
+
         let packet_id_1 = block_on(mgr.allocate());
         assert_eq!(packet_id_1, Some(1));
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 1);
 
-        
         let packet_id_2 = block_on(mgr.allocate());
         assert_eq!(packet_id_2, Some(2));
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 2);
-        
+
         assert_eq!(block_on(mgr.allocate()), None);
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 2);
-
 
         mgr.release(packet_id_1.unwrap());
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 1);

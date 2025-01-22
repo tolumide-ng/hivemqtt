@@ -44,6 +44,12 @@ pub enum MQTTError {
 
     #[error("IO Error: {0}")]
     IoError(String),
+
+    // to be moved
+    #[error("Connection Error")]
+    ConnectionError,
+    #[error("Connection Refused {0}")]
+    ConnectionRefused(u8),
 }
 
 impl From<std::io::Error> for MQTTError {

@@ -57,14 +57,14 @@ impl Default for Connect {
     }
 }
 
-impl From<ConnectOptions> for Connect {
-    fn from(value: ConnectOptions) -> Self {
+impl From<&ConnectOptions> for Connect {
+    fn from(value: &ConnectOptions) -> Self {
         Self {
-            client_id: value.client_id,
-            username: value.username,
-            password: value.password,
+            client_id: value.client_id.clone(),
+            username: value.username.clone(),
+            password: value.password.clone(),
             version: Version::V5,
-            will: value.will,
+            will: value.will.clone(),
             clean_start: value.clean_start,
             keep_alive: value.keep_alive,
             properties: ConnectProperties {
@@ -74,9 +74,9 @@ impl From<ConnectOptions> for Connect {
                 topic_alias_maximum: Some(value.topic_alias_max),
                 request_response_information: value.request_response_information,
                 request_problem_information: value.request_problem_information,
-                user_property: value.user_property,
-                authentication_method: value.authentication_method,
-                authentication_data: value.authentication_data,
+                user_property: value.user_property.clone(),
+                authentication_method: value.authentication_method.clone(),
+                authentication_data: value.authentication_data.clone(),
             },
         }
     }

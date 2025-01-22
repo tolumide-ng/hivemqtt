@@ -21,9 +21,11 @@ pub struct ConnectOptions {
     pub(crate) server_max_size: NonZero<u32>, // set by connack
     pub(crate) client_max_size: NonZero<u32>, // set by connect
 
-    /// 3.1.2.11.3 Used to limit the number of QoS 1 and QoS 2 publications that the client can process concurrently
-    pub(crate) client_receive_max: NonZero<u16>,
-    /// 3.2.2.3.3 Used to limit the number of QoS 1 and QoS 2 publications that the client can process concurrently
+    /// 3.1.2.11.3 The Client uses this value to limit the number of QoS 1 and QoS 2 publications that it is willing to process concurrently
+    pub(crate) client_receive_max: NonZero<u16>, // this is us (the client)
+    /// 3.2.2.3.3 The Server uses this value to limit the number of QoS 1 and QoS 2 publications that it is willing to process concurrently for the Client.
+    /// this determines how much pkids we can make max (the server already told us how much it can handle, so that's the max we can generate)
+    /// This is usually received on the CONNACK
     pub(crate) server_receive_max: NonZero<u16>,
 
     /// 3.1.2.11.5Highest value a client will accept as a topic aloas sent by the server

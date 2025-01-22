@@ -1,5 +1,5 @@
 mod properties;
-mod reason_code;
+pub(crate) mod reason_code;
 
 use properties::ConnAckProperties;
 use reason_code::ConnAckReasonCode;

@@ -156,6 +156,7 @@ impl State {
 
         let pkid = packet.pkid.unwrap();
         let result = match packet.qos {
+            // After it has sent a PUBACK packet the receiver MUST treat any incoming PUBLISH packet that contains the same Packet Identifier as being a new Application Message, irrespective of the setting of its DUP flag
             QoS::One => Some(Packet::PubAck(PubAck {
                 pkid,
                 ..Default::default()
