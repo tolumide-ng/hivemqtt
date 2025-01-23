@@ -19,6 +19,7 @@ use crate::v5::{
         pubrel::PubRel,
         suback::SubAck,
         subscribe::Subscribe,
+        unsuback::UnSubAck,
     },
     utils::topic::parse_alias,
 };
@@ -36,7 +37,8 @@ struct PubData {
     pubrel: Arc<Mutex<Vec<bool>>>,
 }
 
-// Todo: All hashsets needs to be changed to vec/VecDeque to improve performance/caching?
+// Todo!!: All hashsets needs to be changed to vec/VecDeque to improve performance/caching?
+#[derive(Debug)]
 pub(crate) struct State {
     // pkid_mgr: PacketIdManager,
     /// HashMap(alias --> topic)
@@ -59,25 +61,25 @@ pub(crate) struct State {
     outgoing_sub: AtomicU16,
     outgoing_unsub: Arc<Mutex<HashSet<u16>>>,
     clean_start: bool,
-    // xx: PacketIdManager
+    // pkid_mgr: Arc<Mutex<PacketIdManager>>,
 }
 
 impl State {
-    pub(crate) fn new(options: ConnectOptions) -> Self {
-        let receive_max = options.client_receive_max.get() as usize + 1;
+    fn new(value: &ConnectOptions) -> Self {
+        let outgoing_max = value.server_receive_max.get() as usize;
         Self {
-            // pkid_mgr: PacketIdManager::new(options.send_max),
             topic_aliases: TopicAlias::default(),
 
-            outgoing_pub: Arc::new(Mutex::new(Vec::with_capacity(receive_max))),
-            outgoing_rel: Arc::new(Mutex::new(Vec::with_capacity(receive_max))),
-            outgoing_rec: Arc::new(Mutex::new(Vec::with_capacity(receive_max))),
+            outgoing_pub: Arc::new(Mutex::new(Vec::with_capacity(outgoing_max))),
+            outgoing_rel: Arc::new(Mutex::new(Vec::with_capacity(outgoing_max))),
+            outgoing_rec: Arc::new(Mutex::new(Vec::with_capacity(outgoing_max))),
 
             outgoing_sub: AtomicU16::new(0),
             outgoing_unsub: Arc::new(Mutex::new(HashSet::new())),
-            manual_ack: options.manual_ack,
-            topic_alias_max: options.topic_alias_max,
-            clean_start: options.clean_start,
+            manual_ack: value.manual_ack,
+            topic_alias_max: value.topic_alias_max,
+            clean_start: value.clean_start,
+            // pkid_mgr,
         }
     }
 
@@ -177,7 +179,7 @@ impl State {
 
     pub(crate) fn handle_incoming_puback(
         &self,
-        packet: &PubRec,
+        packet: &PubAck,
     ) -> Result<Option<Packet>, MQTTError> {
         if self.outgoing_pub.lock().unwrap()[packet.pkid as usize]
             .take()
@@ -199,11 +201,6 @@ impl State {
         let pkid = p.pkid as usize;
 
         if self.outgoing_pub.lock().unwrap()[pkid].take().is_none() {
-            #[cfg(feature = "logs")]
-            error!(
-                "Unexpected pubrec: Have no record for publish with id {}",
-                pkid
-            );
             return Err(MQTTError::UnknownData(format!(
                 "Unexpected pubrec: Have no record for publish with id {}",
                 pkid
@@ -229,14 +226,14 @@ impl State {
         Ok(())
     }
 
-    pub(crate) fn handle_incoming_pubrel(&self, p: &PubRel) -> Result<Option<PubComp>, MQTTError> {
+    pub(crate) fn handle_incoming_pubrel(&self, p: &PubRel) -> Result<Option<Packet>, MQTTError> {
         let pkid = p.pkid;
         if self.outgoing_rec.lock().unwrap()[pkid as usize] {
             if self.manual_ack {
-                return Ok(Some(PubComp {
+                return Ok(Some(Packet::PubComp(PubComp {
                     pkid,
                     ..Default::default()
-                }));
+                })));
             }
             return Ok(None);
         }
@@ -277,6 +274,15 @@ impl State {
         return Ok(Some(Packet::SubAck(packet)));
     }
 
+    fn handle_incoming_unsuback(&self, packet: UnSubAck) -> Result<Option<Packet>, MQTTError> {
+        let pkid = packet.pkid - 1;
+        let mask = 1u16 << pkid;
+
+        // if self.
+
+        Ok(None)
+    }
+
     fn handle_outgoing_unsubscribe() {}
 
     // fn handle_outgoing_unsubscribe(&self, packet: &UnSubscribe) {
@@ -302,5 +308,18 @@ impl State {
             "Unexpected pubcomp: Have no record for pubrel with id {}",
             pkid
         )));
+    }
+
+    pub(crate) fn handle_incoming_packet(&self, packet: &mut Packet) {
+        let response = match packet {
+            Packet::PubAck(p) => self.handle_incoming_puback(p),
+            Packet::PubRec(p) => self.handle_incoming_pubrec(p),
+            Packet::Publish(p) => self.handle_incoming_publish(p),
+            Packet::PubComp(p) => self.handle_incoming_pubcomp(p),
+            Packet::PubRel(p) => self.handle_incoming_pubrel(p),
+            Packet::SubAck(p) => self.handle_incoming_suback(p),
+            // Packet::UnSubAck(p) => self.handleincoming
+            _ => Err(MQTTError::UnsupportedQoS(0)),
+        };
     }
 }

@@ -50,6 +50,12 @@ pub enum MQTTError {
     ConnectionError,
     #[error("Connection Refused {0}")]
     ConnectionRefused(u8),
+
+    #[error("Timeout Error")]
+    TimeoutError,
+
+    #[error("Incoming Disconnect")]
+    IncomingDisconnect,
 }
 
 impl From<std::io::Error> for MQTTError {

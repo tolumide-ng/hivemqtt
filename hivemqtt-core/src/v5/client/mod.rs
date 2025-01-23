@@ -30,7 +30,7 @@ pub struct ConnectOptions {
 
     /// 3.1.2.11.5Highest value a client will accept as a topic aloas sent by the server
     pub(crate) topic_alias_max: u16,
-    // we use the server's keep_alive from CONNACK else we use the one in CONNECT. Must always be ins econds
+    // we use the server's keep_alive from CONNACK else we use the one in CONNECT. Must always be in seconds
     pub(crate) keep_alive: u16,
     pub(crate) will: Option<Will>,
     pub(crate) client_id: String,
