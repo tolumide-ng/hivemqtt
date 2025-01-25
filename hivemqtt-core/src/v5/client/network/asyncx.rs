@@ -1,11 +1,10 @@
 use std::{
     sync::{Arc, Mutex},
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use async_channel::Receiver;
-use futures::{pin_mut, select, AsyncReadExt, AsyncWriteExt, FutureExt};
-use smol::pin;
+use futures::{select, AsyncReadExt, AsyncWriteExt, FutureExt};
 
 use crate::v5::{
     client::{client::MqttClient, handler::AsyncHandler, state::State, ConnectOptions},
@@ -15,7 +14,10 @@ use crate::v5::{
         connect::Connect,
         ping::PingReq,
     },
-    traits::streamio::StreamIO,
+    traits::{
+        pkid_mgr::{PacketIdAlloc, PacketIdRelease},
+        streamio::StreamIO,
+    },
 };
 
 use super::PacketIdManager;
@@ -24,10 +26,10 @@ use super::PacketIdManager;
 pub struct Network<S> {
     stream: S,
     options: ConnectOptions,
-    client: Option<MqttClient>,
-    pkids: PacketIdManager,
-    state: State,
+    client: Option<MqttClient<PacketIdManager>>,
+    state: State<PacketIdManager>,
     rx: Receiver<Packet>,
+    // pkids: Arc<PacketIdManager>,
 }
 
 impl<S> Network<S>
@@ -35,8 +37,7 @@ where
     S: AsyncReadExt + AsyncWriteExt + Unpin,
 {
     pub async fn new(options: ConnectOptions, stream: S) -> Result<Self, MQTTError> {
-        let pkids = Arc::new(Mutex::new(PacketIdManager::new(0)));
-        let state = State::new(&options);
+        let state = State::from(&options);
 
         let (tx, rx) = async_channel::bounded::<Packet>(100); // receive_max + send_max
 
@@ -44,16 +45,17 @@ where
             stream,
             options,
             client: None,
-            pkids,
+            // pkids,
             state,
             rx,
         };
 
         let connack = network.connect().await?;
         let server_receive_max = connack.properties.receive_maximum.unwrap_or(100);
-        network.pkids = PacketIdManager::new(server_receive_max);
+        let pkids = Arc::new(PacketIdManager::new(server_receive_max));
 
-        network.client = Some(MqttClient::new(tx));
+        network.client = Some(MqttClient::new(tx, pkids.clone()));
+        network.state.pkid_release = Some(pkids);
 
         Ok(network)
     }
@@ -76,8 +78,6 @@ where
         Err(MQTTError::ConnectionRefused(connack.reason.into()))
     }
 
-    async fn xx() {}
-
     async fn run<H>(&mut self, handler: &mut H) -> Result<Packet, MQTTError>
     where
         H: AsyncHandler,
@@ -92,40 +92,54 @@ where
         let mut expecting_pingresp = false;
         let max_timeout = keep_alive as u64 * (3 / 2);
 
-        // let xx = pin_mut!(Box);
-        let mut xx = Box::pin(Self::xx().fuse());
-        // let xx = pin!(xx);
-        // let abc = Box::pin(last_heartbeat);
-
         let reschedule = || {
             expecting_pingresp = false;
             last_ping = Some(Instant::now());
         };
 
-        // let xxx = self.state.handle;
+        // let result = self.state.handle_incoming_packet(&mut data);
+        // result.unwrap().unwrap().write(&mut self.stream);
+
+        let xa = self.rx.recv().await;
+
         loop {
             select! {
-                packet = Packet::read(&mut self.stream).fuse() => {
-                    let mut data = packet?;
-                    expecting_pingresp = false;
+                // receiving incoming packets
+                incoming = Packet::read(&mut self.stream).fuse() => {
+                    let mut packet = incoming?;
 
-                    match data {
+                    match packet {
                         Packet::PingResp(_) => {
-                            handler.handle(data).await;
+                            handler.handle(packet).await;
+                            expecting_pingresp = false;
                             last_ping = Some(Instant::now());
                         }
                         Packet::Disconnect(_) => {
-                            handler.handle(data).await;
+                            handler.handle(packet).await;
                             // return Ok(data);
                             break;
                         }
                         _ => {
+                            let result = self.state.handle_incoming_packet(&mut packet)?;
+                            last_ping = Some(Instant::now());
+                            handler.handle(packet).await;
+
+                            if let Some(response) = result {
+                                response.write(&mut self.stream).await?;
+                            }
                             // let xx = self.state.handle
                         }
                     }
                 },
-                _ = xx => {},
-                // receiving incoming packets
+                outgoing = self.rx.recv().fuse() => {
+                    let packet = outgoing?;
+                    packet.write(&mut self.stream).await?;
+                    self.state.handle_outgoing_packet(&packet)?;
+                    break;
+                },
+                // _ = xx => {
+                //     break;
+                // },
                 // sending outgoing packets
                 // pinging
                 // ponging

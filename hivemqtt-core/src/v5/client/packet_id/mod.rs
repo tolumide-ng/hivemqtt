@@ -3,6 +3,8 @@ use std::sync::atomic::{AtomicU16, Ordering};
 mod shard;
 use shard::PacketIdShard;
 
+use crate::v5::traits::pkid_mgr::{PacketIdAlloc, PacketIdRelease};
+
 #[derive(Debug)]
 pub(crate) struct PacketIdManager {
     shards: Vec<PacketIdShard>,
@@ -24,9 +26,10 @@ impl PacketIdManager {
             max_packets,
         }
     }
+}
 
-    // #[cfg(not(feature = "sync"))]
-    pub(crate) async fn allocate(&self) -> Option<u16> {
+impl PacketIdAlloc for PacketIdManager {
+    fn allocate(&self) -> Option<u16> {
         let allocated = self.allocated.fetch_add(1, Ordering::AcqRel);
         if allocated >= self.max_packets {
             // rollback
@@ -46,9 +49,11 @@ impl PacketIdManager {
         self.allocated.fetch_sub(1, Ordering::Release);
         None
     }
+}
 
+impl PacketIdRelease for PacketIdManager {
     /// Returns whether the packetId is in use or free (Not yet tested)
-    pub(crate) fn is_occupied(&self, id: u16) -> bool {
+    fn is_occupied(&self, id: u16) -> bool {
         let id = (id - 1) as usize;
         let shard_index = id / Self::BITS;
         let actual_index_in_shard = (id % Self::BITS) as u8;
@@ -59,7 +64,7 @@ impl PacketIdManager {
         return result.is_some();
     }
 
-    pub(crate) fn release(&self, id: u16) {
+    fn release(&self, id: u16) {
         let id = (id - 1) as usize;
         let shard_index = id / Self::BITS;
         let actual_index_in_shard = (id % Self::BITS) as u8;
@@ -101,15 +106,15 @@ mod test {
         let mgr = PacketIdManager::new(2);
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
 
-        let packet_id_1 = block_on(mgr.allocate());
+        let packet_id_1 = mgr.allocate();
         assert_eq!(packet_id_1, Some(1));
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 1);
 
-        let packet_id_2 = block_on(mgr.allocate());
+        let packet_id_2 = mgr.allocate();
         assert_eq!(packet_id_2, Some(2));
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 2);
 
-        assert_eq!(block_on(mgr.allocate()), None);
+        assert_eq!(mgr.allocate(), None);
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 2);
 
         mgr.release(packet_id_1.unwrap());

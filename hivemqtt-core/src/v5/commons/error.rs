@@ -1,5 +1,7 @@
 use std::string::FromUtf8Error;
 
+use async_channel::RecvError;
+
 #[derive(Clone, Debug, thiserror::Error, PartialEq, Eq)]
 pub enum MQTTError {
     #[error("Malformed mqtt packet")]
@@ -56,6 +58,8 @@ pub enum MQTTError {
 
     #[error("Incoming Disconnect")]
     IncomingDisconnect,
+    #[error("No more outgoing packets {0}")]
+    NoOutgoingPackets(#[from] RecvError),
 }
 
 impl From<std::io::Error> for MQTTError {

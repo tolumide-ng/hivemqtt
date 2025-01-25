@@ -21,10 +21,11 @@ use crate::v5::{
         subscribe::Subscribe,
         unsuback::UnSubAck,
     },
+    traits::pkid_mgr::PacketIdRelease,
     utils::topic::parse_alias,
 };
 
-use super::{packet_id::PacketIdManager, ConnectOptions};
+use super::ConnectOptions;
 
 #[derive(Debug, Default)]
 struct TopicAlias {
@@ -39,7 +40,7 @@ struct PubData {
 
 // Todo!!: All hashsets needs to be changed to vec/VecDeque to improve performance/caching?
 #[derive(Debug)]
-pub(crate) struct State {
+pub(crate) struct State<T> {
     // pkid_mgr: PacketIdManager,
     /// HashMap(alias --> topic)
     topic_alias_max: u16,
@@ -61,11 +62,14 @@ pub(crate) struct State {
     outgoing_sub: AtomicU16,
     outgoing_unsub: Arc<Mutex<HashSet<u16>>>,
     clean_start: bool,
-    // pkid_mgr: Arc<Mutex<PacketIdManager>>,
+    pub(crate) pkid_release: Option<Arc<T>>,
 }
 
-impl State {
-    fn new(value: &ConnectOptions) -> Self {
+impl<T> From<&ConnectOptions> for State<T>
+where
+    T: PacketIdRelease,
+{
+    fn from(value: &ConnectOptions) -> Self {
         let outgoing_max = value.server_receive_max.get() as usize;
         Self {
             topic_aliases: TopicAlias::default(),
@@ -79,10 +83,15 @@ impl State {
             manual_ack: value.manual_ack,
             topic_alias_max: value.topic_alias_max,
             clean_start: value.clean_start,
-            // pkid_mgr,
+            pkid_release: None,
         }
     }
+}
 
+impl<T> State<T>
+where
+    T: PacketIdRelease,
+{
     fn parse_topic_and_try_update(
         &self,
         topic: &String,
@@ -194,6 +203,7 @@ impl State {
     }
 
     pub(crate) fn handle_outgoing_pubrec(&self, _packet: PubRec) -> Result<(), MQTTError> {
+        // self.pkid_release.as_ref().unwrap().release(packet.pkid);
         Ok(())
     }
 
@@ -207,6 +217,7 @@ impl State {
             )));
         }
 
+        self.pkid_release.as_ref().unwrap().release(p.pkid);
         if p.reason_code == PubRecReasonCode::Success
             || p.reason_code == PubRecReasonCode::NoMatchingSubscribers
         {
@@ -246,6 +257,7 @@ impl State {
 
     fn handle_incoming_pubcomp(&self, p: &PubComp) -> Result<Option<Packet>, MQTTError> {
         if self.outgoing_rel.lock().unwrap()[p.pkid as usize] {
+            self.pkid_release.as_ref().unwrap().release(p.pkid);
             return Ok(None);
         }
         return Err(MQTTError::UnknownData(format!("{}", p.pkid)));
@@ -263,7 +275,7 @@ impl State {
         return Err(MQTTError::PacketIdConflict(packet.pkid));
     }
 
-    fn handle_incoming_suback(&self, packet: SubAck) -> Result<Option<Packet>, MQTTError> {
+    fn handle_incoming_suback(&self, packet: &SubAck) -> Result<Option<Packet>, MQTTError> {
         let pkid = packet.pkid - 1;
         let mask = 1u16 << pkid;
 
@@ -271,7 +283,8 @@ impl State {
         if (self.outgoing_sub.load(Ordering::Relaxed) & mask) != 0 {
             return Err(MQTTError::PacketIdConflict(packet.pkid));
         }
-        return Ok(Some(Packet::SubAck(packet)));
+        self.pkid_release.as_ref().unwrap().release(packet.pkid);
+        return Ok(None);
     }
 
     fn handle_incoming_unsuback(&self, packet: UnSubAck) -> Result<Option<Packet>, MQTTError> {
@@ -310,8 +323,11 @@ impl State {
         )));
     }
 
-    pub(crate) fn handle_incoming_packet(&self, packet: &mut Packet) {
-        let response = match packet {
+    pub(crate) fn handle_incoming_packet(
+        &self,
+        packet: &mut Packet,
+    ) -> Result<Option<Packet>, MQTTError> {
+        match packet {
             Packet::PubAck(p) => self.handle_incoming_puback(p),
             Packet::PubRec(p) => self.handle_incoming_pubrec(p),
             Packet::Publish(p) => self.handle_incoming_publish(p),
@@ -320,6 +336,10 @@ impl State {
             Packet::SubAck(p) => self.handle_incoming_suback(p),
             // Packet::UnSubAck(p) => self.handleincoming
             _ => Err(MQTTError::UnsupportedQoS(0)),
-        };
+        }
+    }
+
+    pub(crate) fn handle_outgoing_packet(&self, packet: &Packet) -> Result<(), MQTTError> {
+        Ok(())
     }
 }

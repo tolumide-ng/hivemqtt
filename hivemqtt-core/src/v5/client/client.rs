@@ -1,15 +1,24 @@
+use std::sync::Arc;
+
 use async_channel::Sender;
 
-use crate::v5::commons::packet::Packet;
+use crate::v5::{commons::packet::Packet, traits::pkid_mgr::PacketIdAlloc};
 
 #[derive(Debug)]
-pub struct MqttClient {
+pub struct MqttClient<T> {
     tx: Sender<Packet>,
+    pkid_alloc: Arc<T>,
 }
 
-impl MqttClient {
-    pub(crate) fn new(tx: Sender<Packet>) -> Self {
-        
-        Self { tx }
+impl<T> MqttClient<T>
+where
+    T: PacketIdAlloc,
+{
+    pub(crate) fn new(tx: Sender<Packet>, pkid_alloc: Arc<T>) -> Self {
+        Self { tx, pkid_alloc }
+    }
+
+    pub(crate) fn talking(&self) {
+        // self.pkid_alloc.allocate();
     }
 }
