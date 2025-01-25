@@ -14,10 +14,7 @@ use crate::v5::{
         connect::Connect,
         ping::PingReq,
     },
-    traits::{
-        pkid_mgr::{PacketIdAlloc, PacketIdRelease},
-        streamio::StreamIO,
-    },
+    traits::streamio::StreamIO,
 };
 
 use super::PacketIdManager;
@@ -29,7 +26,6 @@ pub struct Network<S> {
     client: Option<MqttClient<PacketIdManager>>,
     state: State<PacketIdManager>,
     rx: Receiver<Packet>,
-    // pkids: Arc<PacketIdManager>,
 }
 
 impl<S> Network<S>
@@ -55,7 +51,7 @@ where
         let pkids = Arc::new(PacketIdManager::new(server_receive_max));
 
         network.client = Some(MqttClient::new(tx, pkids.clone()));
-        network.state.pkid_release = Some(pkids);
+        network.state.pkid_mgr = Some(pkids);
 
         Ok(network)
     }
@@ -92,15 +88,8 @@ where
         let mut expecting_pingresp = false;
         let max_timeout = keep_alive as u64 * (3 / 2);
 
-        let reschedule = || {
-            expecting_pingresp = false;
-            last_ping = Some(Instant::now());
-        };
-
         // let result = self.state.handle_incoming_packet(&mut data);
         // result.unwrap().unwrap().write(&mut self.stream);
-
-        let xa = self.rx.recv().await;
 
         loop {
             select! {

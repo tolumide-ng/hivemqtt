@@ -179,46 +179,46 @@ mod asyncx {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::retest_utils::initialize_pid;
-//     use bytes::BytesMut;
+#[cfg(test)]
+mod syncx_tests {
+    use super::*;
+    use crate::retest_utils::initialize_pid;
+    use crate::v5::traits::bufferio::BufferIO;
+    use bytes::BytesMut;
 
-//     use super::*;
+    #[test]
+    fn read_write_publish() {
+        initialize_pid();
+        let packet = Publish {
+            dup: true,
+            retain: true,
+            qos: QoS::One,
+            topic: String::from("packagin_plant/#"),
+            pkid: Some(8930),
+            payload: b"veryLarge payload".to_vec().into(),
+            properties: PublishProperties {
+                payload_format_indicator: Some(13),
+                topic_alias: Some(02),
+                ..Default::default()
+            },
+        };
 
-//     #[test]
-//     fn read_write_publish() {
-//         initialize_pid();
-//         let packet = Publish {
-//             dup: true,
-//             retain: true,
-//             qos: QoS::One,
-//             topic: String::from("packagin_plant/#"),
-//             pkid: Some(8930),
-//             payload: b"veryLarge payload".to_vec().into(),
-//             properties: PublishProperties {
-//                 payload_format_indicator: Some(13),
-//                 topic_alias: Some(02),
-//                 ..Default::default()
-//             },
-//         };
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
 
-//         let mut buf = BytesMut::new();
-//         packet.write(&mut buf).unwrap();
+        let expected =
+            b";)\0\x10packagin_plant/#\"\xe2\x05\x01\r#\0\x02\0\x11veryLarge payload".to_vec();
+        assert_eq!(buf.to_vec(), expected);
 
-//         let expected =
-//             b";)\0\x10packagin_plant/#\"\xe2\x05\x01\r#\0\x02\0\x11veryLarge payload".to_vec();
-//         assert_eq!(buf.to_vec(), expected);
-
-//         let mut expected = Bytes::from_iter(
-//             b";)\0\x10packagin_plant/#\"\xe2\x05\x01\r#\0\x02\0\x11veryLarge payload".to_vec()[2..]
-//                 .to_vec(),
-//         );
-//         let created_packed = Publish::read_with_fixedheader(
-//             &mut expected,
-//             FixedHeader::new(PacketType::Publish, 0b1011, 9),
-//         )
-//         .unwrap();
-//         assert_eq!(created_packed, packet);
-//     }
-// }
+        let mut expected = Bytes::from_iter(
+            b";)\0\x10packagin_plant/#\"\xe2\x05\x01\r#\0\x02\0\x11veryLarge payload".to_vec()[2..]
+                .to_vec(),
+        );
+        let created_packed = Publish::read_with_fixedheader(
+            &mut expected,
+            FixedHeader::new(PacketType::Publish, 0b1011, 9),
+        )
+        .unwrap();
+        assert_eq!(created_packed, packet);
+    }
+}

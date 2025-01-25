@@ -71,7 +71,7 @@ impl From<&ConnectOptions> for Connect {
                 session_expiry_interval: value.session_expiry_interval,
                 receive_maximum: Some(value.client_receive_max.get()),
                 maximum_packet_size: Some(value.client_max_size.get()),
-                topic_alias_maximum: Some(value.topic_alias_max),
+                topic_alias_maximum: Some(value.inbound_topic_alias_max),
                 request_response_information: value.request_response_information,
                 request_problem_information: value.request_problem_information,
                 user_property: value.user_property.clone(),

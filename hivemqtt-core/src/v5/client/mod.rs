@@ -28,8 +28,11 @@ pub struct ConnectOptions {
     /// This is usually received on the CONNACK
     pub(crate) server_receive_max: NonZero<u16>,
 
-    /// 3.1.2.11.5Highest value a client will accept as a topic aloas sent by the server
-    pub(crate) topic_alias_max: u16,
+    /// 3.1.2.11.5 Highest value a client will accept as a topic alias sent by the server
+    pub(crate) inbound_topic_alias_max: u16, // this is sent in the connect packet
+    /// 3.2.2.3.8 Topic Alias Maximum: Indicates the highest value that the Server will accept as a Topic Alias sent by the Client
+    pub(crate) outbound_topic_alias_max: u16, // this is obtained from the connack packet
+
     // we use the server's keep_alive from CONNACK else we use the one in CONNECT. Must always be in seconds
     pub(crate) keep_alive: u16,
     pub(crate) will: Option<Will>,
@@ -49,7 +52,8 @@ pub struct ConnectOptions {
 impl Default for ConnectOptions {
     fn default() -> Self {
         Self {
-            topic_alias_max: 0,
+            inbound_topic_alias_max: 0,
+            outbound_topic_alias_max: 0,
             manual_ack: false,
             clean_start: true,
             session_expiry_interval: Some(0),
