@@ -185,26 +185,25 @@ where
             }
         }
 
-        if self.manual_ack || packet.qos == QoS::Zero {
+        if packet.qos == QoS::Zero {
             return Ok(None);
         }
 
         let pkid = packet.pkid.unwrap();
-        let result = match packet.qos {
+        if packet.qos == QoS::Two || self.manual_ack {
+            self.active_packets.server.lock().unwrap()[pkid as usize] = Some(PacketType::Publish);
+        }
+
+        let result = match (packet.qos, self.manual_ack) {
             // After it has sent a PUBACK packet the receiver MUST treat any incoming PUBLISH packet that contains the same Packet Identifier as being a new Application Message, irrespective of the setting of its DUP flag
-            QoS::One => Some(Packet::PubAck(PubAck {
+            (QoS::One, false) => Some(Packet::PubAck(PubAck {
                 pkid,
                 ..Default::default()
             })),
-            QoS::Two => {
-                self.active_packets.server.lock().unwrap()[pkid as usize] =
-                    Some(PacketType::Publish);
-
-                Some(Packet::PubRec(PubRec {
-                    pkid,
-                    ..Default::default()
-                }))
-            }
+            (QoS::Two, false) => Some(Packet::PubRec(PubRec {
+                pkid,
+                ..Default::default()
+            })),
             _ => None,
         };
 
@@ -212,6 +211,7 @@ where
     }
 
     pub(crate) fn handle_outgoing_puback(&self, p: PubAck) -> Result<(), MQTTError> {
+        self.active_packets.server.lock().unwrap()[p.pkid as usize] = None;
         Ok(())
     }
 
@@ -219,16 +219,23 @@ where
         &self,
         packet: &PubAck,
     ) -> Result<Option<Packet>, MQTTError> {
-        if self.outgoing_pub.lock().unwrap()[packet.pkid as usize]
-            .take()
-            .is_some()
-        {
-            return Ok(None);
+        let pkid = packet.pkid as usize;
+
+        // release the pkid, and remove the packet from the state
+        self.pkid_mgr.as_ref().unwrap().release(packet.pkid);
+        let prev =
+            self.active_packets.client.lock().unwrap()[pkid].take_if(|p| *p == PacketType::Publish);
+
+        if prev.is_none() {
+            return Err(MQTTError::UnknownData(format!(
+                "Unknown Pakcet Id: {}",
+                packet.pkid
+            )));
         }
-        Err(MQTTError::UnknownData(format!(
-            "Unknown Pakcet Id: {}",
-            packet.pkid
-        )))
+
+        self.active_packets.unacked_publish.lock().unwrap()[pkid] = None;
+
+        return Ok(None);
     }
 
     pub(crate) fn handle_outgoing_pubrec(&self, _packet: PubRec) -> Result<(), MQTTError> {
