@@ -15,6 +15,8 @@
 - [ ] Easy internal utility for converting -> to string and vice versal (from terminal tool?) - for debugging
 - [ ] Samples for easy learning
 - [ ] Move bytes length validation/parsing into the trait, and update the trait's secondary properties
+- [ ] Topic Filters: (4.7 Topic Names and Topic Filters)
+- [ ] Shared Subscription: (4.8.2 Shared Subscriptions)
 
 
 

@@ -1,9 +1,6 @@
 use std::{
     collections::HashSet,
-    sync::{
-        atomic::{AtomicU16, Ordering},
-        Arc, Mutex,
-    },
+    sync::{atomic::AtomicU16, Arc, Mutex},
 };
 
 // #[cfg(feature = "logs")]
@@ -12,14 +9,15 @@ use std::{
 use crate::v5::{
     commons::{error::MQTTError, packet::Packet, packet_type::PacketType, qos::QoS},
     packet::{
+        disconnect::Disconnect,
         puback::PubAck,
         pubcomp::{PubComp, PubCompReasonCode},
         publish::Publish,
         pubrec::{properties::PubRecReasonCode, PubRec},
         pubrel::PubRel,
-        suback::SubAck,
         subscribe::Subscribe,
         unsuback::UnSubAck,
+        unsubscribe::UnSubscribe,
     },
     traits::pkid_mgr::PacketIdRelease,
     utils::topic::parse_alias,
@@ -55,21 +53,8 @@ pub(crate) struct State<T> {
     outbound_topic_alias_max: u16,
     topic_aliases: TopicAlias,
 
-    /// Most of the outgoing packets might not need to be validated, let the other side side determine it's validity and return appropriate reason code
-    /// QoS 1 and 2 publish packets that haven't been acked yet
-    /// used to validate incomging pubacks and incoming pubrec
-    outgoing_pub: Mutex<Vec<Option<Publish>>>,
-    /// This is stored immediately a Publish packet is received, and destroyed after PubRel is received
-    /// used to validate outgoing pubrec and incoming pubrel
-    outgoing_rec: Mutex<Vec<bool>>,
-    /// This is stored immediately a PubRec packet is received, and destroyed after PubComp is received
-    /// used to validate outgoing pubrel and incoming pubcomp
-    outgoing_rel: Mutex<Vec<bool>>,
-
     /// Manually or Automatically acknolwedge pubs/subs - this should be removed eventually?
     manual_ack: bool,
-    outgoing_sub: AtomicU16,
-    outgoing_unsub: Mutex<HashSet<u16>>,
     clean_start: bool,
     pub(crate) pkid_mgr: Option<Arc<T>>,
 
@@ -96,12 +81,6 @@ where
                 unacked_publish: Mutex::new(vec![None; outgoing_max]),
             },
 
-            outgoing_pub: Mutex::new(Vec::with_capacity(outgoing_max)),
-            outgoing_rel: Mutex::new(Vec::with_capacity(outgoing_max)),
-            outgoing_rec: Mutex::new(Vec::with_capacity(outgoing_max)),
-
-            outgoing_sub: AtomicU16::new(0),
-            outgoing_unsub: Mutex::new(HashSet::new()),
             manual_ack: value.manual_ack,
             inbound_topic_alias_max: value.inbound_topic_alias_max,
             outbound_topic_alias_max: value.outbound_topic_alias_max,
@@ -315,7 +294,7 @@ where
         })))
     }
 
-    fn handle_outgoing_pubcomp(&self, packet: &PubComp) -> Result<(), MQTTError> {
+    fn handle_outgoing_pubcomp(&self, _packet: &PubComp) -> Result<(), MQTTError> {
         Ok(())
     }
 
@@ -337,63 +316,49 @@ where
     }
 
     fn handle_outgoing_subscribe(&self, packet: Subscribe) -> Result<(), MQTTError> {
-        // we're using the allocate method on pkid, we're confident that the pkid would always be unique
-        let pkid = packet.pkid - 1;
-        let mask = 1u16 << pkid;
+        self.active_packets.client.lock().unwrap()[packet.pkid as usize] =
+            Some(PacketType::Subscribe);
 
-        // this implementatioin is wrong
-        if (self.outgoing_sub.load(Ordering::Relaxed) & mask) == 0 {
-            return Ok(());
-        }
-        return Err(MQTTError::PacketIdConflict(packet.pkid));
+        Ok(())
     }
 
-    fn handle_incoming_suback(&self, packet: &SubAck) -> Result<Option<Packet>, MQTTError> {
-        let pkid = packet.pkid - 1;
-        let mask = 1u16 << pkid;
+    fn handle_incoming_suback(&self, packet: &Subscribe) -> Result<Option<Packet>, MQTTError> {
+        let prev = self.active_packets.client.lock().unwrap()[packet.pkid as usize]
+            .take_if(|pt| *pt == PacketType::Subscribe);
 
-        // this implementatioin is wrong
-        if (self.outgoing_sub.load(Ordering::Relaxed) & mask) != 0 {
-            return Err(MQTTError::PacketIdConflict(packet.pkid));
+        if prev.is_none() {
+            return Err(MQTTError::UnknownData(format!(
+                "Unknown Suback Packet Id: {}",
+                packet.pkid
+            )));
         }
+
         self.pkid_mgr.as_ref().unwrap().release(packet.pkid);
         return Ok(None);
     }
 
-    fn handle_incoming_unsuback(&self, packet: UnSubAck) -> Result<Option<Packet>, MQTTError> {
-        let pkid = packet.pkid - 1;
-        let mask = 1u16 << pkid;
+    fn handle_outgoing_unsubscribe(&self, packet: UnSubscribe) -> Result<(), MQTTError> {
+        self.active_packets.client.lock().unwrap()[packet.pkid as usize] =
+            Some(PacketType::UnSubscribe);
 
-        // if self.
-
-        Ok(None)
+        Ok(())
     }
 
-    fn handle_outgoing_unsubscribe() {}
-
-    // fn handle_outgoing_unsubscribe(&self, packet: &UnSubscribe) {
-    //     let new_pkids = self.outgoing_unsub.lock().unwrap().insert(packet.pkid);
-    //     #[cfg(feature = "logs")]
-    //     if !new_pkids {
-    //         error!("Duplicate Packet ID: {}", packet.pkid);
-    //     }
-    // }
-
-    // fn valid_pid(&self, pid: u16) -> Result<(), MQTTError> {
-    //     if self.outgoing_pub.lock().unwrap()[pid as usize].is_none() { return Ok(()) }
-    //     // Err(MQTTError::PacketIdConflict(pid))
-    // }
-
-    pub(crate) fn incoming_pubcomp(&self, p: PubComp) -> Result<(), MQTTError> {
-        let pkid = p.pkid as usize;
-        if self.outgoing_rel.lock().unwrap()[pkid] {
-            self.outgoing_rel.lock().unwrap()[pkid] = false;
-            return Ok(());
+    fn handle_incoming_unsuback(&self, packet: &UnSubAck) -> Result<Option<Packet>, MQTTError> {
+        let prev = self.active_packets.client.lock().unwrap()[packet.pkid as usize];
+        if prev.is_none() {
+            return Err(MQTTError::UnknownData(format!(
+                "Unknown Suback Packet Id: {}",
+                packet.pkid
+            )));
         }
-        return Err(MQTTError::UnknownData(format!(
-            "Unexpected pubcomp: Have no record for pubrel with id {}",
-            pkid
-        )));
+
+        self.pkid_mgr.as_ref().unwrap().release(packet.pkid);
+        return Ok(None);
+    }
+
+    fn handle_outgoing_disconnect(&self, packet: Disconnect) -> Result<Option<Packet>, MQTTError> {
+        Ok(None)
     }
 
     pub(crate) fn handle_incoming_packet(
