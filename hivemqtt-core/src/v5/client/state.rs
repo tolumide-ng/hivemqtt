@@ -13,7 +13,7 @@ use crate::v5::{
     commons::{error::MQTTError, packet::Packet, packet_type::PacketType, qos::QoS},
     packet::{
         puback::PubAck,
-        pubcomp::PubComp,
+        pubcomp::{PubComp, PubCompReasonCode},
         publish::Publish,
         pubrec::{properties::PubRecReasonCode, PubRec},
         pubrel::PubRel,
@@ -66,7 +66,7 @@ pub(crate) struct State<T> {
     /// used to validate outgoing pubrel and incoming pubcomp
     outgoing_rel: Mutex<Vec<bool>>,
 
-    /// Manually or Automatically acknolwedge pubs/subs
+    /// Manually or Automatically acknolwedge pubs/subs - this should be removed eventually?
     manual_ack: bool,
     outgoing_sub: AtomicU16,
     outgoing_unsub: Mutex<HashSet<u16>>,
@@ -239,8 +239,8 @@ where
     }
 
     // we don't need to confirm anything locally
-    pub(crate) fn handle_outgoing_pubrec(&self, _packet: PubRec) -> Result<(), MQTTError> {
-        // https://vscode.dev/github/tolumide-ng/hivemqtt/blob/main/hivemqtt-core/src/v5/client/state.rs#L203
+    pub(crate) fn handle_outgoing_pubrec(&self, packet: PubRec) -> Result<(), MQTTError> {
+        self.active_packets.server.lock().unwrap()[packet.pkid as usize] = Some(PacketType::PubRec);
         Ok(())
     }
 
@@ -283,55 +283,36 @@ where
     }
 
     // we don't need to confirm anything locally, if it's autohandled good, if it's not, then it's up to the user
-    pub(crate) fn handle_outgoing_pubrel(&self, _packet: PubRec) -> Result<(), MQTTError> {
+    pub(crate) fn handle_outgoing_pubrel(&self, packet: PubRec) -> Result<(), MQTTError> {
+        self.active_packets.client.lock().unwrap()[packet.pkid as usize] = Some(PacketType::PubRel);
         Ok(())
     }
 
-    // pub(crate) fn handle_incoming_pubrec(&self, p: &PubRec) -> Result<Option<Packet>, MQTTError> {
-    //     let pkid = p.pkid as usize;
+    pub(crate) fn handle_incoming_pubrel(
+        &self,
+        packet: &PubRel,
+    ) -> Result<Option<Packet>, MQTTError> {
+        let pkid = packet.pkid as usize;
 
-    //     if self.outgoing_pub.lock().unwrap()[pkid].take().is_none() {
-    //         return Err(MQTTError::UnknownData(format!(
-    //             "Unexpected pubrec: Have no record for publish with id {}",
-    //             pkid
-    //         )));
-    //     }
+        let prev = self.active_packets.server.lock().unwrap()[pkid]
+            .take_if(|pt| *pt == PacketType::PubRec);
 
-    //     self.pkid_mgr.as_ref().unwrap().release(p.pkid);
-    //     if p.reason_code == PubRecReasonCode::Success
-    //         || p.reason_code == PubRecReasonCode::NoMatchingSubscribers
-    //     {
-    //         self.outgoing_rel.lock().unwrap()[pkid] = true;
-    //         if !self.manual_ack {
-    //             // MUST NOT re-send the PUBLISH once it has sent the corresponding PUBREL packet [MQTT-4.3.3-6].
-    //             // self.active_packets.unacked_publish.lock().unwrap()[pkid] = None;
-    //             return Ok(Some(Packet::PubRel(PubRel {
-    //                 pkid: p.pkid,
-    //                 ..Default::default()
-    //             })));
-    //         }
-    //     }
-
-    //     Ok(None)
-    // }
-
-    // we must treeat the pubrel packet as unacknoweldged, until we have received the corresponding pubcomp
-    pub(crate) fn handle_outgoing_pubrel(&self, p: PubRel) -> Result<(), MQTTError> {
-        Ok(())
-    }
-
-    pub(crate) fn handle_incoming_pubrel(&self, p: &PubRel) -> Result<Option<Packet>, MQTTError> {
-        let pkid = p.pkid;
-        if self.outgoing_rec.lock().unwrap()[pkid as usize] {
-            if self.manual_ack {
-                return Ok(Some(Packet::PubComp(PubComp {
-                    pkid,
-                    ..Default::default()
-                })));
-            }
+        if self.manual_ack {
             return Ok(None);
         }
-        return Err(MQTTError::UnknownData(format!("{}", p.pkid)));
+
+        if prev.is_none() {
+            return Ok(Some(Packet::PubComp(PubComp {
+                pkid: packet.pkid,
+                reason_code: PubCompReasonCode::PacketIdentifierNotFound,
+                ..Default::default()
+            })));
+        }
+
+        Ok(Some(Packet::PubComp(PubComp {
+            pkid: packet.pkid,
+            ..Default::default()
+        })))
     }
 
     fn handle_outgoing_pubcomp(&self, p: &PubComp) -> Result<(), MQTTError> {

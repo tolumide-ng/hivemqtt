@@ -6,7 +6,7 @@ use crate::v5::{commons::error::MQTTError, traits::utils::Utils};
 use super::{Property, ReadData};
 
 #[derive(Debug, PartialEq, Eq, Default, FromU8, Clone, Copy)]
-pub enum PubCompReasonCode {
+pub(crate) enum PubCompReasonCode {
     #[default]
     Success = 0,
     PacketIdentifierNotFound = 146,

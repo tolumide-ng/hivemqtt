@@ -1,6 +1,6 @@
 mod properties;
 
-use properties::{PubCompProperties, PubCompReasonCode};
+pub(crate) use properties::{PubCompProperties, PubCompReasonCode};
 
 use crate::v5::{
     commons::{fixed_header::FixedHeader, packet_type::PacketType, property::Property},
