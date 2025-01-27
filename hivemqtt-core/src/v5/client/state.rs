@@ -190,8 +190,8 @@ where
         }
 
         let pkid = packet.pkid.unwrap();
-        if packet.qos == QoS::Two || self.manual_ack {
-            self.active_packets.server.lock().unwrap()[pkid as usize] = Some(PacketType::Publish);
+        if packet.qos == QoS::Two && !self.manual_ack {
+            self.active_packets.server.lock().unwrap()[pkid as usize] = Some(PacketType::PubRec);
         }
 
         let result = match (packet.qos, self.manual_ack) {
@@ -210,8 +210,8 @@ where
         Ok(result)
     }
 
+    // we don't need to confirm anything locally
     pub(crate) fn handle_outgoing_puback(&self, p: PubAck) -> Result<(), MQTTError> {
-        self.active_packets.server.lock().unwrap()[p.pkid as usize] = None;
         Ok(())
     }
 
@@ -222,7 +222,6 @@ where
         let pkid = packet.pkid as usize;
 
         // release the pkid, and remove the packet from the state
-        self.pkid_mgr.as_ref().unwrap().release(packet.pkid);
         let prev =
             self.active_packets.client.lock().unwrap()[pkid].take_if(|p| *p == PacketType::Publish);
 
@@ -233,42 +232,90 @@ where
             )));
         }
 
+        self.pkid_mgr.as_ref().unwrap().release(packet.pkid);
         self.active_packets.unacked_publish.lock().unwrap()[pkid] = None;
 
         return Ok(None);
     }
 
+    // we don't need to confirm anything locally
     pub(crate) fn handle_outgoing_pubrec(&self, _packet: PubRec) -> Result<(), MQTTError> {
-        // self.pkid_mgr.as_ref().unwrap().release(packet.pkid);
+        // https://vscode.dev/github/tolumide-ng/hivemqtt/blob/main/hivemqtt-core/src/v5/client/state.rs#L203
         Ok(())
     }
 
-    pub(crate) fn handle_incoming_pubrec(&self, p: &PubRec) -> Result<Option<Packet>, MQTTError> {
-        let pkid = p.pkid as usize;
+    pub(crate) fn handle_incoming_pubrec(
+        &self,
+        packet: &PubRec,
+    ) -> Result<Option<Packet>, MQTTError> {
+        let pkid = packet.pkid as usize;
 
-        if self.outgoing_pub.lock().unwrap()[pkid].take().is_none() {
-            return Err(MQTTError::UnknownData(format!(
-                "Unexpected pubrec: Have no record for publish with id {}",
-                pkid
-            )));
-        }
-
-        self.pkid_mgr.as_ref().unwrap().release(p.pkid);
-        if p.reason_code == PubRecReasonCode::Success
-            || p.reason_code == PubRecReasonCode::NoMatchingSubscribers
-        {
-            self.outgoing_rel.lock().unwrap()[pkid] = true;
-            if !self.manual_ack {
-                return Ok(Some(Packet::PubRel(PubRel {
-                    pkid: p.pkid,
-                    ..Default::default()
-                })));
+        match self.active_packets.client.lock().unwrap().get_mut(pkid) {
+            Some(pt) if *pt == Some(PacketType::Publish) => {
+                // MUST NOT re-send the PUBLISH once it has sent the corresponding PUBREL packet [MQTT-4.3.3-6].
+                self.active_packets.client.lock().unwrap()[pkid] = None;
+                if packet.reason_code == PubRecReasonCode::NoMatchingSubscribers
+                    || packet.reason_code == PubRecReasonCode::Success
+                {
+                    *pt = Some(PacketType::PubRel);
+                } else {
+                    *pt = None;
+                    return Ok(None);
+                }
             }
+            _ => {
+                return Err(MQTTError::UnknownData(format!(
+                    "Unknown pubrec Pakcet Id: {}",
+                    packet.pkid
+                )));
+            }
+        };
+
+        if self.manual_ack {
+            return Ok(None);
         }
 
-        Ok(None)
+        // MUST treat the PUBREL packet as “unacknowledged” until it has received the corresponding PUBCOMP packet from the receiver [MQTT-4.3.3-5].
+        return Ok(Some(Packet::PubRel(PubRel {
+            pkid: packet.pkid,
+            ..Default::default()
+        })));
     }
 
+    // we don't need to confirm anything locally, if it's autohandled good, if it's not, then it's up to the user
+    pub(crate) fn handle_outgoing_pubrel(&self, _packet: PubRec) -> Result<(), MQTTError> {
+        Ok(())
+    }
+
+    // pub(crate) fn handle_incoming_pubrec(&self, p: &PubRec) -> Result<Option<Packet>, MQTTError> {
+    //     let pkid = p.pkid as usize;
+
+    //     if self.outgoing_pub.lock().unwrap()[pkid].take().is_none() {
+    //         return Err(MQTTError::UnknownData(format!(
+    //             "Unexpected pubrec: Have no record for publish with id {}",
+    //             pkid
+    //         )));
+    //     }
+
+    //     self.pkid_mgr.as_ref().unwrap().release(p.pkid);
+    //     if p.reason_code == PubRecReasonCode::Success
+    //         || p.reason_code == PubRecReasonCode::NoMatchingSubscribers
+    //     {
+    //         self.outgoing_rel.lock().unwrap()[pkid] = true;
+    //         if !self.manual_ack {
+    //             // MUST NOT re-send the PUBLISH once it has sent the corresponding PUBREL packet [MQTT-4.3.3-6].
+    //             // self.active_packets.unacked_publish.lock().unwrap()[pkid] = None;
+    //             return Ok(Some(Packet::PubRel(PubRel {
+    //                 pkid: p.pkid,
+    //                 ..Default::default()
+    //             })));
+    //         }
+    //     }
+
+    //     Ok(None)
+    // }
+
+    // we must treeat the pubrel packet as unacknoweldged, until we have received the corresponding pubcomp
     pub(crate) fn handle_outgoing_pubrel(&self, p: PubRel) -> Result<(), MQTTError> {
         Ok(())
     }
@@ -378,4 +425,10 @@ where
     pub(crate) fn handle_outgoing_packet(&self, packet: &Packet) -> Result<(), MQTTError> {
         Ok(())
     }
+
+    /// should be used in the case of clean_start=0,
+    /// dup flag on publish packets must be set to 1 in this case
+    /// see: 4.3.3 QoS 2: Exactly once delivery
+    /// for more information
+    pub(crate) fn retransmit_all() {}
 }
