@@ -27,9 +27,6 @@ websocket = { version = "0.27.1", optional = true }
 tracing = { version = "0.1.41", optional = true }
 async-channel = { version = "2.3.1" }
 futures = "0.3.31"
-smol = { version = "2.0.2", features = [] }
-tokio = { version = "1.42.0", features = ["macros", "io-util", "net", "sync", "rt"] }
-async-std = "1.10"
 tokio-util = { version = "0.7.13", features= ["compat"]}
 
 

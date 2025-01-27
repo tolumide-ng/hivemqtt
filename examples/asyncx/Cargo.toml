@@ -1,0 +1,24 @@
+[package]
+name = "asyncx"
+edition.workspace = true
+keywords.workspace = true
+categories.workspace = true
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+tokio = { version = "1.42.0", features = ["macros", "io-util", "net", "sync", "rt"] }
+smol = { version = "2.0.2", features = [] }
+async-std = "1.10"
+
+[[bin]]
+name = "tokio"
+path = "src/tokio.rs"
+
+[[bin]]
+name = "smol"
+path = "src/smol.rs"
+
+[[bin]]
+name = "async-std"
+path = "src/async-std.rs"
