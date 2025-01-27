@@ -1,17 +1,15 @@
-use std::{
-    sync::{Arc, Mutex},
-    time::Instant,
-};
+use std::{sync::Arc, time::Instant};
 
 use async_channel::Receiver;
 use futures::{select, AsyncReadExt, AsyncWriteExt, FutureExt};
 
 use crate::v5::{
     client::{client::MqttClient, handler::AsyncHandler, state::State, ConnectOptions},
-    commons::{error::MQTTError, packet::Packet},
+    commons::{error::MQTTError, packet::Packet, packet_type::PacketType},
     packet::{
         connack::{reason_code::ConnAckReasonCode, ConnAck},
         connect::Connect,
+        disconnect::Disconnect,
         ping::PingReq,
     },
     traits::streamio::StreamIO,
@@ -122,9 +120,16 @@ where
                 },
                 outgoing = self.rx.recv().fuse() => {
                     let packet = outgoing?;
+
+                    let disconnect = packet.packet_type() == PacketType::Disconnect;
+
                     packet.write(&mut self.stream).await?;
                     self.state.handle_outgoing_packet(packet)?;
-                    break;
+                    last_ping = Some(Instant::now());
+
+                    if disconnect {
+                        return Ok(Packet::Disconnect(Disconnect::default()))
+                    }
                 },
                 // _ = xx => {
                 //     break;

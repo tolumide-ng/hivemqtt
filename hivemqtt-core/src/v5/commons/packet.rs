@@ -45,6 +45,28 @@ impl Default for Packet {
     }
 }
 
+impl Packet {
+    pub(crate) fn packet_type(&self) -> PacketType {
+        match self {
+            Self::Connect(_) => PacketType::Connect,
+            Self::ConnAck(_) => PacketType::ConnAck,
+            Self::Publish(_) => PacketType::Publish,
+            Self::PubAck(_) => PacketType::PubAck,
+            Self::PubRec(_) => PacketType::PubRec,
+            Self::PubRel(_) => PacketType::PubRel,
+            Self::PubComp(_) => PacketType::PubComp,
+            Self::Subscribe(_) => PacketType::Subscribe,
+            Self::SubAck(_) => PacketType::SubAck,
+            Self::UnSubscribe(_) => PacketType::UnSubscribe,
+            Self::UnSubAck(_) => PacketType::UnSubAck,
+            Self::PingReq(_) => PacketType::PingReq,
+            Self::PingResp(_) => PacketType::PingResp,
+            Self::Disconnect(_) => PacketType::Disconnect,
+            Self::Auth(_) => PacketType::Auth,
+        }
+    }
+}
+
 impl ReadData for Packet {}
 
 pub(crate) mod syncx {
@@ -183,21 +205,3 @@ mod asyncx {
         }
     }
 }
-
-// impl Packet {
-//     pub(crate) const CONNECT: u8 = 0x10; // 0b0001_0000
-//     pub(crate) const CONNACK: u8 = 0x20; // 0b0010_0000
-//     pub(crate) const PUBLISH: u8 = 0x30; // 0b0011_0000
-//     pub(crate) const PUBACK: u8 = 0x40; // 0b0100_0000
-//     pub(crate) const PUBREC: u8 = 0x50; // 0b0101_0000
-//     pub(crate) const PUBREL: u8 = 0x60; // 0b0110_0000
-//     pub(crate) const PUBCOMP: u8 = 0x70; // 0b0111_0000
-//     pub(crate) const SUBSCRIBE: u8 = 0x80; // 0b1000_0000
-//     pub(crate) const SUBACK: u8 = 0x90; // 0b1001_0000
-//     pub(crate) const UNSUBSCRIBE: u8 = 0xA0; // 0b1010_0000
-//     pub(crate) const UNSUBACK: u8 = 0xB0; // 0b1011_0000
-//     pub(crate) const PINGREQ: u8 = 0xC0; // 0b1100_0000
-//     pub(crate) const PINGRESP: u8 = 0xD0; // 0b1101_0000
-//     pub(crate) const DISCONNECT: u8 = 0xE0; // 0b1110_0000
-//     pub(crate) const AUTH: u8 = 0xF0; // 0b1111_0000
-// }

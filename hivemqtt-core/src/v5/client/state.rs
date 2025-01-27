@@ -188,7 +188,7 @@ where
     }
 
     // we don't need to confirm anything locally
-    pub(crate) fn handle_outgoing_puback(&self, p: PubAck) -> Result<(), MQTTError> {
+    pub(crate) fn handle_outgoing_puback(&self, _p: PubAck) -> Result<(), MQTTError> {
         Ok(())
     }
 
