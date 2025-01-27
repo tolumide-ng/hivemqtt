@@ -9,13 +9,18 @@ use crate::v5::{
     packet::{
         connack::{reason_code::ConnAckReasonCode, ConnAck},
         connect::Connect,
-        disconnect::Disconnect,
         ping::PingReq,
     },
     traits::streamio::StreamIO,
 };
 
 use super::PacketIdManager;
+
+pub(crate) enum NetworkStatus {
+    IncomingDisconnect,
+    OutgoingDisconnect,
+    Timeout,
+}
 
 #[derive(Debug)]
 pub struct Network<S> {
@@ -72,7 +77,7 @@ where
         Err(MQTTError::ConnectionRefused(connack.reason.into()))
     }
 
-    async fn run<H>(&mut self, handler: &mut H) -> Result<Packet, MQTTError>
+    async fn run<H>(&mut self, handler: &mut H) -> Result<NetworkStatus, MQTTError>
     where
         H: AsyncHandler,
     {
@@ -103,8 +108,7 @@ where
                         }
                         Packet::Disconnect(_) => {
                             handler.handle(packet).await;
-                            // return Ok(data);
-                            break;
+                            return Ok(NetworkStatus::IncomingDisconnect)
                         }
                         _ => {
                             let result = self.state.handle_incoming_packet(&mut packet)?;
@@ -114,7 +118,6 @@ where
                             if let Some(response) = result {
                                 response.write(&mut self.stream).await?;
                             }
-                            // let xx = self.state.handle
                         }
                     }
                 },
@@ -128,21 +131,15 @@ where
                     last_ping = Some(Instant::now());
 
                     if disconnect {
-                        return Ok(Packet::Disconnect(Disconnect::default()))
+                        return Ok(NetworkStatus::OutgoingDisconnect)
                     }
                 },
-                // _ = xx => {
-                //     break;
-                // },
-                // sending outgoing packets
-                // pinging
-                // ponging
                  default => {
                      let Some(last_time) = last_ping else { continue; };
                      let since = last_time.elapsed().as_secs();
                     if expecting_pingresp {
                         if since >= max_timeout {
-                            return Err(MQTTError::TimeoutError);
+                            return Ok(NetworkStatus::Timeout);
                         }
                         continue;
                     }
@@ -155,7 +152,5 @@ where
                 },
             };
         }
-
-        Err(MQTTError::ConnectionError)
     }
 }

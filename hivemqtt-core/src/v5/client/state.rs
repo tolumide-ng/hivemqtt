@@ -1,8 +1,5 @@
 use std::sync::{Arc, Mutex};
 
-// #[cfg(feature = "logs")]
-// use tracing::error;
-
 use crate::v5::{
     commons::{error::MQTTError, packet::Packet, packet_type::PacketType, qos::QoS},
     packet::{
@@ -185,6 +182,11 @@ where
         };
 
         Ok(result)
+    }
+
+    // we don't need to confirm anything locally
+    pub(crate) fn handle_outgoing_pubacki(&self, _p: PubAck) -> Result<(), MQTTError> {
+        Ok(())
     }
 
     // we don't need to confirm anything locally
