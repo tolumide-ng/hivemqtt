@@ -1,7 +1,4 @@
-use std::{
-    collections::HashSet,
-    sync::{atomic::AtomicU16, Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 // #[cfg(feature = "logs")]
 // use tracing::error;
@@ -15,6 +12,7 @@ use crate::v5::{
         publish::Publish,
         pubrec::{properties::PubRecReasonCode, PubRec},
         pubrel::PubRel,
+        suback::SubAck,
         subscribe::Subscribe,
         unsuback::UnSubAck,
         unsubscribe::UnSubscribe,
@@ -262,7 +260,7 @@ where
     }
 
     // we don't need to confirm anything locally, if it's autohandled good, if it's not, then it's up to the user
-    pub(crate) fn handle_outgoing_pubrel(&self, packet: PubRec) -> Result<(), MQTTError> {
+    pub(crate) fn handle_outgoing_pubrel(&self, packet: PubRel) -> Result<(), MQTTError> {
         self.active_packets.client.lock().unwrap()[packet.pkid as usize] = Some(PacketType::PubRel);
         Ok(())
     }
@@ -294,7 +292,7 @@ where
         })))
     }
 
-    fn handle_outgoing_pubcomp(&self, _packet: &PubComp) -> Result<(), MQTTError> {
+    fn handle_outgoing_pubcomp(&self, _packet: PubComp) -> Result<(), MQTTError> {
         Ok(())
     }
 
@@ -322,7 +320,7 @@ where
         Ok(())
     }
 
-    fn handle_incoming_suback(&self, packet: &Subscribe) -> Result<Option<Packet>, MQTTError> {
+    fn handle_incoming_suback(&self, packet: &SubAck) -> Result<Option<Packet>, MQTTError> {
         let prev = self.active_packets.client.lock().unwrap()[packet.pkid as usize]
             .take_if(|pt| *pt == PacketType::Subscribe);
 
@@ -357,8 +355,8 @@ where
         return Ok(None);
     }
 
-    fn handle_outgoing_disconnect(&self, packet: Disconnect) -> Result<Option<Packet>, MQTTError> {
-        Ok(None)
+    fn handle_outgoing_disconnect(&self, _packet: Disconnect) -> Result<(), MQTTError> {
+        Ok(())
     }
 
     pub(crate) fn handle_incoming_packet(
@@ -366,19 +364,30 @@ where
         packet: &mut Packet,
     ) -> Result<Option<Packet>, MQTTError> {
         match packet {
-            Packet::PubAck(p) => self.handle_incoming_puback(p),
-            Packet::PubRec(p) => self.handle_incoming_pubrec(p),
-            Packet::Publish(p) => self.handle_incoming_publish(p),
-            Packet::PubComp(p) => self.handle_incoming_pubcomp(p),
-            Packet::PubRel(p) => self.handle_incoming_pubrel(p),
-            Packet::SubAck(p) => self.handle_incoming_suback(p),
-            // Packet::UnSubAck(p) => self.handleincoming
+            Packet::Publish(packet) => self.handle_incoming_publish(packet),
+            Packet::PubAck(packet) => self.handle_incoming_puback(packet),
+            Packet::PubRec(packet) => self.handle_incoming_pubrec(packet),
+            Packet::PubRel(packet) => self.handle_incoming_pubrel(packet),
+            Packet::PubComp(packet) => self.handle_incoming_pubcomp(packet),
+            Packet::SubAck(packet) => self.handle_incoming_suback(packet),
+            Packet::UnSubAck(packet) => self.handle_incoming_unsuback(packet),
             _ => Err(MQTTError::UnsupportedQoS(0)),
         }
     }
 
-    pub(crate) fn handle_outgoing_packet(&self, packet: &Packet) -> Result<(), MQTTError> {
-        Ok(())
+    pub(crate) fn handle_outgoing_packet(&self, packet: Packet) -> Result<(), MQTTError> {
+        match packet {
+            Packet::Publish(packet) => self.handle_outgoing_publish(packet),
+            Packet::PubAck(packet) => self.handle_outgoing_puback(packet),
+            Packet::PubRec(packet) => self.handle_outgoing_pubrec(packet),
+            Packet::PubRel(packet) => self.handle_outgoing_pubrel(packet),
+            Packet::PubComp(packet) => self.handle_outgoing_pubcomp(packet),
+            Packet::Subscribe(packet) => self.handle_outgoing_subscribe(packet),
+            Packet::UnSubscribe(packet) => self.handle_outgoing_unsubscribe(packet),
+            Packet::Disconnect(packet) => self.handle_outgoing_disconnect(packet),
+
+            _ => Err(MQTTError::UnsupportedQoS(0)),
+        }
     }
 
     /// should be used in the case of clean_start=0,

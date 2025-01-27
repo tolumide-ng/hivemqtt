@@ -123,7 +123,7 @@ where
                 outgoing = self.rx.recv().fuse() => {
                     let packet = outgoing?;
                     packet.write(&mut self.stream).await?;
-                    self.state.handle_outgoing_packet(&packet)?;
+                    self.state.handle_outgoing_packet(packet)?;
                     break;
                 },
                 // _ = xx => {
