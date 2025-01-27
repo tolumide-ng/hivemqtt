@@ -315,16 +315,25 @@ where
         })))
     }
 
-    fn handle_outgoing_pubcomp(&self, p: &PubComp) -> Result<(), MQTTError> {
+    fn handle_outgoing_pubcomp(&self, packet: &PubComp) -> Result<(), MQTTError> {
         Ok(())
     }
 
-    fn handle_incoming_pubcomp(&self, p: &PubComp) -> Result<Option<Packet>, MQTTError> {
-        if self.outgoing_rel.lock().unwrap()[p.pkid as usize] {
-            self.pkid_mgr.as_ref().unwrap().release(p.pkid);
-            return Ok(None);
+    fn handle_incoming_pubcomp(&self, packet: &PubComp) -> Result<Option<Packet>, MQTTError> {
+        let pkid = packet.pkid as usize;
+        let prev = self.active_packets.client.lock().unwrap()[pkid]
+            .take_if(|pt| *pt == PacketType::PubRel);
+
+        if prev.is_none() {
+            return Err(MQTTError::UnknownData(format!(
+                "Unknown Packet Id: {}",
+                packet.pkid
+            )));
         }
-        return Err(MQTTError::UnknownData(format!("{}", p.pkid)));
+
+        self.pkid_mgr.as_ref().unwrap().release(packet.pkid);
+
+        return Ok(None);
     }
 
     fn handle_outgoing_subscribe(&self, packet: Subscribe) -> Result<(), MQTTError> {
