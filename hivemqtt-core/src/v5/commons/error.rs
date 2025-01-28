@@ -60,6 +60,11 @@ pub enum MQTTError {
     IncomingDisconnect,
     #[error("No more outgoing packets {0}")]
     NoOutgoingPackets(#[from] RecvError),
+
+    #[error("Packet Id Generation Error")]
+    PacketIdGenerationError,
+    #[error("Maximum Packet size exceeded {0}")]
+    MaxPacketSizeExceed(usize),
 }
 
 impl From<std::io::Error> for MQTTError {

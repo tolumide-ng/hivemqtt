@@ -26,3 +26,13 @@ pub mod v5;
 // }
 
 // // impl_from_be_bytes!(u8, u16, u32);
+
+// macro_rules! validate_packet {
+//     (($expr:expr), ($val:expr)) => {
+//         if $expr.length() > $val {
+//             return Err(MQTTError::MaximumSizeExceed);
+//         } else {
+//             Ok(())
+//         }
+//     };
+// }

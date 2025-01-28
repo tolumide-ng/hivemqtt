@@ -120,4 +120,13 @@ pub(crate) trait StreamIO: Sized + ReadData {
         }
         Ok(Some(len))
     }
+
+    fn is_valid(&self, max_size: usize) -> Result<(), MQTTError> {
+        let len = self.length();
+        if len > max_size {
+            return Err(MQTTError::MaxPacketSizeExceed(len));
+        }
+
+        Ok(())
+    }
 }

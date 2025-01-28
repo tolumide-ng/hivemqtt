@@ -36,6 +36,7 @@ where
     S: AsyncReadExt + AsyncWriteExt + Unpin,
 {
     pub async fn new(options: ConnectOptions, stream: S) -> Result<Self, MQTTError> {
+        let max_size = options.server_max_size.get() as usize;
         let state = State::from(&options);
 
         let (tx, rx) = async_channel::bounded::<Packet>(100); // receive_max + send_max
@@ -53,7 +54,7 @@ where
         let server_receive_max = connack.properties.receive_maximum.unwrap_or(100);
         let pkids = Arc::new(PacketIdManager::new(server_receive_max));
 
-        network.client = Some(MqttClient::new(tx, pkids.clone()));
+        network.client = Some(MqttClient::new(tx, pkids.clone(), max_size));
         network.state.pkid_mgr = Some(pkids);
 
         Ok(network)
