@@ -10,6 +10,7 @@ authors.workspace = true
 tokio = { version = "1.42.0", features = ["macros", "io-util", "net", "sync", "rt"] }
 smol = { version = "2.0.2", features = [] }
 async-std = "1.10"
+tokio-util = { version = "0.7.13", features= ["compat"]}
 
 [[bin]]
 name = "tokio"
