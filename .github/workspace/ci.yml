@@ -1,0 +1,9 @@
+# name: Build and Publish WASM package for Javascript (Web + Nodejs + Deno targets) to the npm registry
+
+# on:
+#   release:
+#    types: [created]
+
+# jobs:
+#   build:
+#    runs-on: ubuntu-latest
