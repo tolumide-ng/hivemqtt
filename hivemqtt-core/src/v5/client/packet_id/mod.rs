@@ -3,7 +3,10 @@ use std::sync::atomic::{AtomicU16, Ordering};
 mod shard;
 use shard::PacketIdShard;
 
-use crate::v5::traits::pkid_mgr::{PacketIdAlloc, PacketIdRelease};
+use crate::v5::{
+    commons::error::MQTTError,
+    traits::pkid_mgr::{PacketIdAlloc, PacketIdRelease},
+};
 
 #[derive(Debug)]
 pub(crate) struct PacketIdManager {
@@ -29,25 +32,25 @@ impl PacketIdManager {
 }
 
 impl PacketIdAlloc for PacketIdManager {
-    fn allocate(&self) -> Option<u16> {
+    fn allocate(&self) -> Result<u16, MQTTError> {
         let allocated = self.allocated.fetch_add(1, Ordering::AcqRel);
         if allocated >= self.max_packets {
             // rollback
             self.allocated.fetch_sub(1, Ordering::Release);
-            return None;
+            return Err(MQTTError::PacketIdGenerationError);
         }
 
         for (shard_index, shard) in self.shards.iter().enumerate() {
             if let Some(id) = shard.allocate() {
                 // packet must always be non-zero
                 let packet_id = (shard_index * (Self::BITS) + id as usize) + 1;
-                return Some(packet_id as u16);
+                return Ok(packet_id as u16);
             }
         }
 
         // It should be almost impossible for this to occur, but its better taken care of than not!
         self.allocated.fetch_sub(1, Ordering::Release);
-        None
+        return Err(MQTTError::PacketIdGenerationError);
     }
 }
 

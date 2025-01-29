@@ -41,6 +41,14 @@ pub(crate) trait Utils: Sized {
 
         return Err(MQTTError::MalformedPacket);
     }
+
+    fn validate_topic(&self, topic: &String) -> Result<(), MQTTError> {
+        if topic.contains("+") || topic.contains("#") {
+            return Err(MQTTError::InvalidTopic("invalid character"));
+        }
+
+        Ok(())
+    }
 }
 
 impl<T: StreamIO + BufferIO> Utils for T {}

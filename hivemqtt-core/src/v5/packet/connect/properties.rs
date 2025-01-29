@@ -11,7 +11,7 @@ use crate::v5::{
 use super::Property;
 
 /// CONNECT Properties (3.1.2.11)
-#[derive(Debug, Clone, Length, Default)]
+#[derive(Debug, Clone, Length, Default, PartialEq, Eq)]
 pub(crate) struct ConnectProperties {
     pub(crate) session_expiry_interval: Option<u32>,
     pub(crate) receive_maximum: Option<u16>,

@@ -5,9 +5,9 @@ use crate::v5::traits::read_data::ReadData;
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct UnSubscribe {
-    pub(crate) pkid: u16,
-    pub(crate) properties: UnSubscribeProperties,
-    pub(crate) payload: Vec<String>,
+    pub pkid: u16,
+    pub properties: UnSubscribeProperties,
+    pub payload: Vec<String>,
 }
 
 #[cfg(feature = "asyncx")]

@@ -5,10 +5,10 @@ use super::ReadData;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct SubscriptionOptions {
-    qos: QoS,
-    no_local: bool,
-    retain_as_published: bool,
-    retain_handling: RetainHandling,
+    pub qos: QoS,
+    pub no_local: bool,
+    pub retain_as_published: bool,
+    pub retain_handling: RetainHandling,
 }
 
 #[cfg(feature = "asyncx")]

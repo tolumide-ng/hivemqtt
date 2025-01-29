@@ -6,7 +6,7 @@ use crate::v5::traits::utils::Utils;
 
 use super::{Property, ReadData};
 
-#[derive(Length, Debug, Clone, Default)]
+#[derive(Length, Debug, Clone, Default, PartialEq, Eq)]
 pub struct WillProperties {
     pub delay_interval: Option<u32>,
     pub payload_format_indicator: Option<u8>,
@@ -17,7 +17,7 @@ pub struct WillProperties {
     pub user_property: Vec<(String, String)>,
 }
 
-#[derive(Debug, Clone, Length, Default)]
+#[derive(Debug, Clone, Length, Default, PartialEq, Eq)]
 pub struct Will {
     #[bytes(ignore)]
     pub properties: WillProperties,

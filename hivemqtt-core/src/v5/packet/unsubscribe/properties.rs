@@ -39,7 +39,7 @@ mod syncx {
 
     use crate::v5::{
         commons::{error::MQTTError, property::Property},
-        traits::{bufferio::BufferIO, read_data::ReadData},
+        traits::bufferio::BufferIO,
     };
 
     use super::UnSubscribeProperties;

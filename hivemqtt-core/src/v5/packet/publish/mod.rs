@@ -10,13 +10,13 @@ use crate::v5::{
 
 #[derive(Debug, Default, PartialEq, Clone, Eq)]
 pub struct Publish {
-    pub(crate) dup: bool,
-    pub(crate) retain: bool,
-    pub(crate) qos: QoS,
-    pub(crate) topic: String,
-    pub(crate) pkid: Option<u16>,
-    pub(crate) properties: PublishProperties,
-    pub(crate) payload: Bytes,
+    pub dup: bool,
+    pub retain: bool,
+    pub qos: QoS,
+    pub topic: String,
+    pub pkid: Option<u16>,
+    pub properties: PublishProperties,
+    pub payload: Bytes,
 }
 
 #[cfg(feature = "asyncx")]

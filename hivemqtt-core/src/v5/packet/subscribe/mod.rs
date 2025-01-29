@@ -16,10 +16,10 @@ pub(crate) use syncx::*;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Subscribe {
-    pub(crate) pkid: u16,
-    pub(crate) properties: SubscribeProperties,
+    pub pkid: u16,
+    pub properties: SubscribeProperties,
     /// It is protocl error to have a subscribe packet that doesn't have atleast one payload (topic, subscriptionOptions)
-    pub(crate) payload: Vec<(String, SubscriptionOptions)>,
+    pub payload: Vec<(String, SubscriptionOptions)>,
 }
 
 impl ReadData for Subscribe {}

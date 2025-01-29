@@ -20,7 +20,7 @@ use crate::v5::{
 
 use super::{error::MQTTError, fixed_header::FixedHeader, packet_type::PacketType};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Packet {
     Connect(Connect),
     ConnAck(ConnAck),

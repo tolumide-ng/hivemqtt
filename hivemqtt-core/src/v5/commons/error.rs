@@ -1,8 +1,10 @@
 use std::string::FromUtf8Error;
 
-use async_channel::RecvError;
+use async_channel::{RecvError, SendError};
 
-#[derive(Clone, Debug, thiserror::Error, PartialEq, Eq)]
+use super::packet::Packet;
+
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum MQTTError {
     #[error("Malformed mqtt packet")]
     MalformedPacket,
@@ -65,6 +67,12 @@ pub enum MQTTError {
     PacketIdGenerationError,
     #[error("Maximum Packet size exceeded {0}")]
     MaxPacketSizeExceed(usize),
+
+    #[error("Invalid Topic contains: {0}")]
+    InvalidTopic(&'static str),
+
+    #[error("Channel Error: Channel Closed")]
+    ChannelClosed(#[from] SendError<Packet>),
 }
 
 impl From<std::io::Error> for MQTTError {

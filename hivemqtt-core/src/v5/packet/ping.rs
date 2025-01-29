@@ -3,10 +3,10 @@ use crate::v5::{
     traits::read_data::ReadData,
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct PingReq {}
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct PingResp;
 
 #[cfg(feature = "asyncx")]

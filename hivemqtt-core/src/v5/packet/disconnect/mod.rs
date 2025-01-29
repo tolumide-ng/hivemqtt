@@ -11,8 +11,8 @@ use crate::v5::{
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Disconnect {
-    reason_code: DisconnectReasonCode,
-    properties: DisconnectProperties,
+    pub reason_code: DisconnectReasonCode,
+    pub properties: DisconnectProperties,
 }
 
 #[cfg(feature = "asyncx")]

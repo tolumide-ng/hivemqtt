@@ -1,3 +1,5 @@
+use crate::v5::commons::error::MQTTError;
+
 pub(crate) trait PacketIdRelease: Sized {
     fn release(&self, id: u16);
 
@@ -5,5 +7,5 @@ pub(crate) trait PacketIdRelease: Sized {
 }
 
 pub(crate) trait PacketIdAlloc: Sized {
-    fn allocate(&self) -> Option<u16>;
+    fn allocate(&self) -> Result<u16, MQTTError>;
 }
