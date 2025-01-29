@@ -8,8 +8,8 @@ categories = ["network-programming"]
 keywords = ["mqtt", "iot", "mqttv5", "client"]
 
 [lib]
+crate-type = ["cdylib"]
 path = "src/lib.rs"
-
 
 [features]
 asyncx = []

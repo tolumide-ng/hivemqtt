@@ -1,6 +1,17 @@
 ### HiveMQTT
 [MQTT5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html)
 
+## Some Guides (Incomplete)
+- To generate the `wasm` build:
+    - Ensure you have [`wasm-pack`](https://github.com/rustwasm/wasm-pack) installed on your local machine
+    NB: Because [wasm-pack does not seem to support cargo-workspace](https://github.com/rustwasm/wasm-pack/issues/642)
+        - Cd into the core directory: In this case `hivemqtt-core` first
+```
+> cd hivemqtt-core
+> wasm-pack build --target web --out-dir ./../pkg
+```
+    - This should generate the `pkg` folder which you can use for your javascript/typescript projects at the root level of this project
+
 ### Plans
 - [ ] Protocol Support
     - [ ] MQTT 3.1.1
@@ -11,7 +22,7 @@
 - [ ] Implement `Display` for `Property`
 - [ ] Tests
 - [ ] no_std support
-- [ ] Integrate WASM for easy compiling to Javascript/Typescript/Node.js environments
+- [x] Integrate WASM for easy compiling to Javascript/Typescript/Node.js environments
 - [ ] Easy internal utility for converting -> to string and vice versal (from terminal tool?) - for debugging
 - [ ] Samples for easy learning
 - [ ] Move bytes length validation/parsing into the trait, and update the trait's secondary properties

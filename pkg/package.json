@@ -1,0 +1,24 @@
+{
+  "name": "hivemqtt-core",
+  "type": "module",
+  "collaborators": [
+    "Tolumide Shopein <tolumideshopein@gmail.com>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "hivemqtt_core_bg.wasm",
+    "hivemqtt_core.js",
+    "hivemqtt_core.d.ts"
+  ],
+  "main": "hivemqtt_core.js",
+  "types": "hivemqtt_core.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ],
+  "keywords": [
+    "mqtt",
+    "iot",
+    "mqttv5",
+    "client"
+  ]
+}
