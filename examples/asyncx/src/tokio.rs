@@ -1,37 +1,3 @@
-// mod comp_confirmation {
-//     use tokio::net::TcpStream;
-//     use tokio_util::compat::TokioAsyncReadCompatExt;
-
-//     use super::*;
-
-//     struct HST {}
-//     impl AsyncHandler for HST {
-//         async fn handle(&mut self, packet: Packet) {}
-//     }
-
-//     async fn test_impl() {
-//         let xxx = HST {};
-//         // let stream = tokio::net::TcpStream::connect("whatever").await.unwrap();
-//         let stream = TcpStream::connect("example.com:80").await.unwrap();
-//         // let stream = tokio::net::TcpStream::connect("hostname").await.unwrap();
-//         // let stream = tokio::io::BufStream::new(stream);
-
-//         let stream = stream.compat();
-
-//         let mut xx = Network {
-//             state: State::new(ConnectOptions::default()),
-//             stream: Some(stream),
-//             receiver: None,
-//             keep_alive: Duration::new(60, 0),
-//             handler: xxx,
-//         };
-
-//         let stream = TcpStream::connect("example.com:80").await.unwrap();
-//         let stream = stream.compat();
-//         let abc = xx.connect(stream);
-//     }
-// }
-
 use dotenvy::dotenv;
 use hivemqtt_core::v5::{
     client::{handler::AsyncHandler, network::asyncx::Network, ConnectOptions},
@@ -49,7 +15,7 @@ impl AsyncHandler for Handler {
 }
 
 #[tokio::main]
-fn main() {
+async fn main() {
     dotenv().ok();
     let hostname = env::var("HOSTNAME").expect("HOSTNAME required");
     let username = Some(env::var("USERNAME").expect("USERNAME required"));
@@ -57,7 +23,11 @@ fn main() {
 
     let mut handler = Handler;
 
+    println!("the hostname is {:?}", hostname);
+
     let stream = tokio::net::TcpStream::connect(hostname).await.unwrap();
+
+    println!("connected!!!****");
     let stream = tokio::io::BufStream::new(stream);
     let stream = stream.compat();
 
@@ -76,6 +46,6 @@ fn main() {
     });
 
     println!("ABOUT TO DISCONNECT!!!***");
-    client.disconnect().await;
+    client.disconnect().await.unwrap();
     println!("disconnected!!!");
 }

@@ -3,25 +3,27 @@ name = "asyncx"
 edition.workspace = true
 keywords.workspace = true
 categories.workspace = true
-version.workspace = true
 authors.workspace = true
+publish = false
+license = "MIT"
+version = "0.0.0"
 
 [dependencies]
-tokio = { version = "1.42.0", features = ["macros", "io-util", "net", "sync", "rt"] }
+tokio = { version = "1.42.0", features = ["full"] }
 smol = { version = "2.0.2", features = [] }
 async-std = "1.10"
 tokio-util = { version = "0.7.13", features= ["compat"]}
 hivemqtt_core = { path = "../../hivemqtt-core" }
 dotenvy = "0.15.7"
 
-[[bin]]
+[[example]]
 name = "tokio"
 path = "src/tokio.rs"
 
-[[bin]]
+[[example]]
 name = "smol"
 path = "src/smol.rs"
 
-[[bin]]
+[[example]]
 name = "async-std"
 path = "src/async-std.rs"
