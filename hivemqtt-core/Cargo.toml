@@ -16,8 +16,7 @@ name = "hivemqtt_core"
 [features]
 asyncx = []
 syncx = []
-wasm = ["dep:js-sys", "dep:wasm-bindgen"]
-default = ["asyncx", "syncx", "wasm"]
+default = ["asyncx"]
 
 [dependencies]
 bytes = "1.7.1"
@@ -30,7 +29,3 @@ futures = "0.3.31"
 
 
 
-
-
-js-sys = { version = "0.3.77", optional = true }
-wasm-bindgen = { version = "0.2.100", optional = true }

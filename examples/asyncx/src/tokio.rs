@@ -42,7 +42,7 @@ async fn main() {
 
     tokio::spawn(async move {
         println!("now running!!!!!!!!");
-        result.run(&mut handler).await;
+        result.run(&mut handler).await.unwrap();
     });
 
     println!("ABOUT TO DISCONNECT!!!***");

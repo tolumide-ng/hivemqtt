@@ -514,10 +514,8 @@ dependencies = [
  "derive_more",
  "futures",
  "hivemqtt-macros",
- "js-sys",
  "thiserror",
  "tracing",
- "wasm-bindgen",
 ]
 
 [[package]]
