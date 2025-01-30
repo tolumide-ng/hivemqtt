@@ -9,7 +9,7 @@ use crate::v5::{
 };
 
 #[derive(Debug)]
-pub(crate) struct PacketIdManager {
+pub struct PacketIdManager {
     shards: Vec<PacketIdShard>,
     allocated: AtomicU16,
     max_packets: u16,
@@ -87,7 +87,6 @@ impl PacketIdRelease for PacketIdManager {
 
 #[cfg(test)]
 mod test {
-    use futures::executor::block_on;
     use std::sync::atomic::Ordering;
 
     use super::*;
@@ -110,14 +109,14 @@ mod test {
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 0);
 
         let packet_id_1 = mgr.allocate();
-        assert_eq!(packet_id_1, Some(1));
+        assert_eq!(packet_id_1, Ok(1));
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 1);
 
         let packet_id_2 = mgr.allocate();
-        assert_eq!(packet_id_2, Some(2));
+        assert_eq!(packet_id_2, Ok(2));
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 2);
 
-        assert_eq!(mgr.allocate(), None);
+        assert_eq!(mgr.allocate(), Err(MQTTError::PacketIdGenerationError));
         assert_eq!(mgr.allocated.load(Ordering::Relaxed), 2);
 
         mgr.release(packet_id_1.unwrap());

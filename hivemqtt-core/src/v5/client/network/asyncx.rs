@@ -16,7 +16,7 @@ use crate::v5::{
 
 use super::PacketIdManager;
 
-pub(crate) enum NetworkStatus {
+pub enum NetworkStatus {
     IncomingDisconnect,
     OutgoingDisconnect,
     Timeout,
@@ -26,7 +26,6 @@ pub(crate) enum NetworkStatus {
 pub struct Network<S> {
     stream: S,
     options: ConnectOptions,
-    client: Option<MqttClient<PacketIdManager>>,
     state: State<PacketIdManager>,
     rx: Receiver<Packet>,
 }
@@ -35,7 +34,10 @@ impl<S> Network<S>
 where
     S: AsyncReadExt + AsyncWriteExt + Unpin,
 {
-    pub async fn new(options: ConnectOptions, stream: S) -> Result<Self, MQTTError> {
+    pub async fn new(
+        options: ConnectOptions,
+        stream: S,
+    ) -> Result<(Self, MqttClient<PacketIdManager>), MQTTError> {
         let max_size = options.server_max_size.get() as usize;
         let state = State::from(&options);
 
@@ -44,7 +46,6 @@ where
         let mut network = Self {
             stream,
             options,
-            client: None,
             // pkids,
             state,
             rx,
@@ -54,10 +55,9 @@ where
         let server_receive_max = connack.properties.receive_maximum.unwrap_or(100);
         let pkids = Arc::new(PacketIdManager::new(server_receive_max));
 
-        network.client = Some(MqttClient::new(tx, pkids.clone(), max_size));
-        network.state.pkid_mgr = Some(pkids);
+        network.state.pkid_mgr = Some(pkids.clone());
 
-        Ok(network)
+        Ok((network, MqttClient::new(tx, pkids, max_size)))
     }
 
     async fn connect(&mut self) -> Result<ConnAck, MQTTError> {
@@ -78,7 +78,7 @@ where
         Err(MQTTError::ConnectionRefused(connack.reason.into()))
     }
 
-    async fn run<H>(&mut self, handler: &mut H) -> Result<NetworkStatus, MQTTError>
+    pub async fn run<H>(&mut self, handler: &mut H) -> Result<NetworkStatus, MQTTError>
     where
         H: AsyncHandler,
     {
